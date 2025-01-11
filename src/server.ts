@@ -1,19 +1,32 @@
-import express, {Request,Response} from 'express';
-import {configDotenv} from 'dotenv';
+import express, { Request, Response } from 'express';
+import { configDotenv } from 'dotenv';
 import morgan from 'morgan';
-import {createProxyMiddleware} from 'http-proxy-middleware'
+import cors from 'cors'
+import { createProxyMiddleware } from 'http-proxy-middleware'
+import { IncomingMessage } from 'http';
+import { validateToken } from "./middleware/validateToken";
 
 configDotenv();
 
 const app = express();
 
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: '*',
+    allowedHeaders: ['Content-Type', 'Authorization', 'refresh-token'],
+    credentials: true
+}));
+
+
 app.use(morgan('dev'));
 
-const port = process.env.PORT|| 3000;
+const port = process.env.PORT || 3000;
 
 
-app.use('/user-service',createProxyMiddleware({target:'http://localhost:4000',changeOrigin:true}));
+app.use(validateToken as express.RequestHandler);
 
-app.listen(port,()=>{
+app.use('/user-service', createProxyMiddleware({ target: 'http://localhost:4000', changeOrigin: true }));
+
+app.listen(port, () => {
     console.log(`api-gateway is running on port ${port}`);
 });

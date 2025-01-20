@@ -34,11 +34,10 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
         console.log("decoded :", decoded);
         req.headers['x-user-id'] = decoded.userId;
 
-        console.log("req.headers in validatetoken:", req.headers);
-
+        // console.log("req.headers in validatetoken:", req.headers);
         next();
 
-    } catch (error:any) {
+    } catch (error: any) {
         console.log("Error in valdate Token :", error.message);
         return res.status(403).json({ message: 'Forbidden: Invalid token' });
     }

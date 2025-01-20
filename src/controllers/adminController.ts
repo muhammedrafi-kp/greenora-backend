@@ -22,7 +22,10 @@ export class AdminController implements IAdminController {
                 maxAge: 10 * 1000
             });
 
-            res.status(HTTP_STATUS.OK).json({ accessToken });
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                token: accessToken
+            });
 
         } catch (error: any) {
             console.error("Error while logging in: ", error);
@@ -46,6 +49,79 @@ export class AdminController implements IAdminController {
             res.status(HTTP_STATUS.CREATED).json(admin);
         } catch (error: any) {
             console.error("Error while creating admin : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    // async getUsers(req: Request, res: Response): Promise<void> {
+    //     try {
+    //         const { search, filter, sort, page = 1, limit = 10 } = req.query;
+
+
+    //         console.log("heloooooo",search, filter, sort, page, limit);
+
+    //         res.json({ message: "ok" });
+    //     } catch (error: any) {
+    //         console.error("Error while fetching users data : ", error);
+    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    //     }
+    // }
+
+    async getUsers(req: Request, res: Response): Promise<void> {
+        try {
+            const users = await this.adminService.getUsers();
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: users
+            })
+
+        } catch (error: any) {
+            console.error("Error while fetching users data : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getCollectors(req: Request, res: Response): Promise<void> {
+        try {
+            const collectors = await this.adminService.getCollectors();
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: collectors
+            });
+        } catch (error: any) {
+            console.error("Error while fetching collectors data", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async updateUserStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            console.log("Id :", id);
+            const message = await this.adminService.updateUserStatus(id);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message
+            });
+        } catch (error: any) {
+            console.error("Error while updating status : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async updateCollectorStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            console.log("Id :", id);
+            const message = await this.adminService.updateCollectorStatus(id);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message
+            });
+        } catch (error: any) {
+            console.error("Error while updating status : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }

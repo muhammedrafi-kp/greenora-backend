@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { configDotenv } from 'dotenv';
 configDotenv();
 
-
 const connectDB = async (): Promise<void> => {
     const mongo_URI = process.env.MONGO_URI;
     if (!mongo_URI) {

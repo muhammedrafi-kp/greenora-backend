@@ -33,8 +33,8 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            const accessToken = generateAccessToken(collector._id as string);
-            const refreshToken = generateRefreshToken(collector._id as string);
+            const accessToken = generateAccessToken(collector._id as string, 'collector');
+            const refreshToken = generateRefreshToken(collector._id as string, 'collector');
 
             return { accessToken, refreshToken, collector };
 
@@ -98,8 +98,8 @@ export class CollectorService implements ICollectorService {
 
             const collector = await this.collectorRepository.createCollector(collectorData);
 
-            const accessToken = generateAccessToken(collector._id as string);
-            const refreshToken = generateRefreshToken(collector._id as string);
+            const accessToken = generateAccessToken(collector._id as string,'collector');
+            const refreshToken = generateRefreshToken(collector._id as string,'collector');
 
             return { accessToken, refreshToken, collector };
 
@@ -135,6 +135,23 @@ export class CollectorService implements ICollectorService {
 
         } catch (error: any) {
             console.log("Error while fetching collectorData :", error.message);
+            throw error;
+        }
+    }
+
+    async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
+        try {
+            const user = await this.collectorRepository.updateCollectorById(id, collectorData);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            return user;
+        } catch (error: any) {
+            console.log("Error while fetching user data :", error.message);
             throw error;
         }
     }

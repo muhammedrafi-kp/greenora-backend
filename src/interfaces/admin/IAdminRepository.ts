@@ -1,6 +1,7 @@
 import { IAdmin } from "../../models/adminModel";
 
-export interface IAdminRepository{
+export interface IAdminRepository {
     createAdmin(adminData: Partial<IAdmin>): Promise<IAdmin>;
-    findAdminByEmail(email:string):Promise<IAdmin|null>;
+    findAdminByEmail(email: string): Promise<IAdmin | null>;
+    
 }

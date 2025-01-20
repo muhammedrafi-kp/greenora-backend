@@ -449,7 +449,7 @@ export class UserController implements IUserController {
             if (profileImage) {
                 const s3Params = {
                     Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                    Key: `profile-images/${Date.now()}_${profileImage.originalname}`,
+                    Key: `profile-images/user/${Date.now()}_${profileImage.originalname}`,
                     Body: profileImage.buffer,
                     ContentType: profileImage.mimetype,
                 };
@@ -494,4 +494,6 @@ export class UserController implements IUserController {
             });
         }
     }
+
+    
 }

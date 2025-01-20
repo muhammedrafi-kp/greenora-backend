@@ -30,7 +30,6 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-
     async updateById(id: string, updateData: Partial<T>): Promise<T | null> {
         try {
             return await this.model.findByIdAndUpdate(id, updateData, { new: true });
@@ -39,13 +38,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    // async findAll(): Promise<T> {
-    //     try {
+    async findAll(projection?: Record<string, number>): Promise<T[]> {
+        try {
+            return await this.model.find({}, projection).lean() as T[];
+        } catch (error) {
+            throw new Error(`Error while fetching entities :${error instanceof Error ? error.message : String(error)}`);
 
-    //     } catch (error) {
-
-    //     }
-    // }
+        }
+    }
 
     // async find(filter: FilterQuery<T>, options?: QueryOptions): Promise<T[]> {
     //     try {
@@ -54,6 +54,7 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
 
     //     }
     // }
+
     // async update(id: string, data: UpdateQuery<T>): Promise<T | null> {
     //     try {
 

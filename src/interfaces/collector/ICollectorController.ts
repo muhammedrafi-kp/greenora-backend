@@ -6,4 +6,5 @@ export interface ICollcetorController {
     verifyOtp(req: Request, res: Response): Promise<void>;
     resendOtp(req: Request, res: Response): Promise<void>;
     getCollector(req: Request, res: Response): Promise<void>;
+    updateCollector(req: Request, res: Response): Promise<void>;
 }

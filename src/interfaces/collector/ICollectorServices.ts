@@ -6,4 +6,5 @@ export interface ICollectorService {
     verifyOtp(email: string, otp: string): Promise<{ accessToken: string, refreshToken: string, collector: ICollector }>;
     resendOtp(email:string):Promise<void>;
     getCollector(id: string): Promise<ICollector>;
+    updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null>;
 }

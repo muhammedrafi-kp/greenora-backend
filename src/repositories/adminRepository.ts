@@ -1,6 +1,7 @@
 import Admin, { IAdmin } from '../models/adminModel'
 import { IAdminRepository } from '../interfaces/admin/IAdminRepository'
 import { BaseRepository } from './baseRepository'
+import { IUser } from '../models/userModel';
 
 class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository {
     constructor() {
@@ -9,7 +10,7 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
 
     async createAdmin(adminData: Partial<IAdmin>): Promise<IAdmin> {
         try {
-            return await this.model.create(adminData);
+            return await this.create(adminData);
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -17,12 +18,14 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
 
     async findAdminByEmail(email: string): Promise<IAdmin | null> {
         try {
-            return await this.model.findOne({ email });
+            return await this.findOne({ email });
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }
 
     }
+
+    
 }
 
 export default new AdminRepository();

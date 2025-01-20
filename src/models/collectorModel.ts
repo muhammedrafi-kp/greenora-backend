@@ -7,6 +7,7 @@ export interface ICollector extends Document {
     password: string;
     profileUrl?: string;
     serviceArea?: string;
+    isVerified?: boolean;
     isBlocked?: boolean;
 }
 
@@ -17,6 +18,7 @@ const collectorSchema = new Schema({
     password: { type: String, required: true },
     serviceArea: { type: String, required: false },
     profileUrl: { type: String },
+    isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
 }, { timestamps: true });
 

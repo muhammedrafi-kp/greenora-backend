@@ -32,6 +32,40 @@ class CollectorRepository extends BaseRepository<ICollector> implements ICollect
             throw new Error(`Error while finding collector:${error instanceof Error ? error.message : String(error)}`);
         }
     }
+
+    async getCollectors(): Promise<ICollector[]> {
+        try {
+            const projection = {
+                name: 1,
+                email: 1,
+                phone: 1,
+                profileUrl: 1,
+                serviceArea: 1,
+                isVerified: 1,
+                isBlocked: 1
+            };
+            return await this.findAll(projection);
+        } catch (error: unknown) {
+            throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async updateCollectorById(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
+        try {
+            return await this.updateById(id, collectorData);
+        } catch (error) {
+            throw new Error(`Error while updating collector:${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async updateStatusById(id: string, isBlocked: boolean): Promise<ICollector | null> {
+        try {
+            return await this.updateById(id, { isBlocked } as Partial<ICollector>);
+        } catch (error) {
+            throw new Error(`Error while updating user status : ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
 }
 
 export default new CollectorRepository();

@@ -42,6 +42,28 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
         }
     }
 
+    async getUsers(): Promise<IUser[]> {
+        try {
+            const projection = {
+                name: 1,
+                email: 1,
+                phone: 1,
+                profileUrl: 1,
+                isBlocked: 1
+            };
+            return await this.findAll(projection);
+        } catch (error: unknown) {
+            throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async updateStatusById(id: string, isBlocked: boolean): Promise<IUser | null> {
+        try {
+            return await this.updateById(id, { isBlocked } as Partial<IUser>);
+        } catch (error) {
+            throw new Error(`Error while updating user status : ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
 }
 
 export default new UserRepository();

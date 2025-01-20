@@ -9,7 +9,6 @@ import { generateAccessToken, generateRefreshToken } from "../utils/tokenUtils";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt"
-import { error } from "console";
 
 export class UserService implements IUserService {
 
@@ -38,8 +37,8 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            const accessToken = generateAccessToken(user._id as string);
-            const refreshToken = generateRefreshToken(user._id as string);
+            const accessToken = generateAccessToken(user._id as string, 'user');
+            const refreshToken = generateRefreshToken(user._id as string, 'user');
 
             return { accessToken, refreshToken, user };
 
@@ -62,7 +61,7 @@ export class UserService implements IUserService {
             }
 
             const prefix = "user";
-            const otp = OTP.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
             await this.redisRepository.saveOtp(email, otp, 35, prefix);
             await this.redisRepository.saveUserData(email, userData, prefix);
@@ -104,8 +103,8 @@ export class UserService implements IUserService {
 
             const user = await this.userRepository.createUser(userData);
 
-            const accessToken = generateAccessToken(user._id as string);
-            const refreshToken = generateRefreshToken(user._id as string);
+            const accessToken = generateAccessToken(user._id as string, 'user');
+            const refreshToken = generateRefreshToken(user._id as string, 'user');
 
             return { accessToken, refreshToken, user };
 
@@ -118,7 +117,7 @@ export class UserService implements IUserService {
     async resendOtp(email: string): Promise<void> {
         try {
             const prefix = "user";
-            const otp = OTP.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
             await this.redisRepository.saveOtp(email, otp, 35, prefix);
         } catch (error) {
@@ -143,8 +142,8 @@ export class UserService implements IUserService {
                 });
             }
 
-            const accessToken = generateAccessToken(user._id as string);
-            const refreshToken = generateRefreshToken(user._id as string);
+            const accessToken = generateAccessToken(user._id as string, 'user');
+            const refreshToken = generateRefreshToken(user._id as string, 'user');
 
             return { accessToken, refreshToken };
         } catch (error: any) {
@@ -187,4 +186,5 @@ export class UserService implements IUserService {
             throw error;
         }
     }
+
 }

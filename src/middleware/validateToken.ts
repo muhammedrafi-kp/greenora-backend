@@ -1,26 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-// declare global {
-//     namespace Express {
-//         interface Request {
-//             user?: string | JwtPayload; // Add `user` property
-//         }
-//     }
-// }
-
-// interface CustomJwtPayload extends JwtPayload {
-//     userId?: string;
-// }
-
-const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'google']; // Add other paths that don't need validation
+const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token', 'google'];
 
 export const validateToken = async (req: Request, res: Response, next: NextFunction) => {
 
     const lastPath = req.path.split('/').pop() as string;
     console.log("Last path :", lastPath);
     if (excludedPaths.includes(lastPath)) {
-        return next(); // Skip token validation for excluded paths
+        return next();
     }
 
     const authHeader = req.headers.authorization;
@@ -38,7 +26,7 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
         next();
 
     } catch (error: any) {
-        console.log("Error in valdate Token :", error.message);
-        return res.status(403).json({ message: 'Forbidden: Invalid token' });
+        console.log("Error while valdating token :", error.message);
+        return res.status(401).json({ message: 'Forbidden: Invalid token' });
     }
 }

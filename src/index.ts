@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'refresh-token'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
 
@@ -25,7 +25,9 @@ const port = process.env.PORT || 3000;
 
 app.use(validateToken as express.RequestHandler);
 
-app.use('/user-service', createProxyMiddleware({ target: 'http://localhost:4000', changeOrigin: true }));
+app.use('/user-service', createProxyMiddleware({ target: 'http://localhost:3001', changeOrigin: true }));
+app.use('/request-service', createProxyMiddleware({ target: 'http://localhost:3002', changeOrigin: true }));
+app.use('/location-service', createProxyMiddleware({ target: 'http://localhost:3003', changeOrigin: true }));
 
 app.listen(port, () => {
     console.log(`api-gateway is running on port ${port}`);

@@ -11,5 +11,6 @@ export interface IRedisRepository {
     saveUserData(email: string, userData: IUser | ICollector, prefix: string): Promise<void>;
     getUserData(email: string, prefix: string): Promise<IUser | ICollector>;
     deleteUserData(email: string, prefix: string): Promise<void>;
-    // doesUserExist(email: string): Promise<boolean>;
+    // saveRefreshToken(id: string, refreshToken: string, ttl: number, prefix: string): Promise<void>;
+    // getRefreshToken(id: string, prefix: string): Promise<string>;
 }

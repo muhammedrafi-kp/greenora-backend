@@ -10,6 +10,8 @@ export const MESSAGES = {
     AGENT_UPDATED: "Agent information updated.",
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
-    UNKNOWN_ERROR: "An unknown error occurred."
+    UNKNOWN_ERROR: "An unknown error occurred.",
+    TOKEN_NOT_FOUND:"Token not found.",
+    TOKEN_EXPIRED:"Token is expired."
 };
 

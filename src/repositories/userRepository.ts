@@ -26,19 +26,27 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
         }
     }
 
-    async getUserById(id: string): Promise<IUser | null> {
+    async getUserById(userId: string): Promise<IUser | null> {
         try {
-            return await this.findById(id);
+            return await this.findById(userId);
         } catch (error) {
             throw new Error(`Error while finding user:${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
-    async updateUserById(id: string, userData: Partial<IUser>): Promise<IUser | null> {
+    async updateUserById(userId: string, userData: Partial<IUser>): Promise<IUser | null> {
         try {
-            return await this.updateById(id, userData);
+            return await this.updateById(userId, userData);
         } catch (error) {
             throw new Error(`Error while updating user:${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async updateProfileUrl(userId: string, profileUrl: string): Promise<any> {
+        try {
+            return await this.updateById(userId, { profileUrl }as Partial<IUser>);
+        } catch (error) {
+            throw new Error(`Error while updating user profile url:${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -57,9 +65,9 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
         }
     }
 
-    async updateStatusById(id: string, isBlocked: boolean): Promise<IUser | null> {
+    async updateStatusById(userId: string, isBlocked: boolean): Promise<IUser | null> {
         try {
-            return await this.updateById(id, { isBlocked } as Partial<IUser>);
+            return await this.updateById(userId, { isBlocked } as Partial<IUser>);
         } catch (error) {
             throw new Error(`Error while updating user status : ${error instanceof Error ? error.message : String(error)}`);
         }

@@ -1,7 +1,7 @@
 import { RedisBaseRepository } from "./redisBaseRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUser } from "../models/userModel";
-import {ICollector} from "../models/collectorModel";
+import { ICollector } from "../models/collectorModel";
 
 class RedisRepository extends RedisBaseRepository<any> implements IRedisRepository {
     async saveOtp(email: string, otp: string, ttl: number, prefix: string): Promise<void> {
@@ -33,7 +33,7 @@ class RedisRepository extends RedisBaseRepository<any> implements IRedisReposito
         }
     }
 
-    async saveUserData(email: string, userdata: IUser|ICollector, prefix: string): Promise<void> {
+    async saveUserData(email: string, userdata: IUser | ICollector, prefix: string): Promise<void> {
         try {
             const key = `${prefix}:${email}`;
             await this.save(key, userdata);
@@ -42,7 +42,7 @@ class RedisRepository extends RedisBaseRepository<any> implements IRedisReposito
         }
     }
 
-    async getUserData(email: string, prefix: string): Promise<IUser|ICollector> {
+    async getUserData(email: string, prefix: string): Promise<IUser | ICollector> {
         try {
             const key = `${prefix}:${email}`;
             return await this.get(key);
@@ -51,7 +51,7 @@ class RedisRepository extends RedisBaseRepository<any> implements IRedisReposito
         }
     }
 
-    async deleteUserData(email: string,prefix: string): Promise<void> {
+    async deleteUserData(email: string, prefix: string): Promise<void> {
         try {
             const key = `${prefix}:${email}`;
             await this.delete(key);
@@ -59,6 +59,25 @@ class RedisRepository extends RedisBaseRepository<any> implements IRedisReposito
             throw new Error(`Error while deleting userData : ${error instanceof Error ? error.message : String(error)}`);
         }
     }
+
+    // async saveRefreshToken(id: string, refreshToken: string, ttl: number, prefix: string): Promise<void> {
+    //     try {
+    //         const key = `${prefix}:${id}`;
+    //         await this.save(key, refreshToken, ttl);
+    //     } catch (error) {
+    //         throw new Error(`Error while storing refreshToken : ${error instanceof Error ? error.message : String(error)}`);
+    //     }
+    // }
+
+    // async getRefreshToken(id: string, prefix: string): Promise<string> {
+    //     try {
+    //         const key = `${prefix}:${id}`;
+    //         return await this.get(key);
+    //     } catch (error) {
+    //         throw new Error(`Error while getting refreshToken : ${error instanceof Error ? error.message : String(error)}`);
+    //     }
+    // }
+
 }
 
 export default new RedisRepository();

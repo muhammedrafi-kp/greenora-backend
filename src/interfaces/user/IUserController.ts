@@ -14,4 +14,6 @@ export interface IUserController {
 
     getUser(req: Request, res: Response): Promise<void>;
     updateUser(req: Request, res: Response): Promise<void>;
+    uploadProfileImage(req: Request, res: Response): Promise<void>;
+    validateRefreshToken(req: Request, res: Response): Promise<void>;
 }

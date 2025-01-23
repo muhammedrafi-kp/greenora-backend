@@ -2,28 +2,46 @@ import express, { Request, Response } from 'express';
 import { configDotenv } from 'dotenv';
 import { connectToRedis, logRedisData } from './config/redisConfig'
 import morgan from 'morgan';
+import winston from 'winston';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 
 import passportConfig from "./config/passportConfig"
-
 import connectDB from './config/dbConfig';
+
 import userRouter from './routes/userRoutes';
 import collectorRouter from './routes/collectorRoutes';
 import adminRoutes from './routes/adminRoutes';
 
-import OTP from 'otp-generator';
-const otp = OTP.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
-console.log("OTP:", otp);
+const logger = winston.createLogger({
+    level: 'info',
+    transports: [
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                winston.format.simple()
+            ),
+        }),
+        new winston.transports.File({ filename: 'logs/app.log' }),
+    ],
+});
+
+const stream = {
+    write: (message: string) => logger.info(message.trim()), 
+};
+
 
 configDotenv();
 
 const app = express();
 
+app.use(morgan('combined', { stream }));
+
+
 connectDB();
 connectToRedis();
 
-app.use(morgan('dev'));
+// app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 app.use(logRedisData);
@@ -43,11 +61,8 @@ app.use('/collector', collectorRouter);
 app.use('/admin', adminRoutes);
 
 
-const { PORT } = process.env || 4000;
-
-
-app.listen(PORT, () => {
-    console.log(`user-service is running on port ${PORT}`);
+app.listen(process.env.PORT, () => {
+    console.log(`user-service is running on port ${process.env.PORT}`);
 });
 
 

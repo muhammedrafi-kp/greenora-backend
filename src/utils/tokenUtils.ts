@@ -7,7 +7,7 @@ export function generateAccessToken(userId: string, role: string): string {
     return jwt.sign(
         { userId, role },
         JWT_ACCESS_SECRET,
-        { expiresIn: '1d' }
+        { expiresIn: '1m' }
     );
 }
 
@@ -15,6 +15,6 @@ export function generateRefreshToken(userId: string, role: string): string {
     return jwt.sign(
         { userId, role },
         JWT_REFRESH_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: '1d' }
     );
 }

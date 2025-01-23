@@ -4,8 +4,8 @@ import { ICollcetorController } from "../interfaces/collector/ICollectorControll
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ICollector } from "../models/collectorModel";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
-
 
 export class CollcetorController implements ICollcetorController {
 
@@ -181,8 +181,10 @@ export class CollcetorController implements ICollcetorController {
                     ContentType: profileImage.mimetype,
                 };
 
-                const s3Response = await s3.upload(s3Params).promise();
-                profileUrl = s3Response.Location;
+                const command = new PutObjectCommand(s3Params);
+                const s3Response = await s3.send(command);
+
+                profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
             }
 
             console.log("profileUrl ", profileUrl)

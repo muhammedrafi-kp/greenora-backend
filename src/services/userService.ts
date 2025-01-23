@@ -1,4 +1,3 @@
-
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { IUserService } from "../interfaces/user/IUserService";
@@ -8,7 +7,14 @@ import { sendOtp } from "../utils/mail";
 import { generateAccessToken, generateRefreshToken } from "../utils/tokenUtils";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import bcrypt from "bcrypt"
+import bcrypt from "bcrypt";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { configDotenv } from "dotenv";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import s3 from "../config/s3Config";
+import { error } from "console";
+
+configDotenv();
 
 export class UserService implements IUserService {
 
@@ -17,7 +23,7 @@ export class UserService implements IUserService {
         private redisRepository: IRedisRepository
     ) { };
 
-    async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
+    async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
             const user = await this.userRepository.findUserByEmail(email);
 
@@ -40,6 +46,8 @@ export class UserService implements IUserService {
             const accessToken = generateAccessToken(user._id as string, 'user');
             const refreshToken = generateRefreshToken(user._id as string, 'user');
 
+            // await this.redisRepository.saveRefreshToken(user._id as string, refreshToken, 10, 'refresh_token');
+
             return { accessToken, refreshToken, user };
 
         } catch (error) {
@@ -60,22 +68,22 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            const prefix = "user";
+            // const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 35, prefix);
-            await this.redisRepository.saveUserData(email, userData, prefix);
+            await this.redisRepository.saveOtp(email, otp, 35, 'user');
+            await this.redisRepository.saveUserData(email, userData, 'user');
         } catch (error) {
             console.error('Error while storing otp and userData :', error);
             throw error;
         }
     }
 
-    async verifyOtp(email: string, otp: string): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
+    async verifyOtp(email: string, otp: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
 
-            const prefix = "user";
-            const savedOtp = await this.redisRepository.getOtp(email, prefix);
+            // const prefix = "user";
+            const savedOtp = await this.redisRepository.getOtp(email, 'user');
             console.log("Enterd otp:", otp);
             console.log("saved Otp :", savedOtp);
 
@@ -86,7 +94,7 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            const userData = await this.redisRepository.getUserData(email, prefix) as IUser;
+            const userData = await this.redisRepository.getUserData(email, 'user') as IUser;
 
 
             console.log("OTP verified successfully for email:", userData);
@@ -95,7 +103,7 @@ export class UserService implements IUserService {
                 throw new Error(MESSAGES.UNKNOWN_ERROR);
             }
 
-            await this.redisRepository.deleteUserData(email, prefix);
+            await this.redisRepository.deleteUserData(email, 'user');
 
 
             const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -105,6 +113,8 @@ export class UserService implements IUserService {
 
             const accessToken = generateAccessToken(user._id as string, 'user');
             const refreshToken = generateRefreshToken(user._id as string, 'user');
+
+            // await this.redisRepository.saveRefreshToken(user._id as string, refreshToken, 10, 'refresh_token');
 
             return { accessToken, refreshToken, user };
 
@@ -122,6 +132,38 @@ export class UserService implements IUserService {
             await this.redisRepository.saveOtp(email, otp, 35, prefix);
         } catch (error) {
             console.error('Error while resending otp:', error);
+            throw error;
+        }
+    }
+
+    async validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
+        try {
+            let decoded: JwtPayload;
+            try {
+                decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'refresh_secret') as JwtPayload;
+            } catch (err) {
+                const error: any = new Error(MESSAGES.TOKEN_EXPIRED);
+                error.status = HTTP_STATUS.UNAUTHORIZED;
+                throw error;
+            }
+
+            const user = await this.userRepository.getUserById(decoded.userId);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("decoded in service:", decoded);
+
+            const accessToken = generateAccessToken(user._id as string, 'user');
+            const refreshToken = generateRefreshToken(user._id as string, 'user');
+
+            return { accessToken, refreshToken };
+
+        } catch (error) {
+            console.error('Error while storing refreshToken :', error);
             throw error;
         }
     }
@@ -152,9 +194,9 @@ export class UserService implements IUserService {
         }
     }
 
-    async getUser(id: string): Promise<IUser> {
+    async getUser(userId: string): Promise<IUser> {
         try {
-            const user = await this.userRepository.getUserById(id);
+            const user = await this.userRepository.getUserById(userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -170,9 +212,33 @@ export class UserService implements IUserService {
         }
     }
 
-    async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
+    async updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<IUser | null> {
         try {
-            const user = await this.userRepository.updateUserById(id, userData);
+
+            let profileUrl: string | undefined;
+
+            if (profileImage) {
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: `profile-images/user/${Date.now()}_${profileImage.originalname}`,
+                    Body: profileImage.buffer,
+                    ContentType: profileImage.mimetype,
+                };
+
+                const command = new PutObjectCommand(s3Params);
+                const s3Response = await s3.send(command);
+
+                profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+            }
+
+            console.log("profileUrl ", profileUrl);
+
+            const updatedData: Partial<IUser> = {
+                ...userData,
+                ...(profileUrl && { profileUrl }),
+            };
+
+            const user = await this.userRepository.updateUserById(userId, updatedData);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -181,6 +247,33 @@ export class UserService implements IUserService {
             }
 
             return user;
+        } catch (error: any) {
+            console.log("Error while fetching user data :", error.message);
+            throw error;
+        }
+    }
+
+    async uploadProfileImage(userId: string, file: Express.Multer.File | undefined): Promise<string | null> {
+        try {
+            if (!file) {
+                throw new Error("Profile image file is missing.");
+            }
+
+            const s3Params = {
+                Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                Key: `profile-images/user/${Date.now()}_${file.originalname}`,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+            };
+
+            const command = new PutObjectCommand(s3Params);
+            await s3.send(command);
+
+            const profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+
+            await this.userRepository.updateProfileUrl(userId, profileUrl);
+
+            return profileUrl;
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
             throw error;

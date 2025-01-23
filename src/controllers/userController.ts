@@ -5,7 +5,7 @@ import passport from 'passport';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
 import { IUser } from "../models/userModel";
-import s3 from "../config/s3Config";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { configDotenv } from 'dotenv';
 configDotenv();
@@ -29,9 +29,9 @@ export class UserController implements IUserController {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                // maxAge: 24 * 60 * 60 * 1000,  
-                maxAge: 10 * 1000
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
             });
 
             const userData = { name: user.name, email: user.email }
@@ -41,6 +41,7 @@ export class UserController implements IUserController {
                 success: true,
                 message: "Login successful!",
                 token: accessToken,
+                role: "user",
                 data: userData
             });
 
@@ -90,9 +91,10 @@ export class UserController implements IUserController {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
+                secure: true,
                 // maxAge: 24 * 60 * 60 * 1000,  
-                maxAge: 10 * 1000
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
             });
 
             const userData = { name: user.name, email: user.email };
@@ -444,29 +446,9 @@ export class UserController implements IUserController {
                 return;
             }
 
-            let profileUrl: string | undefined;
+            const updatedData: Partial<IUser> = { name, phone };
 
-            if (profileImage) {
-                const s3Params = {
-                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                    Key: `profile-images/user/${Date.now()}_${profileImage.originalname}`,
-                    Body: profileImage.buffer,
-                    ContentType: profileImage.mimetype,
-                };
-
-                const s3Response = await s3.upload(s3Params).promise();
-                profileUrl = s3Response.Location;
-            }
-
-            console.log("profileUrl ", profileUrl)
-
-            const updatedData: Partial<IUser> = {
-                name,
-                phone,
-                ...(profileUrl && { profileUrl }), // Include profileUrl only if provided
-            };
-
-            const updatedUser = await this.userService.updateUser(userId as string, updatedData);
+            const updatedUser = await this.userService.updateUser(userId as string, updatedData, profileImage);
 
             if (!updatedUser) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -495,5 +477,85 @@ export class UserController implements IUserController {
         }
     }
 
-    
+    async uploadProfileImage(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.headers['x-user-id'];
+            const profileImage = req.file;
+            if (!userId) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: 'User ID is missing in the request headers.',
+                });
+                return;
+            }
+
+
+            if (!profileImage) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: "Profile image file is missing in the request.",
+                });
+                return;
+            }
+
+            const profileUrl = await this.userService.uploadProfileImage(userId as string, profileImage);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "Profile image uploaded successfully.",
+                data: { profileUrl },
+            });
+
+        } catch (error: any) {
+            console.error('Error in update user profile image:', error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.',
+            });
+        }
+    }
+
+    async validateRefreshToken(req: Request, res: Response): Promise<void> {
+        try {
+
+            console.log("req.cookies :", req.cookies);
+            if (!req.cookies.refreshToken) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: MESSAGES.TOKEN_NOT_FOUND,
+                });
+                return;
+            }
+
+            const { accessToken, refreshToken } = await this.userService.validateRefreshToken(req.cookies.refreshToken);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "token created!",
+                token: accessToken,
+                role:"user"
+            });
+
+        } catch (error: any) {
+
+            if (error.status === 401) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.',
+            })
+        }
+    }
 }

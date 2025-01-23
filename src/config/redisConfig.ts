@@ -5,7 +5,7 @@ const redisClient = createClient({
 });
 
 redisClient.on('connect', () => {
-    console.log("Redis client is connected..!");
+    console.log("Redis client is connected!");
 });
 
 redisClient.on('error', (err) => {
@@ -15,7 +15,7 @@ redisClient.on('error', (err) => {
 const connectToRedis = async () => {
     try {
         await redisClient.connect();
-        console.log('Redis connection established');
+        console.log('Redis connection established!');
     } catch (error) {
         console.error('Failed to connect to Redis:', error);
         process.exit(1);
@@ -30,7 +30,6 @@ const disconnectFromRedis = async () => {
 
 const logRedisData = async (req:any, res:any, next:any) => {
     try {
-        // console.log("Logging Redis data...");
         const keys = await redisClient.keys('*');
         if (keys.length === 0) {
             console.log('No keys found in Redis');
@@ -44,7 +43,7 @@ const logRedisData = async (req:any, res:any, next:any) => {
     } catch (err) {
         console.error('Error logging Redis data:', err);
     }
-    next(); // Proceed to the next middleware or route handler
+    next();
 };
   
 

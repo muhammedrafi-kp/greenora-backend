@@ -1,4 +1,4 @@
-import User, { IUser } from "../models/UserModel"
+import User, { IUser } from "../models/User";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { BaseRepository } from "./baseRepository";
 
@@ -44,7 +44,7 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
 
     async updateProfileUrl(userId: string, profileUrl: string): Promise<any> {
         try {
-            return await this.updateById(userId, { profileUrl }as Partial<IUser>);
+            return await this.updateById(userId, { profileUrl } as Partial<IUser>);
         } catch (error) {
             throw new Error(`Error while updating user profile url:${error instanceof Error ? error.message : String(error)}`);
         }
@@ -59,7 +59,7 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
                 profileUrl: 1,
                 isBlocked: 1
             };
-            return await this.find({},projection);
+            return await this.find({}, projection);
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }

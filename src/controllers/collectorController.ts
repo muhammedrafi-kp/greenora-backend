@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { ICollcetorController } from "../interfaces/collector/ICollectorController";
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { ICollector } from "../models/CollectorModel";
+import { ICollector } from "../models/Collector";
 import { MESSAGES } from '../constants/messages';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";

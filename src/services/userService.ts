@@ -1,7 +1,7 @@
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { IUserService } from "../interfaces/user/IUserService";
-import { IUser } from "../models/UserModel";
+import { IUser } from "../models/User";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
 import { generateAccessToken, generateRefreshToken,verifyToken } from "../utils/token";

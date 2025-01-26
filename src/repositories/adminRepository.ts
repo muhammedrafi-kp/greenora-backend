@@ -1,7 +1,7 @@
-import Admin, { IAdmin } from '../models/AdminModel'
-import { IAdminRepository } from '../interfaces/admin/IAdminRepository'
-import { BaseRepository } from './baseRepository'
-import { IUser } from '../models/UserModel';
+import Admin, { IAdmin } from '../models/Admin';
+import { IAdminRepository } from '../interfaces/admin/IAdminRepository';
+import { BaseRepository } from './baseRepository';
+// import { IUser } from '../models/User';
 
 class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository {
     constructor() {
@@ -32,7 +32,7 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
         }
     }
 
-    
+
 }
 
 export default new AdminRepository();

@@ -4,7 +4,7 @@ import { IUserService } from "../interfaces/user/IUserService";
 import passport from 'passport';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
-import { IUser } from "../models/UserModel";
+import { IUser } from "../models/User";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { configDotenv } from 'dotenv';

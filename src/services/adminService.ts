@@ -1,5 +1,5 @@
 import { IAdminService } from '../interfaces/admin/IAdminService';
-import { IAdmin } from '../models/AdminModel';
+import { IAdmin } from '../models/Admin';
 import { IAdminRepository } from '../interfaces/admin/IAdminRepository';
 import { IUserRepository } from '../interfaces/user/IUserRepository';
 import { ICollectorRepository } from '../interfaces/collector/ICollectorRepository';
@@ -7,8 +7,8 @@ import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken,verifyToken } from '../utils/token';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
-import { IUser } from '../models/UserModel';
-import { ICollector } from '../models/CollectorModel';
+import { IUser } from '../models/User';
+import { ICollector } from '../models/Collector';
 
 
 export class AdminService implements IAdminService {

@@ -1,7 +1,7 @@
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
-import { ICollector } from "../models/CollectorModel";
+import { ICollector } from "../models/Collector";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";

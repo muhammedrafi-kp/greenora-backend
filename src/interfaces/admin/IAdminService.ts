@@ -1,6 +1,6 @@
-import { IAdmin } from "../../models/AdminModel";
-import { IUser } from "../../models/UserModel";
-import { ICollector } from "../../models/CollectorModel";
+import { IAdmin } from "../../models/Admin";
+import { IUser } from "../../models/User";
+import { ICollector } from "../../models/Collector";
 
 export interface IAdminService {
     login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string }>;

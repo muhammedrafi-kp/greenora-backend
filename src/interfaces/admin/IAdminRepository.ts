@@ -1,4 +1,4 @@
-import { IAdmin } from "../../models/AdminModel";
+import { IAdmin } from "../../models/Admin";
 
 export interface IAdminRepository {
     createAdmin(adminData: Partial<IAdmin>): Promise<IAdmin>;

@@ -1,5 +1,5 @@
 import { BaseRepository } from "./baseRepository";
-import Collector, { ICollector } from "../models/CollectorModel";
+import Collector, { ICollector } from "../models/Collector";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 
 class CollectorRepository extends BaseRepository<ICollector> implements ICollectorRepository {

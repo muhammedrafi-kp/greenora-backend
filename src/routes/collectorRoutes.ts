@@ -14,6 +14,9 @@ const router = Router();
 router.post('/login', collectorController.login.bind(collectorController));
 router.post('/signup', collectorController.signUp.bind(collectorController));
 router.post('/verify-otp', collectorController.verifyOtp.bind(collectorController));
+router.post('/resend-otp', collectorController.resendOtp.bind(collectorController));
+router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
+
 router.get('/profile', collectorController.getCollector.bind(collectorController));
 router.put('/update-profile', upload.single('profileImage'), collectorController.updateCollector.bind(collectorController));
 

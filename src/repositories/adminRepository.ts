@@ -1,7 +1,7 @@
-import Admin, { IAdmin } from '../models/adminModel'
+import Admin, { IAdmin } from '../models/AdminModel'
 import { IAdminRepository } from '../interfaces/admin/IAdminRepository'
 import { BaseRepository } from './baseRepository'
-import { IUser } from '../models/userModel';
+import { IUser } from '../models/UserModel';
 
 class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository {
     constructor() {
@@ -22,7 +22,14 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
 
+    async getAdminById(adminId: string): Promise<IAdmin | null> {
+        try {
+            return await this.findById(adminId);
+        } catch (error) {
+            throw new Error(`Error while finding user:${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 
     

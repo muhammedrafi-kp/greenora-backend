@@ -1,14 +1,14 @@
 import { IAdminService } from '../interfaces/admin/IAdminService';
-import { IAdmin } from '../models/adminModel';
+import { IAdmin } from '../models/AdminModel';
 import { IAdminRepository } from '../interfaces/admin/IAdminRepository';
 import { IUserRepository } from '../interfaces/user/IUserRepository';
 import { ICollectorRepository } from '../interfaces/collector/ICollectorRepository';
 import bcrypt from 'bcrypt';
-import { generateAccessToken, generateRefreshToken } from '../utils/tokenUtils';
+import { generateAccessToken, generateRefreshToken,verifyToken } from '../utils/token';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
-import { IUser } from '../models/userModel';
-import { ICollector } from '../models/collectorModel';
+import { IUser } from '../models/UserModel';
+import { ICollector } from '../models/CollectorModel';
 
 
 export class AdminService implements IAdminService {
@@ -57,6 +57,32 @@ export class AdminService implements IAdminService {
         } catch (error) {
             console.error('Error while creating admin:', error);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
+    async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
+        try {
+            
+            const decoded = verifyToken(token);
+            
+            const user = await this.adminRepository.getAdminById(decoded.userId);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("decoded in service:", decoded);
+
+            const accessToken = generateAccessToken(user._id as string, 'user');
+            const refreshToken = generateRefreshToken(user._id as string, 'user');
+
+            return { accessToken, refreshToken };
+
+        } catch (error) {
+            console.error('Error while storing refreshToken :', error);
+            throw error;
         }
     }
 

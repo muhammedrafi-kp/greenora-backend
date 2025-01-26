@@ -1,11 +1,11 @@
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
-import { ICollector } from "../models/collectorModel";
+import { ICollector } from "../models/CollectorModel";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { generateAccessToken, generateRefreshToken } from "../utils/tokenUtils";
+import { generateAccessToken, generateRefreshToken,verifyToken } from "../utils/token";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
 
@@ -57,12 +57,12 @@ export class CollectorService implements ICollectorService {
             }
 
             const prefix = "collector";
-            const otp = OTP.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 30, prefix);
-            await this.redisRepository.saveUserData(email, collectorData, prefix);
+            await this.redisRepository.saveOtp(email, otp, 35, prefix);
+            await this.redisRepository.saveUserData(email, collectorData, 86400, prefix);
         } catch (error) {
-            console.error('Error while storing otp and collectorData :', error);
+            console.error('Error while storing otp and collectorata :', error);
             throw error;
         }
     };
@@ -98,8 +98,8 @@ export class CollectorService implements ICollectorService {
 
             const collector = await this.collectorRepository.createCollector(collectorData);
 
-            const accessToken = generateAccessToken(collector._id as string,'collector');
-            const refreshToken = generateRefreshToken(collector._id as string,'collector');
+            const accessToken = generateAccessToken(collector._id as string, 'collector');
+            const refreshToken = generateRefreshToken(collector._id as string, 'collector');
 
             return { accessToken, refreshToken, collector };
 
@@ -112,11 +112,37 @@ export class CollectorService implements ICollectorService {
     async resendOtp(email: string): Promise<void> {
         try {
             const prefix = "collector";
-            const otp = OTP.generate(6, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
             await this.redisRepository.saveOtp(email, otp, 35, prefix);
         } catch (error) {
             console.error('Error while resending otp:', error);
+            throw error;
+        }
+    }
+
+    async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
+        try {
+            
+            const decoded = verifyToken(token);
+            
+            const user = await this.collectorRepository.getCollectorById(decoded.userId);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("decoded in service:", decoded);
+
+            const accessToken = generateAccessToken(user._id as string, 'collector');
+            const refreshToken = generateRefreshToken(user._id as string, 'collector');
+
+            return { accessToken, refreshToken };
+
+        } catch (error) {
+            console.error('Error while storing refreshToken :', error);
             throw error;
         }
     }

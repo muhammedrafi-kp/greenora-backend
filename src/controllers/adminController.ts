@@ -17,14 +17,15 @@ export class AdminController implements IAdminController {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                // maxAge: 24 * 60 * 60 * 1000,  
-                maxAge: 10 * 1000
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
             });
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                token: accessToken
+                token: accessToken,
+                role:"admin"
             });
 
         } catch (error: any) {
@@ -50,6 +51,51 @@ export class AdminController implements IAdminController {
         } catch (error: any) {
             console.error("Error while creating admin : ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async validateRefreshToken(req: Request, res: Response): Promise<void> {
+        try {
+
+            console.log("req.cookies :", req.cookies);
+            
+            if (!req.cookies.refreshToken) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: MESSAGES.TOKEN_NOT_FOUND,
+                });
+                return;
+            }
+
+            const { accessToken, refreshToken } = await this.adminService.validateRefreshToken(req.cookies.refreshToken);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "token created!",
+                token: accessToken,
+                role:"admin"
+            });
+
+        } catch (error: any) {
+
+            if (error.status === 401) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.',
+            })
         }
     }
 

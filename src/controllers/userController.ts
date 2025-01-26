@@ -4,7 +4,7 @@ import { IUserService } from "../interfaces/user/IUserService";
 import passport from 'passport';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
-import { IUser } from "../models/userModel";
+import { IUser } from "../models/UserModel";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { configDotenv } from 'dotenv';
@@ -92,7 +92,6 @@ export class UserController implements IUserController {
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: true,
-                // maxAge: 24 * 60 * 60 * 1000,  
                 maxAge: 24 * 60 * 60 * 1000,
                 sameSite: 'none',
             });
@@ -128,6 +127,51 @@ export class UserController implements IUserController {
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async validateRefreshToken(req: Request, res: Response): Promise<void> {
+        try {
+
+            console.log("req.cookies :", req.cookies);
+            
+            if (!req.cookies.refreshToken) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: MESSAGES.TOKEN_NOT_FOUND,
+                });
+                return;
+            }
+
+            const { accessToken, refreshToken } = await this.userService.validateRefreshToken(req.cookies.refreshToken);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "token created!",
+                token: accessToken,
+                role:"user"
+            });
+
+        } catch (error: any) {
+
+            if (error.status === 401) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.',
+            })
         }
     }
 
@@ -515,47 +559,5 @@ export class UserController implements IUserController {
         }
     }
 
-    async validateRefreshToken(req: Request, res: Response): Promise<void> {
-        try {
-
-            console.log("req.cookies :", req.cookies);
-            if (!req.cookies.refreshToken) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    message: MESSAGES.TOKEN_NOT_FOUND,
-                });
-                return;
-            }
-
-            const { accessToken, refreshToken } = await this.userService.validateRefreshToken(req.cookies.refreshToken);
-
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: "token created!",
-                token: accessToken,
-                role:"user"
-            });
-
-        } catch (error: any) {
-
-            if (error.status === 401) {
-                res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: error.message
-                });
-                return;
-            }
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'An internal server error occurred.',
-            })
-        }
-    }
+  
 }

@@ -1,4 +1,4 @@
-import User, { IUser } from "../models/userModel"
+import User, { IUser } from "../models/UserModel"
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { BaseRepository } from "./baseRepository";
 
@@ -59,7 +59,7 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
                 profileUrl: 1,
                 isBlocked: 1
             };
-            return await this.findAll(projection);
+            return await this.find({},projection);
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }

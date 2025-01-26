@@ -1,13 +1,11 @@
-import { Model, Document, UpdateQuery, FilterQuery, QueryOptions } from 'mongoose';
+import { Types, Model, Document, UpdateQuery, FilterQuery, QueryOptions } from 'mongoose';
 
 export interface IBaseRepository<T extends Document> {
     create(data: Partial<T>): Promise<T>;
-    findById(id: string): Promise<T | null>;
+    findById(id: string | Types.ObjectId): Promise<T | null>;
     findOne(filter: FilterQuery<T>): Promise<T | null>;
-
-    updateById(id: string, updateData: Partial<T>): Promise<T | null>;
-    findAll(projection?: Record<string, number>): Promise<T[]>;
-    // find(filter: FilterQuery<T>, options?: QueryOptions): Promise<T[]>;
-    // update(id: string, data: UpdateQuery<T>): Promise<T | null>
-    // delete(id: string): Promise<T | null>
+    find(filter: FilterQuery<T>,projection?: Record<string, number>): Promise<T[]>;
+    // find(filter?: FilterQuery<T>, projection?: Record<string, number>): Promise<T[]>;
+    updateById(id: string | Types.ObjectId, data: UpdateQuery<T>, options?: QueryOptions): Promise<T | null>;
+    deleteById(id: string | Types.ObjectId): Promise<T | null>;
 }

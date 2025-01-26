@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 import { ICollcetorController } from "../interfaces/collector/ICollectorController";
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { ICollector } from "../models/collectorModel";
+import { ICollector } from "../models/CollectorModel";
+import { MESSAGES } from '../constants/messages';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
 
@@ -26,9 +27,9 @@ export class CollcetorController implements ICollcetorController {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                // maxAge: 24 * 60 * 60 * 1000,  
-                maxAge: 10 * 1000
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
             });
 
             const collectorData = { name: collector.name, email: collector.email }
@@ -38,6 +39,7 @@ export class CollcetorController implements ICollcetorController {
                 success: true,
                 message: "Login successful",
                 token: accessToken,
+                role: "collector",
                 data: collectorData
             });
 
@@ -84,12 +86,22 @@ export class CollcetorController implements ICollcetorController {
 
             const { accessToken, refreshToken, collector } = await this.collectorService.verifyOtp(email, otp);
 
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
             const collectorData = { name: collector.name, email: collector.email };
 
             res.status(HTTP_STATUS.CREATED).json({
+                success: true,
                 message: "OTP verification successful, user created!",
+                token: accessToken,
                 data: collectorData
             });
+
         } catch (error: any) {
 
             if (error.status === 401) {
@@ -109,6 +121,51 @@ export class CollcetorController implements ICollcetorController {
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async validateRefreshToken(req: Request, res: Response): Promise<void> {
+        try {
+
+            console.log("req.cookies :", req.cookies);
+
+            if (!req.cookies.refreshToken) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: MESSAGES.TOKEN_NOT_FOUND,
+                });
+                return;
+            }
+
+            const { accessToken, refreshToken } = await this.collectorService.validateRefreshToken(req.cookies.refreshToken);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "token created!",
+                token: accessToken,
+                role: "collector"
+            });
+
+        } catch (error: any) {
+
+            if (error.status === 401) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.',
+            })
         }
     }
 

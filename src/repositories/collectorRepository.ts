@@ -1,5 +1,5 @@
 import { BaseRepository } from "./baseRepository";
-import Collector, { ICollector } from "../models/collectorModel";
+import Collector, { ICollector } from "../models/CollectorModel";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 
 class CollectorRepository extends BaseRepository<ICollector> implements ICollectorRepository {
@@ -44,7 +44,7 @@ class CollectorRepository extends BaseRepository<ICollector> implements ICollect
                 isVerified: 1,
                 isBlocked: 1
             };
-            return await this.findAll(projection);
+            return await this.find({}, projection);
         } catch (error: unknown) {
             throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
         }

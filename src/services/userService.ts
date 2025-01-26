@@ -1,14 +1,14 @@
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { IUserService } from "../interfaces/user/IUserService";
-import { IUser } from "../models/userModel";
+import { IUser } from "../models/UserModel";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
-import { generateAccessToken, generateRefreshToken } from "../utils/tokenUtils";
+import { generateAccessToken, generateRefreshToken,verifyToken } from "../utils/token";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
-import jwt, { JwtPayload } from "jsonwebtoken";
+// import jwt, { JwtPayload } from "jsonwebtoken";
 import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
@@ -72,7 +72,7 @@ export class UserService implements IUserService {
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
             await this.redisRepository.saveOtp(email, otp, 35, 'user');
-            await this.redisRepository.saveUserData(email, userData, 'user');
+            await this.redisRepository.saveUserData(email, userData, 86400, 'user');
         } catch (error) {
             console.error('Error while storing otp and userData :', error);
             throw error;
@@ -89,7 +89,7 @@ export class UserService implements IUserService {
 
             if (savedOtp !== otp) {
                 console.log("invalid otp")
-                const error: any = new Error("Invalid OTP");
+                const error: any = new Error(MESSAGES.INVALID_OTP);
                 error.status = HTTP_STATUS.UNAUTHORIZED;
                 throw error;
             }
@@ -100,7 +100,9 @@ export class UserService implements IUserService {
             console.log("OTP verified successfully for email:", userData);
 
             if (!userData) {
-                throw new Error(MESSAGES.UNKNOWN_ERROR);
+                const error: any = new Error(MESSAGES.SIGNUP_SESSION_EXPIRED);
+                error.status = HTTP_STATUS.GONE;
+                throw error;
             }
 
             await this.redisRepository.deleteUserData(email, 'user');
@@ -138,15 +140,9 @@ export class UserService implements IUserService {
 
     async validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
         try {
-            let decoded: JwtPayload;
-            try {
-                decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'refresh_secret') as JwtPayload;
-            } catch (err) {
-                const error: any = new Error(MESSAGES.TOKEN_EXPIRED);
-                error.status = HTTP_STATUS.UNAUTHORIZED;
-                throw error;
-            }
-
+            
+            const decoded = verifyToken(token);
+            
             const user = await this.userRepository.getUserById(decoded.userId);
 
             if (!user) {

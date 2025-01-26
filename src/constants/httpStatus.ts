@@ -16,6 +16,7 @@ export const HTTP_STATUS = {
     NOT_FOUND: 404, // Resource not found
     METHOD_NOT_ALLOWED: 405, // HTTP method not allowed
     CONFLICT: 409, // Resource conflict (e.g., duplicate entry)
+    GONE: 410, // Resource no longer available
     TOO_MANY_REQUESTS: 429, // Rate limiting exceeded
   
     // 5xx: Server Errors

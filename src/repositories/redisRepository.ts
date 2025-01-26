@@ -1,13 +1,13 @@
 import { RedisBaseRepository } from "./redisBaseRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
-import { IUser } from "../models/userModel";
-import { ICollector } from "../models/collectorModel";
+import { IUser } from "../models/UserModel";
+import { ICollector } from "../models/CollectorModel";
 
 class RedisRepository extends RedisBaseRepository<any> implements IRedisRepository {
     async saveOtp(email: string, otp: string, ttl: number, prefix: string): Promise<void> {
         try {
             console.log(email, otp, ttl);
-            const key = `${prefix}:otp:${email}`;
+            const key = `${prefix}-otp:${email}`;
             await this.save(key, otp, ttl);
         } catch (error) {
             throw new Error(`Error while saving otp : ${error instanceof Error ? error.message : String(error)}`);
@@ -17,23 +17,23 @@ class RedisRepository extends RedisBaseRepository<any> implements IRedisReposito
 
     async getOtp(email: string, prefix: string): Promise<string | null> {
         try {
-            const key = `${prefix}:otp:${email}`;
+            const key = `${prefix}-otp:${email}`;
             return this.get(key);
         } catch (error) {
             throw new Error(`Error while getting otp : ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
-    async deleteOtp(email: string): Promise<void> {
-        try {
-            const key = `otp:${email}`;
-            await this.delete(key);
-        } catch (error) {
-            throw new Error(`Error while deleting otp : ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+    // async deleteOtp(email: string): Promise<void> {
+    //     try {
+    //         const key = `otp:${email}`;
+    //         await this.delete(key);
+    //     } catch (error) {
+    //         throw new Error(`Error while deleting otp : ${error instanceof Error ? error.message : String(error)}`);
+    //     }
+    // }
 
-    async saveUserData(email: string, userdata: IUser | ICollector, prefix: string): Promise<void> {
+    async saveUserData(email: string, userdata: IUser | ICollector,ttl: number, prefix: string): Promise<void> {
         try {
             const key = `${prefix}:${email}`;
             await this.save(key, userdata);

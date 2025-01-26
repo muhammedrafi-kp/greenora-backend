@@ -1,4 +1,4 @@
-import { IUser } from "../../models/userModel";
+import { IUser } from "../../models/UserModel";
 
 export interface IUserService {
     login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }>;

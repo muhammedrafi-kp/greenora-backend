@@ -13,6 +13,8 @@ const router = Router();
 
 router.post('/login', adminController.login.bind(adminController));
 router.post('/signup', adminController.createAdmin.bind(adminController));
+router.post('/refresh-token', adminController.validateRefreshToken.bind(adminController));
+
 router.get('/users', adminController.getUsers.bind(adminController));
 router.get('/collectors', adminController.getCollectors.bind(adminController));
 router.patch('/update-user-status/:id', adminController.updateUserStatus.bind(adminController));

@@ -5,9 +5,10 @@ export interface IAdmin extends Document {
     password: string;
 }
 
-const adminSchema = new Schema({
+const adminSchema = new Schema<IAdmin>({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true }
 }, { timestamps: true });
 
-export default  model<IAdmin>('Admin', adminSchema);
+const Admin = model<IAdmin>('Admin', adminSchema);
+export default Admin;

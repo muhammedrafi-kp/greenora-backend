@@ -4,7 +4,7 @@ import { IAdminRepository } from '../interfaces/admin/IAdminRepository';
 import { IUserRepository } from '../interfaces/user/IUserRepository';
 import { ICollectorRepository } from '../interfaces/collector/ICollectorRepository';
 import bcrypt from 'bcrypt';
-import { generateAccessToken, generateRefreshToken,verifyToken } from '../utils/token';
+import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/token';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
 import { IUser } from '../models/User';
@@ -62,9 +62,9 @@ export class AdminService implements IAdminService {
 
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
-            
+
             const decoded = verifyToken(token);
-            
+
             const user = await this.adminRepository.getAdminById(decoded.userId);
 
             if (!user) {
@@ -138,8 +138,8 @@ export class AdminService implements IAdminService {
             const user = await this.collectorRepository.getCollectorById(id);
 
             if (!user) {
-                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
-                error.status = HTTP_STATUS.NOT_FOUND;
+                const error: any = new Error(MESSAGES.UNKNOWN_ERROR);
+                error.status = HTTP_STATUS.GONE;
                 throw error;
             }
 

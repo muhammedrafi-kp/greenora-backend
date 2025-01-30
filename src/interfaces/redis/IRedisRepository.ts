@@ -1,5 +1,5 @@
-import { IUser } from "../../models/UserModel";
-import { ICollector } from "../../models/CollectorModel";
+import { IUser } from "../../models/User";
+import { ICollector } from "../../models/Collector";
 
 export interface IRedisRepository {
     saveOtp(email: string, otp: string, ttl: number, prefix: string): Promise<void>;

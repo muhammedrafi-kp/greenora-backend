@@ -134,7 +134,7 @@ export class UserController implements IUserController {
         try {
 
             console.log("req.cookies :", req.cookies);
-            
+
             if (!req.cookies.refreshToken) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
@@ -156,7 +156,7 @@ export class UserController implements IUserController {
                 success: true,
                 message: "token created!",
                 token: accessToken,
-                role:"user"
+                role: "user"
             });
 
         } catch (error: any) {
@@ -499,19 +499,19 @@ export class UserController implements IUserController {
                     success: false,
                     message: 'User not found.',
                 });
+            } else {
+                const userdata = {
+                    name: updatedUser?.name,
+                    email: updatedUser?.email,
+                    phone: updatedUser?.phone,
+                    profileUrl: updatedUser?.profileUrl,
+                };
+
+                res.status(HTTP_STATUS.OK).json({
+                    success: true,
+                    data: userdata,
+                });
             }
-
-            const userdata = {
-                name: updatedUser?.name,
-                email: updatedUser?.email,
-                phone: updatedUser?.phone,
-                profileUrl: updatedUser?.profileUrl,
-            };
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                data: userdata,
-            });
         } catch (error: any) {
             console.error('Error in updateUser controller:', error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -559,5 +559,5 @@ export class UserController implements IUserController {
         }
     }
 
-  
+
 }

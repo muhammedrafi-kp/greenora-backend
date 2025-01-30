@@ -9,8 +9,8 @@ import session from 'express-session';
 import passportConfig from "./config/passportConfig"
 import connectDB from './config/dbConfig';
 
-import userRouter from './routes/userRoutes';
-import collectorRouter from './routes/collectorRoutes';
+import userRoutes from './routes/userRoutes';
+import collectorRoutes from './routes/collectorRoutes';
 import adminRoutes from './routes/adminRoutes';
 
 const logger = winston.createLogger({
@@ -56,8 +56,8 @@ app.use(session({
 app.use(passportConfig.initialize());
 app.use(passportConfig.session());
 
-app.use('/user', userRouter);
-app.use('/collector', collectorRouter);
+app.use('/user', userRoutes);
+app.use('/collector', collectorRoutes);
 app.use('/admin', adminRoutes);
 
 

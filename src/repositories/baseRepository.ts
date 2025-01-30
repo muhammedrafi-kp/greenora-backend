@@ -45,13 +45,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    async updateById(id: string | Types.ObjectId, data: UpdateQuery<T>, options?: QueryOptions): Promise<T | null> {
+    async updateById(id: string | Types.ObjectId, data: UpdateQuery<T>, options: QueryOptions = {}): Promise<T | null> {
         try {
-            return await this.model.findByIdAndUpdate(id, data, options);
+            return await this.model.findByIdAndUpdate(id, data, { ...options, new: true });
         } catch (error) {
             throw new Error(`UpdateById failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
+
 
     async deleteById(id: string | Types.ObjectId): Promise<T | null> {
         try {

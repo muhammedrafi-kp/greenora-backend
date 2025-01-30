@@ -1,4 +1,4 @@
-import { ICollector } from "../../models/CollectorModel"
+import { ICollector } from "../../models/Collector";
 
 export interface ICollectorService {
     login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, collector: ICollector }>;

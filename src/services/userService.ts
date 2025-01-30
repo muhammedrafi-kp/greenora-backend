@@ -4,7 +4,7 @@ import { IUserService } from "../interfaces/user/IUserService";
 import { IUser } from "../models/User";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
-import { generateAccessToken, generateRefreshToken,verifyToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyToken } from "../utils/token";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
@@ -13,6 +13,7 @@ import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
 import { error } from "console";
+import userRepository from "../repositories/userRepository";
 
 configDotenv();
 
@@ -21,12 +22,12 @@ export class UserService implements IUserService {
     constructor(
         private userRepository: IUserRepository,
         private redisRepository: IRedisRepository
-    ) { };
+    ) { }
 
     async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
             const user = await this.userRepository.findUserByEmail(email);
-
+            // userRepository.create()
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
@@ -140,9 +141,9 @@ export class UserService implements IUserService {
 
     async validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
         try {
-            
+
             const decoded = verifyToken(token);
-            
+
             const user = await this.userRepository.getUserById(decoded.userId);
 
             if (!user) {

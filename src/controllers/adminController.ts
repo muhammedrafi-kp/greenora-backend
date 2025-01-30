@@ -120,7 +120,7 @@ export class AdminController implements IAdminController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: users
-            })
+            });
 
         } catch (error: any) {
             console.error("Error while fetching users data : ", error);

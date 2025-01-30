@@ -7,11 +7,10 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
 
     constructor() {
         super(User);
-    }
+    } 
 
     async createUser(userData: Partial<IUser>): Promise<IUser> {
         try {
-            console.log("google userdata in repo :", userData);
             return await this.create(userData);
         } catch (error: unknown) {
             throw new Error(`Error while creating user : ${error instanceof Error ? error.message : String(error)}`);

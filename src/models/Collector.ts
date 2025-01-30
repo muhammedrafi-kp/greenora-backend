@@ -11,7 +11,7 @@ export interface ICollector extends Document {
     isBlocked?: boolean;
 }
 
-const collectorSchema = new Schema({
+const collectorSchema = new Schema<ICollector>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
@@ -22,4 +22,5 @@ const collectorSchema = new Schema({
     isBlocked: { type: Boolean, default: false },
 }, { timestamps: true });
 
-export default model<ICollector>("Collector", collectorSchema);
+const Collector = model<ICollector>("Collector", collectorSchema);
+export default Collector;

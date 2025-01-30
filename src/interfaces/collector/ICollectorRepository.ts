@@ -1,4 +1,4 @@
-import { ICollector } from "../../models/CollectorModel";
+import { ICollector } from "../../models/Collector";
 
 export interface ICollectorRepository {
     createCollector(collectorData: ICollector): Promise<ICollector>;

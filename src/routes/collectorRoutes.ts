@@ -3,6 +3,8 @@ import { CollcetorController } from "../controllers/collectorController";
 import { CollectorService } from "../services/collectorService";
 import collectorRepository from "../repositories/collectorRepository";
 import redisRepository from "../repositories/redisRepository";
+import { validateCollector } from "../middlewares/auth";
+
 import multer from 'multer';
 const upload = multer();
 
@@ -17,7 +19,7 @@ router.post('/verify-otp', collectorController.verifyOtp.bind(collectorControlle
 router.post('/resend-otp', collectorController.resendOtp.bind(collectorController));
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
 
-router.get('/profile', collectorController.getCollector.bind(collectorController));
-router.put('/update-profile', upload.single('profileImage'), collectorController.updateCollector.bind(collectorController));
+router.get('/profile', validateCollector, collectorController.getCollector.bind(collectorController));
+router.put('/update-profile', validateCollector, upload.single('profileImage'), collectorController.updateCollector.bind(collectorController));
 
 export default router;

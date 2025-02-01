@@ -177,15 +177,18 @@ export class CollcetorController implements ICollcetorController {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "invalid user id" });
                 return
             }
-            const user = await this.collectorService.getCollector(userId as string);
+            const collector = await this.collectorService.getCollector(userId as string);
 
             const collectorData = {
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                profileUrl: user.profileUrl,
-                serviceArea: user.serviceArea
-            }
+                name: collector.name,
+                email: collector.email,
+                phone: collector.phone,
+                district: collector.district || "N/A",
+                serviceArea: collector.serviceArea || "N/A",
+                profileUrl: collector.profileUrl || "",
+                isVerified: collector.isVerified
+            };
+
 
             console.log("collectorData in controller:", collectorData);
 

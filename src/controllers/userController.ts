@@ -8,6 +8,7 @@ import { IUser } from "../models/User";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { configDotenv } from 'dotenv';
+import { error } from "console";
 configDotenv();
 
 export class UserController implements IUserController {
@@ -434,12 +435,8 @@ export class UserController implements IUserController {
 
     async getUser(req: Request, res: Response): Promise<void> {
         try {
-            console.log("req.headers", req.headers['x-user-id']);
             const userId = req.headers['x-user-id'];
-            if (!userId) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "invalid user id" });
-                return;
-            }
+
             const user = await this.userService.getUser(userId as string);
 
             const userData = {
@@ -457,12 +454,6 @@ export class UserController implements IUserController {
             });
 
         } catch (error: any) {
-            // if (error.status === 401) {
-            //     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-            //         success: false,
-            //         message: error.message
-            //     });
-            // }
 
             if (error.status === HTTP_STATUS.NOT_FOUND) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({

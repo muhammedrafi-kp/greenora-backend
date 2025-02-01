@@ -94,9 +94,10 @@ export class CollectorService implements ICollectorService {
 
             const hashedPassword = await bcrypt.hash(collectorData.password, 10);
             collectorData.password = hashedPassword;
-            collectorData.serviceArea = 'not-provided';
+            // collectorData.serviceArea = 'not-provided';
 
             const collector = await this.collectorRepository.createCollector(collectorData);
+            console.log("collectorrrrrrrrrr:",collector)
 
             const accessToken = generateAccessToken(collector._id as string, 'collector');
             const refreshToken = generateRefreshToken(collector._id as string, 'collector');

@@ -75,8 +75,8 @@ export class AdminService implements IAdminService {
 
             console.log("decoded in service:", decoded);
 
-            const accessToken = generateAccessToken(user._id as string, 'user');
-            const refreshToken = generateRefreshToken(user._id as string, 'user');
+            const accessToken = generateAccessToken(user._id as string, 'admin');
+            const refreshToken = generateRefreshToken(user._id as string, 'admin');
 
             return { accessToken, refreshToken };
 

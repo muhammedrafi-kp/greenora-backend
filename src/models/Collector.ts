@@ -5,8 +5,12 @@ export interface ICollector extends Document {
     email: string;
     phone: string;
     password: string;
-    profileUrl?: string;
+    district?: string;
     serviceArea?: string;
+    profileUrl?: string;
+    idProofType?: string;
+    idProofFrontUrl?: string;
+    idProofBackUrl?: string;
     isVerified?: boolean;
     isBlocked?: boolean;
 }
@@ -16,8 +20,12 @@ const collectorSchema = new Schema<ICollector>({
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
-    serviceArea: { type: String, required: false },
-    profileUrl: { type: String },
+    district: { type: String, trim: true },
+    serviceArea: { type: String, trim: true },
+    profileUrl: { type: String, trim: true },
+    idProofType: { type: String, enum: ['Aadhar', 'Voter-ID', 'Driving-License'] },
+    idProofFrontUrl: { type: String },
+    idProofBackUrl: { type: String },
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
 }, { timestamps: true });

@@ -55,7 +55,13 @@ export class CategoryController implements ICategoryController {
     async getCategories(req: Request, res: Response): Promise<void> {
         try {
             const categoryType = req.query.type;
-            const categories = await this.categoryService.getCategories({ type: categoryType, isActive: true });
+
+            const query: any = { isActive: true };
+            if (categoryType) {
+                query.type = categoryType;
+            }
+            
+            const categories = await this.categoryService.getCategories(query);
 
             if (categories) {
                 res.status(HTTP_STATUS.OK).json({
@@ -125,7 +131,7 @@ export class CategoryController implements ICategoryController {
                     message: error.message
                 })
             };
-            
+
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }

@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token', 'google'];
 
-export const validateToken = async (req: Request, res: Response, next: NextFunction) => {
+export const validateJwt = async (req: Request, res: Response, next: NextFunction) => {
 
     const lastPath = req.path.split('/').pop() as string;
     console.log("Last path :", lastPath);
@@ -21,8 +21,9 @@ export const validateToken = async (req: Request, res: Response, next: NextFunct
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET || "access_secret") as JwtPayload;
         console.log("decoded :", decoded);
         req.headers['x-user-id'] = decoded.userId;
+        req.headers['x-role'] = decoded.role;
 
-        // console.log("req.headers in validatetoken:", req.headers);
+        console.log("req.headers in validatetoken:", req.headers);
         next();
 
     } catch (error: any) {

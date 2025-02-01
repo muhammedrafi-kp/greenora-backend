@@ -4,7 +4,7 @@ import morgan from 'morgan';
 import cors from 'cors'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import { IncomingMessage } from 'http';
-import { validateToken } from "./middleware/validateToken";
+import { validateJwt } from "./middleware/validateJwt";
 
 configDotenv();
 
@@ -23,7 +23,7 @@ app.use(morgan('dev'));
 const port = process.env.PORT || 3000;
 
 
-app.use(validateToken as express.RequestHandler);
+app.use(validateJwt as express.RequestHandler);
 
 app.use('/user-service', createProxyMiddleware({ target: 'http://localhost:3001', changeOrigin: true }));
 app.use('/request-service', createProxyMiddleware({ target: 'http://localhost:3002', changeOrigin: true }));

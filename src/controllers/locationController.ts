@@ -83,21 +83,7 @@ export class LocationController implements ILocationController {
         }
     }
 
-    async createServiceArea(req: Request, res: Response): Promise<void> {
-        try {
-            const serviceAreaData = req.body;
-            const serviceArea = await this.locationService.createServiceArea(serviceAreaData);
-            res.status(HTTP_STATUS.CREATED).json({
-                success: true,
-                message: MESSAGES.SERVICE_AREA_CREATED,
-                data: serviceArea
-            });
-
-        } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-        }
-    }
+   
 
     async getDistricts(req: Request, res: Response): Promise<void> {
         try {
@@ -106,6 +92,40 @@ export class LocationController implements ILocationController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: districts
+            });
+
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    
+
+    async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
+        try {
+            const districtsAndServiceAreas = await this.locationService.getDistrictsWithServiceAreas();
+            console.log(districtsAndServiceAreas);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: districtsAndServiceAreas
+            });
+
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async createServiceArea(req: Request, res: Response): Promise<void> {
+        try {
+            const serviceAreaData = req.body;
+            const serviceArea = await this.locationService.createServiceArea(serviceAreaData);
+            res.status(HTTP_STATUS.CREATED).json({
+                success: true,
+                message: MESSAGES.SERVICE_AREA_CREATED,
+                data: serviceArea
             });
 
         } catch (error: any) {
@@ -124,16 +144,10 @@ export class LocationController implements ILocationController {
         }
     }
 
-    async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
+    async updateServiceArea(req: Request, res: Response): Promise<void> {
         try {
-            const districtsAndServiceAreas = await this.locationService.getDistrictsWithServiceAreas();
-            console.log(districtsAndServiceAreas);
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                data: districtsAndServiceAreas
-            });
-
+            const { serviceAreaId } = req.params;
+            
         } catch (error: any) {
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });

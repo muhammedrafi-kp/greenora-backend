@@ -26,25 +26,6 @@ class DistrictRepository extends BaseRepository<IDistrict> implements IDistrictR
 
     async getDistrictsWithServiceAreas(): Promise<IDistrict[]> {
         try {
-            // return this.model.aggregate([
-            //     {
-            //         // Match the service areas for the district based on districtId
-            //         $lookup: {
-            //             from: "serviceareas", // Ensure this is the correct collection name in MongoDB (case-sensitive)
-            //             localField: "_id", // The _id of the district
-            //             foreignField: "district", // The district field in the service area
-            //             as: "serviceAreas", // Alias for the matched service areas
-            //         },
-            //     },
-            //     {
-            //         $project: {
-            //             _id: 1,
-            //             name: 1,
-            //             serviceAreas: 1, // Keep the serviceAreas array from the lookup
-            //         },
-            //     },
-            // ]);
-
             return this.model.aggregate([
                 {
                   $match: {
@@ -55,7 +36,7 @@ class DistrictRepository extends BaseRepository<IDistrict> implements IDistrictR
                   $lookup: {
                     from: "serviceareas",
                     localField: "_id",
-                    foreignField: "district",
+                    foreignField: "districtId",
                     as: "serviceAreas",
                   },
                 },
@@ -65,7 +46,7 @@ class DistrictRepository extends BaseRepository<IDistrict> implements IDistrictR
                       $filter: {
                         input: "$serviceAreas",
                         as: "serviceArea",
-                        cond: { $eq: ["$$serviceArea.isActive", true] }, // Filter active service areas
+                        cond: { $eq: ["$$serviceArea.isActive", true] },
                       },
                     },
                   },

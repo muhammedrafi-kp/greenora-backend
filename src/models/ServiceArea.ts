@@ -2,7 +2,7 @@ import { Schema, model, Document, Types } from "mongoose";
 
 export interface IServiceArea extends Document {
     name: string;
-    district: Types.ObjectId;
+    districtId: Types.ObjectId;
     center: {
         type: 'Point';
         coordinates: [number, number];
@@ -17,7 +17,7 @@ export interface IServiceArea extends Document {
 
 const serviceAreaSchema = new Schema<IServiceArea>({
     name: { type: String, required: true },
-    district: { type: Schema.Types.ObjectId, ref: 'District', required: true },
+    districtId: { type: Schema.Types.ObjectId, ref: 'District', required: true },
     center: {
         type: { type: String, enum: ['Point'], required: true },
         coordinates: { type: [Number], required: true },

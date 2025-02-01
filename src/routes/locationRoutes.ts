@@ -10,10 +10,13 @@ const locationController = new LocationController(locationService);
 
 const router = Router();
 
-router.post('/district/create-district', locationController.createDistrict.bind(locationController));
-router.put('/district/update-district/:districtId',locationController.updateDistrict.bind(locationController));
-router.put('/district/delete-district/:districtId',locationController.deleteDistrict.bind(locationController))
-router.get('/district/districts-with-servic-areas', locationController.getDistrictsWithServiceAreas.bind(locationController));
+router.post('/admin/create-district', locationController.createDistrict.bind(locationController));
+router.put('/admin/update-district/:districtId',locationController.updateDistrict.bind(locationController));
+router.put('/admin/delete-district/:districtId',locationController.deleteDistrict.bind(locationController))
+router.get('/admin/districts-with-servic-areas', locationController.getDistrictsWithServiceAreas.bind(locationController));
+
+router.post('/admin/create-service-area', locationController.createServiceArea.bind(locationController));
+router.put('/admin/update-service-area/:serviceAreaId', locationController.updateServiceArea.bind(locationController));
 
 export default router;
 

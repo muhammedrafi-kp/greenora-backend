@@ -31,7 +31,7 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
 
     async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>): Promise<T[]> {
         try {
-            return await this.model.find({ filter }, projection);
+            return await this.model.find(filter, projection);
         } catch (error) {
             throw new Error(`Find failed: ${error instanceof Error ? error.message : String(error)}`);
         }

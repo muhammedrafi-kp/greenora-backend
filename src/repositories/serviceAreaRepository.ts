@@ -7,13 +7,13 @@ class ServiceAreaRepository extends BaseRepository<IServiceArea> implements ISer
         super(ServiceArea);
     }
 
-    async createServiceArea(serviceAreaData: IServiceArea): Promise<IServiceArea> {
-        try {
-            return await this.create(serviceAreaData);
-        } catch (error) {
-            throw new Error(`Error while creating serviceArea : ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
+    // async createServiceArea(serviceAreaData: IServiceArea): Promise<IServiceArea> {
+    //     try {
+    //         return await this.create(serviceAreaData);
+    //     } catch (error) {
+    //         throw new Error(`Error while creating serviceArea : ${error instanceof Error ? error.message : String(error)}`);
+    //     }
+    // }
 
     async findServiceAreaById(serviceAreaId: string): Promise<IServiceArea | null> {
         try {

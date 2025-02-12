@@ -8,9 +8,9 @@ export interface IServiceArea extends Document {
         coordinates: [number, number];
     };
     location: string;
-    radius: number;
     capacity: number;
     serviceDays: string[];
+    postalCodes:string[];
     collectors: Types.ObjectId[];
     isActive: boolean;
 }
@@ -23,9 +23,9 @@ const serviceAreaSchema = new Schema<IServiceArea>({
         coordinates: { type: [Number], required: true },
     },
     location: { type: String, required: true },
-    radius: { type: Number, required: true },
     capacity: { type: Number, required: true },
     serviceDays: [{ type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] }],
+    postalCodes:[{type:String}],
     collectors: [{ type: Schema.Types.ObjectId, ref: 'Collector' }],
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });

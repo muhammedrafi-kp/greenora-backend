@@ -1,17 +1,17 @@
 export const MESSAGES = {
     DISTRICT_CREATED: "District created successfully.",
     SERVICE_AREA_CREATED: "Service area created successfully.",
-    USER_EXISTS: "User with this email already exists.",
-    VERIFY_EMAIL: "Please verify your email before logging in.",
-    SIGNUP_SESSION_EXPIRED: "Signup session expired. Please restart the process.",
-    EMAIL_VERIFIED: "Email verified successfully!",
-    CATEGORY_NOT_FOUND: "Category not found.",
-    INVALID_PASSWORD: "Invalid password!",
-    INVALID_OTP: "Invalid OTP",
+    ADDRESS_CREATED: "Address created successfully.",
+    DISTRICT_NOT_FOUND: "District not found.",
+    DISTRICTS_NOT_FOUND: "Districts not found.",
+    SERVICE_AREA_NOT_FOUND: "Service area not found.",
+    SERVICE_AREAS_NOT_FOUND: "Service areas not found.",
+    SERVICE_AVAILABLE:"Service is available with this pincode.",
+    ADDRESS_NOT_FOUND: "Addresse not found.",
+    ADDRESSES_NOT_FOUND: "Addresses not found.",
+    ADDRESS_DELETED: "Address deleted successfully.",
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
     UNKNOWN_ERROR: "An unknown error occurred.",
-    TOKEN_NOT_FOUND: "Token not found.",
-    TOKEN_EXPIRED: "Token is expired."
 };
 

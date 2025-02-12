@@ -29,7 +29,7 @@ class DistrictRepository extends BaseRepository<IDistrict> implements IDistrictR
             return this.model.aggregate([
                 {
                   $match: {
-                    isActive: true, // Filter only active districts
+                    isActive: true,
                   },
                 },
                 {

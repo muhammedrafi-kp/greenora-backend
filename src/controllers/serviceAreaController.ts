@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
-import { ILocationController } from "../interfaces/ILocationController";
-import { ILocationService } from "../interfaces/ILocationService";
+import { IServiceAreaController } from "../interfaces/IServiceAreaController";
+import { IServiceAreaService } from "../interfaces/IServiceAreaService";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages"
 
-export class LocationController implements ILocationController {
-    constructor(private locationService: ILocationService) {
-        this.locationService = locationService;
+export class ServiceAreaController implements IServiceAreaController {
+    constructor(private serviceAreaService: IServiceAreaService) {
+        this.serviceAreaService = serviceAreaService;
     }
 
     async createDistrict(req: Request, res: Response): Promise<void> {
         try {
             const districtName = req.body.name;
 
-            const district = await this.locationService.createDistrict(districtName);
+            const district = await this.serviceAreaService.createDistrict(districtName);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
@@ -33,7 +33,7 @@ export class LocationController implements ILocationController {
             const { districtId } = req.params;
             const districtName = req.body.name;
 
-            const updatedDistrict = await this.locationService.updateDistrict(districtId, districtName);
+            const updatedDistrict = await this.serviceAreaService.updateDistrict(districtId, districtName);
 
             console.log("updatedDistrict:", updatedDistrict);
             if (updatedDistrict) {
@@ -44,7 +44,7 @@ export class LocationController implements ILocationController {
             } else {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
-                    message: MESSAGES.CATEGORY_NOT_FOUND,
+                    message: MESSAGES.DISTRICT_NOT_FOUND,
                 });
             }
 
@@ -57,7 +57,7 @@ export class LocationController implements ILocationController {
     async deleteDistrict(req: Request, res: Response): Promise<void> {
         try {
             const { districtId } = req.params;
-            const updatedDistrict = await this.locationService.deleteDistrict(districtId);
+            const updatedDistrict = await this.serviceAreaService.deleteDistrict(districtId);
 
             if (updatedDistrict) {
                 res.status(HTTP_STATUS.OK).json({
@@ -83,11 +83,21 @@ export class LocationController implements ILocationController {
         }
     }
 
-   
+
 
     async getDistricts(req: Request, res: Response): Promise<void> {
         try {
-            const districts = await this.locationService.findDistricts({isActive:true});
+
+            const query: any = { isActive: true };
+            const districts = await this.serviceAreaService.getDistricts(query);
+
+            if (!districts) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: true,
+                    message: MESSAGES.DISTRICTS_NOT_FOUND
+                });
+                return;
+            }
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -100,11 +110,11 @@ export class LocationController implements ILocationController {
         }
     }
 
-    
+
 
     async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
         try {
-            const districtsAndServiceAreas = await this.locationService.getDistrictsWithServiceAreas();
+            const districtsAndServiceAreas = await this.serviceAreaService.getDistrictsWithServiceAreas();
             console.log(districtsAndServiceAreas);
 
             res.status(HTTP_STATUS.OK).json({
@@ -121,7 +131,7 @@ export class LocationController implements ILocationController {
     async createServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const serviceAreaData = req.body;
-            const serviceArea = await this.locationService.createServiceArea(serviceAreaData);
+            const serviceArea = await this.serviceAreaService.createServiceArea(serviceAreaData);
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: MESSAGES.SERVICE_AREA_CREATED,
@@ -136,8 +146,22 @@ export class LocationController implements ILocationController {
 
     async getServiceAreas(req: Request, res: Response): Promise<void> {
         try {
-            const { districtId } = req.query;
-            const serviceAreas = await this.locationService.findServiceAreas(districtId as string);
+            const { districtId } = req.params;
+            const serviceAreas = await this.serviceAreaService.getServiceAreas(districtId as string);
+
+            if (!serviceAreas) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: true,
+                    message: MESSAGES.SERVICE_AREAS_NOT_FOUND
+                });
+                return;
+            }
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: serviceAreas
+            });
+
         } catch (error: any) {
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
@@ -147,7 +171,34 @@ export class LocationController implements ILocationController {
     async updateServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const { serviceAreaId } = req.params;
-            
+
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async isServiceAvailable(req: Request, res: Response): Promise<void> {
+        try {
+            const { serviceAreaId, pinCode } = req.body;
+            console.log("serviceAreaId :", serviceAreaId)
+            console.log("pinCode :", pinCode)
+
+            const serviceArea = await this.serviceAreaService.isServiceAvailable(serviceAreaId, pinCode);
+
+            if (!serviceArea) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: MESSAGES.SERVICE_AREA_NOT_FOUND
+                });
+                return;
+            }
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.SERVICE_AVAILABLE
+            })
+
         } catch (error: any) {
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });

@@ -1,5 +1,5 @@
 import { IDistrictRepository } from "../interfaces/IDistrictRepository";
-import { ILocationService } from "../interfaces/ILocationService";
+import { IServiceAreaService } from "../interfaces/IServiceAreaService";
 import { IServiceAreaRepository } from "../interfaces/IServiceAreaRepository";
 import { IDistrict } from "../models/District";
 import { IServiceArea } from "../models/ServiceArea";
@@ -7,7 +7,7 @@ import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 
 
-export class LocationService implements ILocationService {
+export class ServiceAreaService implements IServiceAreaService {
     constructor(
         private districtRepository: IDistrictRepository,
         private serviceAreaRepository: IServiceAreaRepository
@@ -15,7 +15,7 @@ export class LocationService implements ILocationService {
 
     async createDistrict(districtName: string): Promise<IDistrict> {
         try {
-            return await this.districtRepository.create({name:districtName});
+            return await this.districtRepository.create({ name: districtName });
         } catch (error) {
             console.error('Error while creating district:', error);
             throw error;
@@ -24,7 +24,7 @@ export class LocationService implements ILocationService {
 
     async updateDistrict(districtId: string, districtName: string): Promise<IDistrict | null> {
         try {
-            return await this.districtRepository.updateById(districtId, {name:districtName});
+            return await this.districtRepository.updateById(districtId, { name: districtName });
         } catch (error) {
             console.error('Error while creating district:', error);
             throw error;
@@ -50,25 +50,34 @@ export class LocationService implements ILocationService {
 
     async createServiceArea(serviceAreaData: IServiceArea): Promise<IServiceArea> {
         try {
-            return await this.serviceAreaRepository.createServiceArea(serviceAreaData);
+            return await this.serviceAreaRepository.create(serviceAreaData);
         } catch (error) {
             console.error('Error while creating ServiceArea:', error);
             throw error;
         }
     }
 
-    async findDistricts(): Promise<IDistrict[]> {
+    async getDistricts(query: object): Promise<IDistrict[]> {
         try {
-            return await this.districtRepository.findAllDistricts();
+            const projection = {
+                _id: 1,
+                name: 1
+            }
+            return await this.districtRepository.find(query, projection);
         } catch (error) {
             console.error('Error while finding district:', error);
             throw error;
         }
     }
 
-    async findServiceAreas(districtId: string): Promise<IServiceArea[]> {
+    async getServiceAreas(districtId: string): Promise<IServiceArea[]> {
         try {
-            return await this.serviceAreaRepository.findAllServiceAreas();
+            const query: object = { districtId };
+            const projection: Record<string, number> = {
+                _id: 1,
+                name: 1
+            }
+            return await this.serviceAreaRepository.find(query, projection);
         } catch (error) {
             console.error('Error while finding ServiceAreas:', error);
             throw error;
@@ -78,6 +87,22 @@ export class LocationService implements ILocationService {
     async getDistrictsWithServiceAreas(): Promise<IDistrict[]> {
         try {
             return await this.districtRepository.getDistrictsWithServiceAreas();
+        } catch (error) {
+            console.error('Error while finding district with serviceAreas:', error);
+            throw error;
+        }
+    }
+
+    async isServiceAvailable(serviceAreaId: string, pincode: string): Promise<IServiceArea | null> {
+        try {
+            const query: object = {
+                _id: serviceAreaId,
+                postalCodes: { $in: [pincode] },
+                isActive: true
+            }
+
+            return await this.serviceAreaRepository.findOne(query);
+
         } catch (error) {
             console.error('Error while finding district with serviceAreas:', error);
             throw error;

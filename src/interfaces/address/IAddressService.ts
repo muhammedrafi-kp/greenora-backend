@@ -1,4 +1,4 @@
-import { IAddress } from "../models/Address";
+import { IAddress } from "../../models/Address";
 
 
 export interface IAddressService {

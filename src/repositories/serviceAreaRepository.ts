@@ -1,4 +1,4 @@
-import { IServiceAreaRepository } from "../interfaces/IServiceAreaRepository";
+import { IServiceAreaRepository } from "../interfaces/serviceArea/IServiceAreaRepository";
 import ServiceArea, { IServiceArea } from "../models/ServiceArea";
 import { BaseRepository } from "./baseRepository";
 

@@ -1,5 +1,5 @@
-import { IAddressRepository } from "../interfaces/IAddressRepository";
-import { IAddressService } from "../interfaces/IAddressService";
+import { IAddressRepository } from "../interfaces/address/IAddressRepository";
+import { IAddressService } from "../interfaces/address/IAddressService";
 import { IAddress } from "../models/Address";
 
 export class AddressService implements IAddressService {

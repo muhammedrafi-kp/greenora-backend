@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { IServiceAreaController } from "../interfaces/IServiceAreaController";
-import { IServiceAreaService } from "../interfaces/IServiceAreaService";
+import { IServiceAreaController } from "../interfaces/serviceArea/IServiceAreaController";
+import { IServiceAreaService } from "../interfaces/serviceArea/IServiceAreaService";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages"
 

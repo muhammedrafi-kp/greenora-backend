@@ -1,6 +1,6 @@
-import { IDistrictRepository } from "../interfaces/IDistrictRepository";
-import { IServiceAreaService } from "../interfaces/IServiceAreaService";
-import { IServiceAreaRepository } from "../interfaces/IServiceAreaRepository";
+import { IDistrictRepository } from "../interfaces/serviceArea/IDistrictRepository";
+import { IServiceAreaService } from "../interfaces/serviceArea/IServiceAreaService";
+import { IServiceAreaRepository } from "../interfaces/serviceArea/IServiceAreaRepository";
 import { IDistrict } from "../models/District";
 import { IServiceArea } from "../models/ServiceArea";
 import { MESSAGES } from "../constants/messages";

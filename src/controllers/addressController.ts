@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { IAddressController } from "../interfaces/IAddressController";
-import { IAddressService } from "../interfaces/IAddressService";
+import { IAddressController } from "../interfaces/address/IAddressController";
+import { IAddressService } from "../interfaces/address/IAddressService";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import { Types } from 'mongoose';

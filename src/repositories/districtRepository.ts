@@ -1,6 +1,6 @@
 import { BaseRepository } from "./baseRepository";
 import District, { IDistrict } from "../models/District";
-import { IDistrictRepository } from "../interfaces/IDistrictRepository";
+import { IDistrictRepository } from "../interfaces/serviceArea/IDistrictRepository";
 
 class DistrictRepository extends BaseRepository<IDistrict> implements IDistrictRepository {
     constructor() {

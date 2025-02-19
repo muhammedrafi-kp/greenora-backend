@@ -1,5 +1,5 @@
-import { IDistrict } from "../models/District";
-import { IServiceArea } from "../models/ServiceArea";
+import { IDistrict } from "../../models/District";
+import { IServiceArea } from "../../models/ServiceArea";
 
 
 export interface IServiceAreaService {

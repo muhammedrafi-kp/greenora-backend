@@ -25,9 +25,10 @@ const port = process.env.PORT || 3000;
 
 app.use(validateJwt as express.RequestHandler);
 
-app.use('/user-service', createProxyMiddleware({ target: 'http://localhost:3001', changeOrigin: true }));
-app.use('/request-service', createProxyMiddleware({ target: 'http://localhost:3002', changeOrigin: true }));
-app.use('/location-service', createProxyMiddleware({ target: 'http://localhost:3003', changeOrigin: true }));
+app.use("/user-service", createProxyMiddleware({ target: 'http://localhost:3001', changeOrigin: true }));
+app.use("/request-service", createProxyMiddleware({ target: 'http://localhost:3002', changeOrigin: true }));
+app.use("/location-service", createProxyMiddleware({ target: 'http://localhost:3003', changeOrigin: true }));
+app.use("/payment-service", createProxyMiddleware({ target: 'http://localhost:3004', changeOrigin: true }));
 
 app.listen(port, () => {
     console.log(`api-gateway is running on port ${port}`);

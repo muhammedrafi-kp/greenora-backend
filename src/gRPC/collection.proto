@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package collection;
+
+service collectionService {
+  rpc ValidateCollectionData (validateCollectionDataRequest) returns (validateCollectionDataResponse);
+  rpc CreateCollection (createCollectionRequest) returns (createCollectionResponse);
+}
+
+message validateCollectionDataRequest {
+  string userId = 1;
+  CollectionData collectionData = 2;  
+}
+
+message CollectionData {
+  string type = 1; // "waste" or "scrap"
+  Address address = 2;
+  repeated Item items = 3;
+  double estimatedCost = 4;
+  string preferredDate = 5;
+  optional string instructions = 6;
+}
+
+message Address {
+  string name = 1;
+  string mobile = 2;
+  string district = 3;
+  string serviceArea = 4;
+  string pinCode = 5;
+  string locality = 6;
+  string addressLine = 7;
+}
+
+message Item {  
+  string categoryId = 1;
+  int32 qty = 2;
+}
+
+message validateCollectionDataResponse {
+  bool success = 1;
+  string message = 2;
+  string collectionId = 3;
+  int32 totalCost = 4; 
+}
+
+message createCollectionRequest {
+  string userId = 1;
+}
+
+message createCollectionResponse {
+  bool success = 1;
+  string message = 2;
+}

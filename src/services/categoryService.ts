@@ -1,5 +1,5 @@
-import { ICategoryRepository } from "../interfaces/ICategoryRepository";
-import { ICategoryService } from "../interfaces/ICategoryService";
+import { ICategoryRepository } from "../interfaces/category/ICategoryRepository";
+import { ICategoryService } from "../interfaces/category/ICategoryService";
 import { ICategory } from "../models/Category";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
@@ -67,4 +67,24 @@ export class CategoryService implements ICategoryService {
             throw error;
         }
     }
+
+    async calculateCost(categoryData: { categoryId: string; qty: string; }[]): Promise<number> {
+        try {
+            let totalCost = 0;
+
+            for (const category of categoryData) {
+                const categoryData = await this.categoryRepository.findById(category.categoryId);
+
+                if(categoryData){
+                    totalCost += categoryData.rate * Number(category.qty);
+                }
+            }
+            // return await this.categoryRepository.calculateCost(categoryData);
+            return totalCost;
+        } catch (error) {
+            console.error('Error while calculating cost:', error);
+            throw error;
+        }
+    }
+
 }

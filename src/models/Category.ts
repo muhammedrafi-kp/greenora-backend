@@ -4,7 +4,7 @@ export interface ICategory extends Document {
     name: string;
     type: "waste" | "scrap";
     description?: string;
-    rate?: number;
+    rate: number;
     isActive: boolean;
 }
 

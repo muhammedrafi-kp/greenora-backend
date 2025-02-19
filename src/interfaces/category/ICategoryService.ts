@@ -1,5 +1,5 @@
 
-import { ICategory } from "../models/Category";
+import { ICategory } from "../../models/Category";
 
 export interface ICategoryService {
     createCategory(categoryData: Partial<ICategory>): Promise<ICategory>;
@@ -8,4 +8,6 @@ export interface ICategoryService {
     getCategories(query: object): Promise<ICategory[]>;
     updateCategory(categoryId: string, categoryData: Partial<ICategory>): Promise<ICategory | null>;
     deleteCategory(categoryId: string): Promise<ICategory | null>;
+    calculateCost(categoryData: { categoryId: string; qty: string }[]): Promise<number>;
+    // initiatePayment(orderId: string): Promise<any>;
 }

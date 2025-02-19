@@ -6,4 +6,6 @@ export interface ICategoryController {
     getCategories(req: Request, res: Response): Promise<void>;
     updateCategory(req: Request, res: Response): Promise<void>;
     deleteCategory(req: Request, res: Response): Promise<void>;
+    calculateCost(req: Request, res: Response): Promise<void>;
+    // initiatePayment(req: Request, res: Response): Promise<void>;
 }

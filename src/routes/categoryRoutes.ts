@@ -13,5 +13,6 @@ router.get('/category/:categoryId', categoryController.getCategory.bind(category
 router.get('/categories', categoryController.getCategories.bind(categoryController));
 router.put('/update-category/:categoryId', categoryController.updateCategory.bind(categoryController));
 router.put('/delete-category/:categoryId', categoryController.deleteCategory.bind(categoryController));
+router.post('/calculate-cost', categoryController.calculateCost.bind(categoryController));
 
 export default router;

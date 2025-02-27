@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token', 'google'];
+const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token', 'callback'];
 
 export const validateJwt = async (req: Request, res: Response, next: NextFunction) => {
 

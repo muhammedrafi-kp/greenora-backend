@@ -5,18 +5,18 @@ export interface IUser extends Document {
     email: string;
     phone: string;
     password: string;
-    authProvider: "google" | "local";
     profileUrl?: string;
+    authProvider: "google" | "local";
     isBlocked?: boolean;
 }
 
 const userSchema = new Schema<IUser>({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phone: { type: String, required: false },
     password: { type: String, required: false },
     profileUrl: { type: String },
     authProvider: { type: String, enum: ["google", "local"], default: "local" },
-    phone: { type: String, required: false },
     isBlocked: { type: Boolean, default: false }
 }, { timestamps: true });
 

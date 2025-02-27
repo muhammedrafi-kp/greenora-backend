@@ -142,6 +142,35 @@ export class AdminController implements IAdminController {
         }
     }
 
+    async getVerificationRequests(req: Request, res: Response): Promise<void> {
+        try {
+            const verificationRequests = await this.adminService.getVerificationRequests();
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: verificationRequests
+            });
+        } catch (error: any) {
+            console.error("Error while fetching verification requests : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async updateVerificationStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+            console.log("id :", id, "status :", status);
+            const collector = await this.adminService.updateVerificationStatus(id, status);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: collector
+            });
+        } catch (error: any) {
+            console.error("Error while updating verification status : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
     async updateUserStatus(req: Request, res: Response): Promise<void> {
         try {
             const { id } = req.params;

@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import { ICollcetorController } from "../interfaces/collector/ICollectorController";
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
@@ -169,6 +168,36 @@ export class CollcetorController implements ICollcetorController {
         }
     }
 
+    async googleAuthCallback(req: Request, res: Response): Promise<void> {
+        try {
+            const { credential } = req.body;
+            const { accessToken, refreshToken, collector: { name, email } } = await this.collectorService.handleGoogleAuth(credential);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            const userData = { name, email };
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
+                token: accessToken,
+                role: "collector",
+                data: userData
+            });
+
+        } catch (error: any) {
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async getCollector(req: Request, res: Response): Promise<void> {
         try {
             console.log("req.headers[x-user-id] :", req.headers['x-user-id']);
@@ -179,37 +208,21 @@ export class CollcetorController implements ICollcetorController {
             }
             const collector = await this.collectorService.getCollector(userId as string);
 
-            const collectorData = {
-                name: collector.name,
-                email: collector.email,
-                phone: collector.phone,
-                district: collector.district || "N/A",
-                serviceArea: collector.serviceArea || "N/A",
-                profileUrl: collector.profileUrl || "",
-                isVerified: collector.isVerified
-            };
-
-
-            console.log("collectorData in controller:", collectorData);
+            console.log("collector:", collector);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: collectorData
+                data: collector
             });
 
         } catch (error: any) {
-            // if (error.status === 401) {
-            //     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-            //         success: false,
-            //         message: error.message
-            //     });
-            // }
 
             if (error.status === HTTP_STATUS.NOT_FOUND) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
                     message: error.message
-                })
+                });
+                return;
             }
 
             console.error("Error while fetching collectorData : ", error.message);
@@ -220,8 +233,63 @@ export class CollcetorController implements ICollcetorController {
     async updateCollector(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-user-id'];
-            const { name, phone } = req.body;
-            const profileImage = req.file;
+            const { name, phone, gender, district, serviceArea, idProofType } = req.body;
+            console.log("req.body :", req.body);
+            const files = req.files as {
+                [fieldname: string]: Express.Multer.File[]
+            };
+
+            let profileUrl: string | undefined;
+            let idProofFrontUrl: string | undefined;
+            let idProofBackUrl: string | undefined;
+
+            // Handle profile image upload
+            if (files['profileImage']) {
+                const profileImage = files['profileImage'][0];
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: `profile-images/collector/${Date.now()}_${profileImage.originalname}`,
+                    Body: profileImage.buffer,
+                    ContentType: profileImage.mimetype,
+                };
+
+                const command = new PutObjectCommand(s3Params);
+                await s3.send(command);
+
+                profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+            }
+
+            // Handle ID proof front image upload
+            if (files['idProofFront']) {
+                const idProofFront = files['idProofFront'][0];
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: `id-proofs/collector/${Date.now()}_front_${idProofFront.originalname}`,
+                    Body: idProofFront.buffer,
+                    ContentType: idProofFront.mimetype,
+                };
+
+                const command = new PutObjectCommand(s3Params);
+                await s3.send(command);
+
+                idProofFrontUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+            }
+
+            // Handle ID proof back image upload
+            if (files['idProofBack']) {
+                const idProofBack = files['idProofBack'][0];
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: `id-proofs/collector/${Date.now()}_back_${idProofBack.originalname}`,
+                    Body: idProofBack.buffer,
+                    ContentType: idProofBack.mimetype,
+                };
+
+                const command = new PutObjectCommand(s3Params);
+                await s3.send(command);
+
+                idProofBackUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+            }
 
             if (!userId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -231,28 +299,17 @@ export class CollcetorController implements ICollcetorController {
                 return;
             }
 
-            let profileUrl: string | undefined;
-
-            if (profileImage) {
-                const s3Params = {
-                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                    Key: `profile-images/collector/${Date.now()}_${profileImage.originalname}`,
-                    Body: profileImage.buffer,
-                    ContentType: profileImage.mimetype,
-                };
-
-                const command = new PutObjectCommand(s3Params);
-                const s3Response = await s3.send(command);
-
-                profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-            }
-
-            console.log("profileUrl ", profileUrl)
-
             const updatedData: Partial<ICollector> = {
                 name,
                 phone,
+                gender,
+                district,
+                serviceArea,
+                ...(idProofType && { idProofType }),
                 ...(profileUrl && { profileUrl }),
+                ...(idProofFrontUrl && { idProofFrontUrl }),
+                ...(idProofBackUrl && { idProofBackUrl }),
+                verificationStatus: 'requested'
             };
 
             const updatedUser = await this.collectorService.updateCollector(userId as string, updatedData);
@@ -262,13 +319,18 @@ export class CollcetorController implements ICollcetorController {
                     success: false,
                     message: 'User not found.',
                 });
+                return;
             }
 
             const collectorData = {
-                name: updatedUser?.name,
-                email: updatedUser?.email,
-                phone: updatedUser?.phone,
-                profileUrl: updatedUser?.profileUrl,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                district: updatedUser.district,
+                serviceArea: updatedUser.serviceArea,
+                profileUrl: updatedUser.profileUrl,
+                idProofType: updatedUser.idProofType,
+                verificationStatus: updatedUser.verificationStatus
             };
 
             res.status(HTTP_STATUS.OK).json({
@@ -283,4 +345,55 @@ export class CollcetorController implements ICollcetorController {
             });
         }
     }
+
+    async changePassword(req: Request, res: Response): Promise<void> {
+        try {
+            const collectorId = req.headers['x-user-id'];
+            const { currentPassword, newPassword } = req.body;
+            console.log("currentPassword:", currentPassword);
+            console.log("newPassword:", newPassword);
+
+            await this.collectorService.changePassword(collectorId as string, currentPassword, newPassword);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "Password changed successfully",
+            });
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            console.error("Error while changing password in controller : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getAvailableCollectors(req: Request, res: Response): Promise<void> {
+        try {
+
+
+        } catch (error: any) {
+
+
+
+            console.error("Error while getting available collectors : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
 }

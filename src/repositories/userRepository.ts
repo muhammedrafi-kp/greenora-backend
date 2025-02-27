@@ -17,7 +17,7 @@ class UserRepository extends BaseRepository<IUser> implements IUserRepository {
         }
     }
 
-    async findUserByEmail(email: string): Promise<IUser | null> {
+    async getUserByEmail(email: string): Promise<IUser | null> {
         try {
             return await this.findOne({ email });
         } catch (error) {

@@ -4,7 +4,7 @@ import { IUserService } from "../interfaces/user/IUserService";
 import { IUser } from "../models/User";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
-import { generateAccessToken, generateRefreshToken, verifyToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken } from "../utils/token";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
@@ -12,8 +12,8 @@ import bcrypt from "bcrypt";
 import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
-import { error } from "console";
 import userRepository from "../repositories/userRepository";
+import { TokenPayload } from "google-auth-library";
 
 configDotenv();
 
@@ -26,7 +26,7 @@ export class UserService implements IUserService {
 
     async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
-            const user = await this.userRepository.findUserByEmail(email);
+            const user = await this.userRepository.getUserByEmail(email);
             // userRepository.create()
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -61,7 +61,7 @@ export class UserService implements IUserService {
         try {
             const { email } = userData;
 
-            const existingUser = await this.userRepository.findUserByEmail(email);
+            const existingUser = await this.userRepository.getUserByEmail(email);
 
             if (existingUser) {
                 const error: any = new Error("Email already exists!");
@@ -165,28 +165,44 @@ export class UserService implements IUserService {
         }
     }
 
-    async handleGoogleAuth(userData: { name: string; email: string, profileUrl: string }): Promise<{ accessToken: string, refreshToken: string }> {
+    async handleGoogleAuth(credential: string): Promise<{ accessToken: string; refreshToken: string; user: IUser }> {
         try {
-            console.log("userData in service:", userData);
-            let user = await this.userRepository.findUserByEmail(userData.email);
+
+            const payload = await verifyGoogleToken(credential) as TokenPayload;
+
+            if (!payload || !payload.email) {
+                const error: any = new Error(MESSAGES.INVALID_INPUT);
+                error.status = HTTP_STATUS.UNAUTHORIZED;
+                throw error;
+            }
+
+
+            console.log("payload :", payload);
+
+            let user = await this.userRepository.getUserByEmail(payload.email);
+
+            console.log("user :", user);
 
             if (!user) {
-                user = await this.userRepository.createUser({
-                    name: userData.name,
-                    email: userData.email,
-                    phone: 'not-provided',
+                user  = await this.userRepository.createUser({
+                    name:payload.name,
+                    email:payload.email,
+                    phone: 'N/A',
                     password: '',
-                    profileUrl: userData.profileUrl,
-                    isBlocked: false,
+                    profileUrl:payload.picture,
+                    authProvider: "google",
                 });
             }
+
+            console.log("user :", user);
 
             const accessToken = generateAccessToken(user._id as string, 'user');
             const refreshToken = generateRefreshToken(user._id as string, 'user');
 
-            return { accessToken, refreshToken };
-        } catch (error: any) {
-            console.error("Error in handleGoogleAuth:", error.message);
+            return { accessToken, refreshToken, user };
+
+        } catch (error) {
+            console.error('Error while storing refreshToken :', error);
             throw error;
         }
     }
@@ -271,6 +287,36 @@ export class UserService implements IUserService {
             await this.userRepository.updateProfileUrl(userId, profileUrl);
 
             return profileUrl;
+        } catch (error: any) {
+            console.log("Error while fetching user data :", error.message);
+            throw error;
+        }
+    }
+
+    async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+        try {
+            const user = await this.userRepository.getUserById(userId);
+
+            console.log("user in service:", user);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            const isCorrectPassword = await bcrypt.compare(currentPassword, user.password);
+
+            if (!isCorrectPassword) {
+                const error: any = new Error(MESSAGES.INVALID_PASSWORD);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashedPassword;
+
+            await this.userRepository.updateById(userId, user);
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
             throw error;

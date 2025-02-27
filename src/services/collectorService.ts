@@ -5,7 +5,8 @@ import { ICollector } from "../models/Collector";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { generateAccessToken, generateRefreshToken,verifyToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken } from "../utils/token";
+import { TokenPayload } from "google-auth-library";
 import OTP from "otp-generator";
 import { sendOtp } from "../utils/mail";
 
@@ -17,7 +18,7 @@ export class CollectorService implements ICollectorService {
 
     async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector; }> {
         try {
-            const collector = await this.collectorRepository.findCollectorByEmail(email);
+            const collector = await this.collectorRepository.getCollectorByEmail(email);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -48,7 +49,7 @@ export class CollectorService implements ICollectorService {
         try {
             const { email } = collectorData;
 
-            const existingCollector = await this.collectorRepository.findCollectorByEmail(email);
+            const existingCollector = await this.collectorRepository.getCollectorByEmail(email);
 
             if (existingCollector) {
                 const error: any = new Error("Email already exists!");
@@ -97,7 +98,7 @@ export class CollectorService implements ICollectorService {
             // collectorData.serviceArea = 'not-provided';
 
             const collector = await this.collectorRepository.createCollector(collectorData);
-            console.log("collectorrrrrrrrrr:",collector)
+            console.log("collectorrrrrrrrrr:", collector)
 
             const accessToken = generateAccessToken(collector._id as string, 'collector');
             const refreshToken = generateRefreshToken(collector._id as string, 'collector');
@@ -124,9 +125,9 @@ export class CollectorService implements ICollectorService {
 
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
-            
+
             const decoded = verifyToken(token);
-            
+
             const user = await this.collectorRepository.getCollectorById(decoded.userId);
 
             if (!user) {
@@ -148,9 +149,56 @@ export class CollectorService implements ICollectorService {
         }
     }
 
+    async handleGoogleAuth(credential: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector; }> {
+        try {
+
+            const payload = await verifyGoogleToken(credential) as TokenPayload;
+
+            if (!payload || !payload.email) {
+                const error: any = new Error(MESSAGES.INVALID_INPUT);
+                error.status = HTTP_STATUS.UNAUTHORIZED;
+                throw error;
+            }
+
+
+            console.log("payload :", payload);
+
+            let collector = await this.collectorRepository.getCollectorByEmail(payload.email);
+
+            console.log("user :", collector);
+
+            if (!collector) {
+                collector = await this.collectorRepository.createCollector({
+                    name: payload.name,
+                    email: payload.email,
+                    phone: 'N/A',
+                    password: '',
+                    profileUrl: payload.picture,
+                    authProvider: "google",
+                });
+            }
+
+            console.log("collector :", collector);
+
+            const accessToken = generateAccessToken(collector._id as string, 'collector');
+            const refreshToken = generateRefreshToken(collector._id as string, 'collector');
+
+            return { accessToken, refreshToken, collector };
+
+        } catch (error) {
+            console.error('Error while storing refreshToken :', error);
+            throw error;
+        }
+    }
+
     async getCollector(id: string): Promise<ICollector> {
         try {
-            const collector = await this.collectorRepository.getCollectorById(id);
+            const projection = {
+                _id: 0,
+                password: 0,
+                __v: 0
+            }
+            const collector = await this.collectorRepository.findById(id, projection);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -180,6 +228,66 @@ export class CollectorService implements ICollectorService {
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
             throw error;
+        }
+    }
+
+
+    async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+        try {
+            const collector = await this.collectorRepository.getCollectorById(userId);
+
+            console.log("collector in service:", collector);
+
+            if (!collector) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            const isCorrectPassword = await bcrypt.compare(currentPassword, collector.password);
+
+            if (!isCorrectPassword) {
+                const error: any = new Error(MESSAGES.INVALID_PASSWORD);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            collector.password = hashedPassword;
+
+            await this.collectorRepository.updateCollectorById(userId, collector);
+        } catch (error: any) {
+            console.log("Error while changing collector password :", error.message);
+            throw error;
+        }
+    }
+
+    async getAvailableCollectors(serviceAreaId: string): Promise<{ success: boolean; collectors: ICollector[] }> {
+        try {
+            const filter = {
+                serviceArea: serviceAreaId,
+                availabilityStatus: "available",
+                $expr: { $lt: ["$currentTasks", "$maxCapacity"] }
+            }
+
+            const projection = {
+                collectorId: 1,
+                name: 1,
+                email: 1,
+                phone: 1,
+                availabilityStatus: 1,
+                currentTasks: 1,
+                maxCapacity: 1,
+            }
+            const collectors = await this.collectorRepository.find(filter, projection);
+
+            return {
+                success: true,
+                collectors
+            };
+        } catch (error: any) {
+            console.log("Error while fetching colloctors data :", error.message);
+            throw error
         }
     }
 };

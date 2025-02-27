@@ -1,11 +1,13 @@
 export const MESSAGES = {
     USER_CREATED: "User successfully created.",
+    LOGIN_SUCCESS:"Login successful.",
     USER_EXISTS: "User with this email already exists.",
     VERIFY_EMAIL: "Please verify your email before logging in.",
     SIGNUP_SESSION_EXPIRED: "Signup session expired. Please restart the process.",
     EMAIL_VERIFIED: "Email verified successfully!",
     USER_NOT_FOUND: "User not found.",
-    INVALID_PASSWORD: "Invalid password!",
+    INVALID_PASSWORD: "Invalid password.",
+    SAME_PASSWORD:"New password and current password cannot be the same.",
     INVALID_OTP:"Invalid OTP",
     ADMIN_CREATED: "Admin successfully created.",
     AGENT_CREATED: "Agent successfully registered.",
@@ -15,6 +17,13 @@ export const MESSAGES = {
     UNKNOWN_ERROR: "An unknown error occurred.",
     TOKEN_NOT_FOUND: "Token not found.",
     TOKEN_EXPIRED: "Token is expired.",
-    ACCESS_DENIED:"Access Denied."
+    ACCESS_DENIED:"Access Denied.",
+
+    GOOGLE_AUTH_SUCCESS: "Google authentication successful.",
+    GOOGLE_AUTH_FAILED: "Google authentication failed. Please try again.",
+    GOOGLE_AUTH_USER_NOT_FOUND: "No user associated with this Google account.",
+    GOOGLE_AUTH_EMAIL_NOT_VERIFIED: "Google email is not verified. Please verify it first.",
+    GOOGLE_AUTH_TOKEN_INVALID: "Invalid Google authentication token.",
+    GOOGLE_AUTH_TOKEN_EXPIRED: "Google authentication token has expired.",
 };
 

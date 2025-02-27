@@ -14,9 +14,9 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    async findById(id: string | Types.ObjectId): Promise<T | null> {
+    async findById(id: string | Types.ObjectId, projection?: Record<string, number>): Promise<T | null> {
         try {
-            return await this.model.findById(id);
+            return await this.model.findById(id,projection);
         } catch (error) {
             throw new Error(`FindById failed: ${error instanceof Error ? error.message : String(error)}`);
         }

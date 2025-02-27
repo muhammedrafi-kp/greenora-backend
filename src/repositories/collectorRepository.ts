@@ -1,5 +1,5 @@
 import { BaseRepository } from "./baseRepository";
-import Collector, { ICollector } from "../models/Collector";
+import Collector, { ICollector, Counter } from "../models/Collector";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 
 class CollectorRepository extends BaseRepository<ICollector> implements ICollectorRepository {
@@ -10,6 +10,14 @@ class CollectorRepository extends BaseRepository<ICollector> implements ICollect
 
     async createCollector(collectorData: ICollector): Promise<ICollector> {
         try {
+            const counter = await Counter.findOneAndUpdate(
+                { name: "collectorId" },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true }
+            );
+
+            collectorData.collectorId = `COL${counter.seq}`;
+
             return await this.model.create(collectorData);
         } catch (error: unknown) {
             throw new Error(`Error while creating user : ${error instanceof Error ? error.message : String(error)}`);
@@ -17,7 +25,7 @@ class CollectorRepository extends BaseRepository<ICollector> implements ICollect
     }
 
 
-    async findCollectorByEmail(email: string): Promise<ICollector | null> {
+    async getCollectorByEmail(email: string): Promise<ICollector | null> {
         try {
             return await this.model.findOne({ email });
         } catch (error) {
@@ -40,7 +48,11 @@ class CollectorRepository extends BaseRepository<ICollector> implements ICollect
                 email: 1,
                 phone: 1,
                 profileUrl: 1,
+                idProofFrontUrl: 1,
+                idProofBackUrl: 1,
+                district: 1,
                 serviceArea: 1,
+                verificationStatus: 1,
                 isVerified: 1,
                 isBlocked: 1
             };

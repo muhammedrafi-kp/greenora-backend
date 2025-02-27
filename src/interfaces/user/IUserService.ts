@@ -6,8 +6,9 @@ export interface IUserService {
     verifyOtp(email: string, otp: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }>;
     validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }>;
     resendOtp(email: string): Promise<void>;
-    handleGoogleAuth(userData: { name: string; email: string, profileUrl: string }): Promise<{ accessToken: string, refreshToken: string }>;
+    handleGoogleAuth(credential: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }>;
     getUser(userId: string): Promise<IUser>;
     updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<IUser | null>;
     uploadProfileImage(userId: string, file: Express.Multer.File | undefined): Promise<string | null>;
+    changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
 }

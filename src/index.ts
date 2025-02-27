@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import { configDotenv } from 'dotenv';
-import { connectToRedis, logRedisData } from './config/redisConfig'
 import morgan from 'morgan';
 import winston from 'winston';
 import cookieParser from 'cookie-parser';
@@ -8,6 +7,8 @@ import session from 'express-session';
 
 import passportConfig from "./config/passportConfig"
 import connectDB from './config/dbConfig';
+import startGrpcServer from './gRPC/grpcServer';
+import { connectToRedis, logRedisData } from './config/redisConfig'
 
 import userRoutes from './routes/userRoutes';
 import collectorRoutes from './routes/collectorRoutes';
@@ -37,8 +38,8 @@ const app = express();
 
 app.use(morgan('combined', { stream }));
 
-
 connectDB();
+startGrpcServer();
 connectToRedis();
 
 // app.use(morgan('dev'));

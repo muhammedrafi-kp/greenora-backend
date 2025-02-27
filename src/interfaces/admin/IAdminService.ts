@@ -9,6 +9,8 @@ export interface IAdminService {
     // getUsers(search: string, filter: string, sort: string, page: number, limit: number): Promise<IUser[]>;
     getUsers(): Promise<IUser[]>;
     getCollectors(): Promise<ICollector[]>;
+    getVerificationRequests(): Promise<ICollector[]>;
+    updateVerificationStatus(id: string, status: string): Promise<ICollector | null>;
     updateUserStatus(id: string): Promise<string>;
     updateCollectorStatus(id: string): Promise<string>;
 }

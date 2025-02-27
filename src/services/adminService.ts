@@ -112,8 +112,30 @@ export class AdminService implements IAdminService {
         }
     }
 
+    async getVerificationRequests(): Promise<ICollector[]> {
+        try {
+            const query = { verificationStatus: 'requested' };
+            return this.collectorRepository.find(query);
+        } catch (error) {
+            console.error('Error while fetching verification requests:', error);
+            throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
+    async updateVerificationStatus(id: string, status: string): Promise<ICollector | null> {
+        try {
+            if(status === 'approve') status = 'approved';
+            if(status === 'reject') status = 'rejected';
+            return this.collectorRepository.updateById(id, { verificationStatus: status });
+        } catch (error) {
+            console.error('Error while updating verification status:', error);
+            throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
     async updateUserStatus(id: string): Promise<string> {
         try {
+            
             const user = await this.userRepository.getUserById(id);
 
             if (!user) {

@@ -16,10 +16,10 @@ export const validateAdmin = (req: Request, res: Response, next: NextFunction): 
     const userId = req.headers['x-user-id'];
     const role = req.headers['x-role'];
     if (!userId || role !== 'admin') {
-         res.status(HTTP_STATUS.FORBIDDEN).json({ message: MESSAGES.ACCESS_DENIED });
-         return;
+        res.status(HTTP_STATUS.FORBIDDEN).json({ message: MESSAGES.ACCESS_DENIED });
+        return;
     }
-    
+
     next();
 };
 
@@ -27,9 +27,10 @@ export const validateCollector = (req: Request, res: Response, next: NextFunctio
     const userId = req.headers['x-user-id'];
     const role = req.headers['x-role'];
     if (!userId || role !== 'collector') {
-         res.status(HTTP_STATUS.FORBIDDEN).json({ message: MESSAGES.ACCESS_DENIED });
-         return;
+        res.status(HTTP_STATUS.FORBIDDEN).json({ message: MESSAGES.ACCESS_DENIED });
+        return;
     }
-    
+
     next();
 };
+

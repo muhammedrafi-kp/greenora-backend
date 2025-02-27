@@ -20,9 +20,7 @@ export class UserController implements IUserController {
             const { email, password } = req.body;
 
             if (!email || !password) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    message: 'Email and password are required.',
-                });
+                res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email and password are required.' });
                 return;
             }
 
@@ -40,7 +38,7 @@ export class UserController implements IUserController {
             console.log("Login successfull!");
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Login successful!",
+                message: MESSAGES.LOGIN_SUCCESS,
                 token: accessToken,
                 role: "user",
                 data: userData
@@ -103,6 +101,7 @@ export class UserController implements IUserController {
                 success: true,
                 message: "OTP verification successful, user created!",
                 token: accessToken,
+                role: "user",
                 data: userData
             });
 
@@ -176,261 +175,34 @@ export class UserController implements IUserController {
         }
     }
 
-    // async googleAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-    //     try {
-    //         passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
-    //     } catch (error) {
-    //         console.log("Error in controller googleAuth:",error);
-    //         next(error);  // Pass errors to the next middleware (error handler)
-    //     }
-    // }
-
-    // async googleAuthCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
-    //     passport.authenticate('google', async (error:any, userData: any) => {
-    //         if (error || !userData) {
-    //             return res.status(401).json({ message: "Authentication failed" });
-    //         }
-
-    //         try {
-    //             // Call userService to handle Google Auth logic
-    //             const { accessToken, refreshToken } = await this.userService.handleGoogleAuth(userData);
-
-    //             res.cookie("refreshToken", refreshToken, {
-    //                 httpOnly: true,
-    //                 secure: process.env.NODE_ENV === "production",
-    //                 maxAge: 24 * 60 * 60 * 1000, // 1 day
-    //             });
-
-    //             res.status(200).json({
-    //                 success: true,
-    //                 message: "Authentication successful",
-    //                 token: accessToken,
-    //             });
-    //         } catch (err) {
-    //             console.error("Error in googleAuthCallback:", err);
-    //             next(err);
-    //         }
-    //     })(req, res, next);
-    // }
-
-    async googleAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
-            passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
-        } catch (error) {
-            console.log("Error in controller googleAuth:", error);
-            next(error); // Pass errors to the next middleware (error handler)
+            const { credential } = req.body;
+            const { accessToken, refreshToken, user: { name, email } } = await this.userService.handleGoogleAuth(credential);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            const userData = { name, email };
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
+                token: accessToken,
+                role: "user",
+                data: userData
+            });
+
+        } catch (error: any) {
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message
+            });
         }
-    }
-
-    // async googleAuthCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
-    //     passport.authenticate('google', async (error: any, userData: any) => {
-    //         if (error || !userData) {
-    //             return res.redirect('/user/google/failure'); // Redirect to failure page
-    //         }
-
-    //         try {
-    //             // Call userService to handle Google Auth logic
-    //             const { accessToken, refreshToken } = await this.userService.handleGoogleAuth(userData);
-
-    //             // Set cookies or send token
-    //             res.cookie("refreshToken", refreshToken, {
-    //                 httpOnly: true,
-    //                 secure: process.env.NODE_ENV === "production",
-    //                 maxAge: 24 * 60 * 60 * 1000, // 1 day
-    //             });
-
-    //             // Redirect to success page
-    //             return res.redirect(`/user/google/success?token=${accessToken}`);
-    //         } catch (err) {
-    //             console.error("Error in googleAuthCallback:", err);
-    //             next(err);
-    //         }
-    //     })(req, res, next);
-    // }
-
-    // googleAuthSuccess(req: Request, res: Response): void {
-    //     const { token } = req.query;
-
-    //     if (!token) {
-    //         res.status(400).json({ message: "Missing access token" });
-    //         return;
-    //     }
-
-    //     // res.status(200).json({
-    //     //     success: true,
-    //     //     message: "Authentication successful",
-    //     //     token: token,
-    //     // });
-
-    //     // return res.redirect(
-    //     //     `http://localhost:5173//?token=${token}`
-    //     // );
-
-    //     const html = `
-    //     <!DOCTYPE html>
-    //     <html>
-    //         <body>
-    //             <script>
-    //                 window.opener.postMessage(
-    //                     { 
-    //                         type: "GOOGLE_AUTH_SUCCESS", 
-    //                         token: "${token}" 
-    //                     }, 
-    //                     "http://localhost:5173"  // Your frontend origin
-    //                 );
-    //                 window.close();
-    //             </script>
-    //         </body>
-    //     </html>
-    // `;
-
-    //     res.send(html);
-
-
-    // }
-
-    // googleAuthFailure(req: Request, res: Response): void {
-    //     // res.status(401).json({
-    //     //     success: false,
-    //     //     message: "Authentication failed. Please try again.",
-    //     // });
-
-    //     const html = `
-    //         <!DOCTYPE html>
-    //         <html>
-    //             <body>
-    //                 <script>
-    //                     window.opener.postMessage(
-    //                         { 
-    //                             type: "GOOGLE_AUTH_FAILURE",
-    //                             error: "Authentication failed"
-    //                         }, 
-    //                         "http://localhost:5173"  // Your frontend origin
-    //                     );
-    //                     window.close();
-    //                 </script>
-    //             </body>
-    //         </html>
-    //     `;
-
-    //     res.send(html);
-    // }
-
-    // Backend: UserController
-    async googleAuthCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
-        passport.authenticate('google', async (error: any, userData: any) => {
-            if (error || !userData) {
-                // Use relative path
-                return res.redirect('/user/google/failure');
-            }
-
-            try {
-                const { accessToken, refreshToken } = await this.userService.handleGoogleAuth(userData);
-
-                res.cookie("refreshToken", refreshToken, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === "production",
-                    maxAge: 24 * 60 * 60 * 1000,
-                    sameSite: 'lax',  // Add this for better cookie security
-                });
-
-                // Use relative path and encrypt token in state
-                return res.redirect(`/user/google/success?token=${accessToken}`);
-            } catch (err) {
-                console.error("Error in googleAuthCallback:", err);
-                next(err);
-            }
-        })(req, res, next);
-    }
-
-    googleAuthSuccess(req: Request, res: Response): void {
-        const { token } = req.query;
-
-        if (!token) {
-            res.status(400).json({ message: "Missing access token" });
-            return;
-        }
-
-        const html = `
-        <!DOCTYPE html>
-        <html>
-            <body>
-                <script>
-                    function handleAuth() {
-                        const token = "${token}";
-                        
-                        // Try postMessage first
-                        if (window.opener) {
-                            try {
-                                window.opener.postMessage(
-                                    { 
-                                        type: "GOOGLE_AUTH_SUCCESS", 
-                                        token: token 
-                                    }, 
-                                    "http://localhost:5173"
-                                );
-                                window.close();
-                                return;
-                            } catch (err) {
-                                console.log('PostMessage failed, trying fallback');
-                            }
-                        }
-                        
-                        // Fallback: Use localStorage
-                        try {
-                            localStorage.setItem('tempAuthToken', token);
-                            window.location.href = 'http://localhost:5173';
-                        } catch (err) {
-                            console.error('Auth fallback failed:', err);
-                            document.body.innerHTML = 'Authentication Error. Please try again.';
-                        }
-                    }
-
-                    // Execute immediately
-                    handleAuth();
-                </script>
-                <p>Completing authentication...</p>
-            </body>
-        </html>
-    `;
-
-        res.send(html);
-    }
-
-    googleAuthFailure(req: Request, res: Response): void {
-        const html = `
-        <!DOCTYPE html>
-        <html>
-            <body>
-                <script>
-                    function handleFailure() {
-                        if (window.opener) {
-                            try {
-                                window.opener.postMessage(
-                                    { 
-                                        type: "GOOGLE_AUTH_FAILURE",
-                                        error: "Authentication failed"
-                                    }, 
-                                    "http://localhost:5173"
-                                );
-                                window.close();
-                                return;
-                            } catch (err) {
-                                console.log('PostMessage failed');
-                            }
-                        }
-                        // Fallback: redirect to error page
-                        window.location.href = 'http://localhost:5173/auth-error';
-                    }
-
-                    handleFailure();
-                </script>
-                <p>Authentication failed. Redirecting...</p>
-            </body>
-        </html>
-    `;
-
-        res.send(html);
     }
 
     async getUser(req: Request, res: Response): Promise<void> {
@@ -459,7 +231,8 @@ export class UserController implements IUserController {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
                     message: error.message
-                })
+                });
+                return;
             }
 
             console.error("Error while fetching user data in controller : ", error.message);
@@ -550,5 +323,41 @@ export class UserController implements IUserController {
         }
     }
 
+    async changePassword(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.headers['x-user-id'];
+            const { currentPassword, newPassword } = req.body;
+            console.log("currentPassword:", currentPassword);
+            console.log("newPassword:", newPassword);
+
+            await this.userService.changePassword(userId as string, currentPassword, newPassword);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: "Password changed successfully",
+            });
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            console.error("Error while changing password in controller : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
 
 }

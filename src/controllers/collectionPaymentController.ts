@@ -43,6 +43,9 @@ export class CollectionPaymentController implements ICollectionPaymentController
             const userId = req.headers['x-user-id'];
             const razorpayVerificationData = req.body;
 
+            console.log("userId :",userId);
+            console.log("razorpayVerificationData :",razorpayVerificationData)
+
             const response = await this.collectionPaymentService.verifyPayment(userId as string,razorpayVerificationData);
 
             if (!response) {

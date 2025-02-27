@@ -15,7 +15,6 @@ logs/
 # Dependency directories (for server-side tools)
 jspm_packages/
 
-
 # npm-debug logs
 npm-debug.log*
 

@@ -53,14 +53,15 @@ export class CollectionPaymentService implements ICollectionPaymentService {
     async verifyPayment(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<boolean> {
         try {
 
-            const response: { success: boolean; message: string } = await new Promise((resolve, reject) => {
-                collectionClient.CreateCollection(userId), (error: any, response: any) => {
-                    if (error) {
-                        reject(error)
-                    }
+            console.log("verifyPayment in service")
 
+            const response: { success: boolean; message: string } = await new Promise((resolve, reject) => {
+                collectionClient.CreateCollection({userId}, (error: any, response: any) => {
+                    if (error) {
+                        return reject(error);
+                    }
                     resolve(response);
-                }
+                });
             });
 
             console.log("response from grpc :", response)
@@ -75,7 +76,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
             return generatedSignature === razorpay_signature;
 
         } catch (error: any) {
-            console.error('Error while validating collection data:', error.message);
+            console.error('Error while verifying payment   ', error.message);
             throw error;
         }
     }

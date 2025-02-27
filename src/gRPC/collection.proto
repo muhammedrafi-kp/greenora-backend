@@ -44,9 +44,10 @@ message validateCollectionDataResponse {
 }
 
 message createCollectionRequest {
-
+  string userId = 1;
 }
 
 message createCollectionResponse {
-  
+  bool success = 1;
+  string message = 2;
 }

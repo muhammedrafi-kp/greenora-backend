@@ -30,6 +30,7 @@ server.addService(collectionProto.collectionService.service, {
             const userId = call.request.userId;
             const collectionData = call.request.collectionData;
             const response = await collectionService.validateCollectionData(userId, collectionData);
+            console.log("response in grpc server :",response);
             callback(null, response);
         } catch (error: any) {
             console.error("Error in ValidateCollectionData:", error.message);
@@ -55,12 +56,9 @@ server.addService(collectionProto.collectionService.service, {
 });
 
 const startGrpcServer = () => {
-
-
     server.bindAsync(`0.0.0.0:${process.env.GRPC_PORT}`, grpc.ServerCredentials.createInsecure(), () => {
-        console.log(`✅ gRPC Server is running on port ${process.env.GRPC_PORT}`);
+        console.log(`gRPC Server is running on port ${process.env.GRPC_PORT} ✅`);
     });
-
 };
 
 export default startGrpcServer;

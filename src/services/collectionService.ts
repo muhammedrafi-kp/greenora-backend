@@ -7,6 +7,8 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import { v4 as uuidv4 } from 'uuid';
 
+import collectorsClient from "../gRPC/grpcClient";
+
 export class CollectionService implements ICollectionservice {
     constructor(
         private collectionRepository: ICollectionRepository,
@@ -56,12 +58,11 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async createCollectionRequest(userId: string): Promise<ICollection> {
+    async createCollectionRequest(userId: string): Promise<{ success: boolean, message: string, data: ICollection }> {
         try {
-
+            console.log("userId in collection service!!:", userId);
             let collectionData: ICollection | null = await this.redisRepository.get(userId);
 
-            // Check if collectionData exists
             if (!collectionData) {
                 throw new Error(`No collection data found in Redis for userId: ${userId}`);
             }
@@ -73,7 +74,11 @@ export class CollectionService implements ICollectionservice {
             // Store collection data in the main repository (DB)
             const collection = await this.collectionRepository.create(collectionData);
 
-            return collection;
+            return {
+                success: true,
+                message: MESSAGES.COLLECTION_CREATED,
+                data: collection
+            };
         } catch (error) {
             console.error('Error while creating pickup request:', error);
             throw error;
@@ -98,5 +103,48 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
+    async getAvailableCollectors(serviceAreaId: string): Promise<{ success: true, collectors: object[] }> {
+        try {
+            const response: { success: boolean; collectors: object[] } = await new Promise((resolve, reject) => {
+                collectorsClient.GetAvailableCollectors({ serviceAreaId }, (error: any, response: any) => {
+                    if (error) {
+                        return reject(error)
+                    }
 
+                    resolve(response);
+                });
+            });
+            console.log("response in collection controller :", response);
+            if (!response.success) {
+                throw new Error("getting collectors failed!");
+            }
+
+            return {
+                success: true,
+                collectors: response.collectors
+            }
+        } catch (error) {
+            console.error('Error while fetching available collectors:', error);
+            throw error;
+        }
+    }
+
+
+    async processPendingRequests(): Promise<void> {
+        try {
+            const pendingRequests = await this.collectionRepository.getPendingRequests();
+        } catch (error) {
+            console.error('Error while fetching available collectors:', error);
+            throw error;
+        }
+    }
+
+    async assignCollectorToRequest(request: ICollection): Promise<void> {
+        try {
+            
+        } catch (error) {
+            console.error('Error while fetching available collectors:', error);
+            throw error;
+        }
+    }
 }

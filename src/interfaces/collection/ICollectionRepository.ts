@@ -3,5 +3,5 @@ import { IBaseRepository } from "../baseRepository/IBaseRepository";
 
 
 export interface ICollectionRepository extends IBaseRepository<ICollection>{
-    
+    getPendingRequests(): Promise<ICollection[]>
 }

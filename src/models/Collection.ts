@@ -21,10 +21,23 @@ export interface ICollection extends Document {
         locality: string;
         addressLine: string;
     };
+    location: {
+        lat: number;
+        long: number;
+        updatedAt: Date;
+    };
     advancePayment: number;
+    paymentId: string;
     paymentStatus: "pending" | "paid" | "failed";
     status: "pending" | "scheduled" | "cancelled" | "completed";
     scheduledAt: Date;
+    collectionProof: string;
+    userFeedback: {
+        rating: number;
+        command: string;
+    };
+    cancellationReason: string;
+
 }
 
 const requestSchema = new Schema<ICollection>(
@@ -53,10 +66,22 @@ const requestSchema = new Schema<ICollection>(
             lat: { type: Number },
             long: { type: Number }
         },
+        location: {
+            lat: { type: Number },
+            long: { type: Number },
+            updatedAt: { type: Date }
+        },
         advancePayment: { type: Number, default: 50 },
+        paymentId: { type: String, required: true },
         paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
         status: { type: String, enum: ["pending", "scheduled", "cancelled", "completed"], default: "pending" },
         scheduledAt: { type: Date },
+        collectionProof: { type: String },
+        userFeedback: {
+            rating: { type: Number, min: 1, max: 5 },
+            comment: { type: String }
+        },
+        cancellationReason: { type: String }
     },
     { timestamps: true }
 );

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package collectors;
+
+service collectorService {
+  rpc GetAvailableCollectors (collectorsRequest) returns (collectorsResponse);
+}
+
+message collectorsRequest {
+  string serviceAreaId = 1;
+}
+
+message collectorsResponse {
+  bool success = 1;
+  repeated Collector collectors = 2;
+}
+
+message Collector {
+  string collectorId = 1;
+  string name = 2;
+  string email = 3;
+  string phone = 4;
+  string availabilityStatus = 5;
+  string currentTasks = 6;
+  string maxCapacity = 7;
+}
+
+

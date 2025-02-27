@@ -12,7 +12,7 @@ export class CollectionController implements ICollectionController {
 
       const userId = req.headers['x-user-id'];
       const collectionData = { ...req.body, userId };
-      
+
       console.log("collectionData", collectionData);
 
       const collection = await this.collectionService.createCollectionRequest(collectionData);
@@ -50,6 +50,20 @@ export class CollectionController implements ICollectionController {
     try {
       const collectionHistories = await this.collectionService.getCollectionHistories();
       res.status(HTTP_STATUS.OK).json({ success: true, data: collectionHistories });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
+
+  async getAvailableCollectors(req: Request, res: Response): Promise<void> {
+    try {
+      const { serviceAreaId } = req.params;
+      const { success, collectors } = await this.collectionService.getAvailableCollectors(serviceAreaId);
+
+      res.status(HTTP_STATUS.OK).json({
+        success,
+        collectors
+      });
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }

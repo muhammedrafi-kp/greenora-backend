@@ -7,9 +7,9 @@ import { MESSAGES } from "../constants/messages";
 export class CategoryService implements ICategoryService {
     constructor(private categoryRepository: ICategoryRepository) { };
 
-    async createCategory(data: Partial<ICategory>): Promise<ICategory> {
+    async createCategory(categoryData: Partial<ICategory>): Promise<ICategory> {
         try {
-            return await this.categoryRepository.create(data);
+            return await this.categoryRepository.create(categoryData);
         } catch (error) {
             console.error('Error while creating category:', error);
             throw error;
@@ -75,7 +75,7 @@ export class CategoryService implements ICategoryService {
             for (const category of categoryData) {
                 const categoryData = await this.categoryRepository.findById(category.categoryId);
 
-                if(categoryData){
+                if (categoryData) {
                     totalCost += categoryData.rate * Number(category.qty);
                 }
             }

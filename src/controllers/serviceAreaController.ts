@@ -204,4 +204,24 @@ export class ServiceAreaController implements IServiceAreaController {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
+
+    async getDistrictWithServiceArea(req: Request, res: Response): Promise<void> {
+        try {
+            const { districtId, serviceAreaId } = req.params;
+
+            console.log(districtId,serviceAreaId);
+
+            const { district, serviceArea } = await this.serviceAreaService.getDistrictWithServiceArea(districtId, serviceAreaId);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                district,
+                serviceArea
+            });
+
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
 }

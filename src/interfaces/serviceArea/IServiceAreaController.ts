@@ -10,4 +10,5 @@ export interface IServiceAreaController {
     getServiceAreas(req: Request, res: Response): Promise<void>;
     updateServiceArea(req: Request, res: Response): Promise<void>;
     isServiceAvailable(req: Request, res: Response): Promise<void>;
+    getDistrictWithServiceArea(req: Request, res: Response): Promise<void>;
 }

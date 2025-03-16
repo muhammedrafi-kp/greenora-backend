@@ -34,7 +34,7 @@ export class AddressService implements IAddressService {
 
     async getAddresses(userId: string): Promise<IAddress[] | null> {
         try {
-            return await this.addressRepository.getAddressesByUserId(userId);
+            return await this.addressRepository.find({ userId });
         } catch (error) {
             console.error('Error while finding addresses:', error);
             throw error;

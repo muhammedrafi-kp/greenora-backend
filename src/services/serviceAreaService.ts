@@ -104,7 +104,28 @@ export class ServiceAreaService implements IServiceAreaService {
             return await this.serviceAreaRepository.findOne(query);
 
         } catch (error) {
-            console.error('Error while finding district with serviceAreas:', error);
+            console.error('Error while checking availability:', error);
+            throw error;
+        }
+    }
+
+    async getDistrictWithServiceArea(districtId: string, serviceAreaId: string): Promise<{ district: IDistrict; serviceArea: IServiceArea; }> {
+        try {
+
+            const district = await this.districtRepository.findById(districtId);
+            if (!district) {
+                throw new Error(`District with ID ${districtId} not found`);
+            }
+
+            const serviceArea = await this.serviceAreaRepository.findById(serviceAreaId);
+            if (!serviceArea) {
+                throw new Error(`Service Area with ID ${serviceAreaId} not found`);
+            }
+
+            return { district, serviceArea };
+
+        } catch (error) {
+            console.error('Error while finding district with serviceArea:', error);
             throw error;
         }
     }

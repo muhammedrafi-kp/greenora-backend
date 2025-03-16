@@ -71,6 +71,8 @@ export class AddressController implements IAddressController {
         try {
             const userId = req.headers['x-user-id'];
 
+            console.log("user Id:",userId);
+
             const addresses = await this.addressService.getAddresses(userId as string);
 
             if (!addresses) {

@@ -8,10 +8,6 @@ import { configDotenv } from "dotenv";
 
 configDotenv();
 
-const CASHFREE_BASE_URL = "https://sandbox.cashfree.com/pg/orders"; // Test mode
-const APP_ID = process.env.CASHFREE_APP_ID || "";
-const SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "";
-
 export class CategoryController implements ICategoryController {
 
     constructor(private categoryService: ICategoryService) { };
@@ -29,9 +25,9 @@ export class CategoryController implements ICategoryController {
                 data: category
             });
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -53,9 +49,9 @@ export class CategoryController implements ICategoryController {
                 });
             }
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -84,9 +80,9 @@ export class CategoryController implements ICategoryController {
             });
 
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -111,9 +107,9 @@ export class CategoryController implements ICategoryController {
                 data: updatedCategory
             });
 
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -139,12 +135,12 @@ export class CategoryController implements ICategoryController {
             if (error.status === HTTP_STATUS.GONE) {
                 res.status(HTTP_STATUS.GONE).json({
                     success: false,
-                    message: error.message
+                    message: error instanceof Error ? error.message : String(error)
                 })
             };
 
             console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -166,9 +162,9 @@ export class CategoryController implements ICategoryController {
                 success: true,
                 data: estimatedCost
             });
-        } catch (error: any) {
+        } catch (error) {
             console.error("Error during calculate cost:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
 
@@ -213,9 +209,9 @@ export class CategoryController implements ICategoryController {
     //             data: response.data
     //         });
 
-    //     } catch (error: any) {
+    //     } catch (error) {
     //         console.error("Error during initiate payment:", error.message);
-    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
     //     }
     // }
 }

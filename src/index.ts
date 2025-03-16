@@ -5,7 +5,7 @@ import morgan from "morgan";
 import connectDB from './config/dbConfig';
 import startGrpcServer from "./gRPC/grpcServer";
 import { connectToRedis, logRedisData } from './config/redisConfig'
-import "./crone";
+// import "./crone";
 
 import categoryRoutes from "../src/routes/categoryRoutes";
 import collectionRoutes from "./routes/collectionRoutes";
@@ -29,5 +29,5 @@ app.use('/collection', collectionRoutes);
 // });
 
 app.listen(process.env.PORT, () => {
-    console.log(`Collection-Service is running on port ${process.env.PORT}`);
+    console.log(`collection-Service is running on port ${process.env.PORT} ✅`);
 });

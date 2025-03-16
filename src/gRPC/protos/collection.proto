@@ -14,21 +14,21 @@ message validateCollectionDataRequest {
 
 message CollectionData {
   string type = 1; // "waste" or "scrap"
-  Address address = 2;
-  repeated Item items = 3;
-  double estimatedCost = 4;
-  string preferredDate = 5;
-  optional string instructions = 6;
+  string districtId = 2;
+  string serviceAreaId = 3;
+  Address address = 4;
+  repeated Item items = 5;
+  double estimatedCost = 6;
+  string preferredDate = 7;
+  optional string instructions = 8;
 }
 
 message Address {
   string name = 1;
   string mobile = 2;
-  string district = 3;
-  string serviceArea = 4;
-  string pinCode = 5;
-  string locality = 6;
-  string addressLine = 7;
+  string pinCode = 3;
+  string locality = 4;
+  string addressLine = 5;
 }
 
 message Item {  

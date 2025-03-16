@@ -5,16 +5,13 @@ import { CollectionController } from "./controllers/collectionController";
 import categoryRepository from "./repositories/categoryRepository";
 import redisRepository from "./repositories/redisRepository";
 
-const collectionService = new CollectionService(collectionRepository,categoryRepository,redisRepository);
+const collectionService = new CollectionService(collectionRepository, categoryRepository, redisRepository);
 
-cron.schedule("0 0 * * *",async ()=>{
+// "0 0 * * *"
+cron.schedule("*/5 * * * * *", async () => {
     try {
         await collectionService.processPendingRequests()
-    } catch (error) {
-        
+    } catch (error:any) {
+        console.error("Error processing pending requests:", error.message);
     }
 })
-
-// cron.schedule("*/3 * * * * *",()=>{
-//     console.log("Cron job running every 3 seconds: ", new Date().toLocaleString());
-// })

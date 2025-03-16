@@ -1,12 +1,16 @@
-import { Types, Schema, model, Document, Decimal128 } from "mongoose";
+import mongoose,{ Types, Schema, model, Document, Decimal128 } from "mongoose";
 
 export interface ICollection extends Document {
     userId: string;
     collectionId: string;
     collectorId?: Types.ObjectId;
     type: "waste" | "scrap";
+    districtId: string,
+    serviceAreaId: string,
     items: {
         categoryId: Types.ObjectId;
+        name: string;
+        rate: number;
         qty: number;
     }[];
     estimatedCost: number;
@@ -15,8 +19,6 @@ export interface ICollection extends Document {
     address: {
         name: string;
         mobile: string;
-        district: string;
-        serviceArea: string;
         pinCode: string;
         locality: string;
         addressLine: string;
@@ -26,9 +28,10 @@ export interface ICollection extends Document {
         long: number;
         updatedAt: Date;
     };
-    advancePayment: number;
+    // advancePaymentAmount: number;
+    // advancePaymentStatus: string;
     paymentId: string;
-    paymentStatus: "pending" | "paid" | "failed";
+    // paymentStatus: "pending" | "paid" | "failed";
     status: "pending" | "scheduled" | "cancelled" | "completed";
     scheduledAt: Date;
     collectionProof: string;
@@ -37,18 +40,23 @@ export interface ICollection extends Document {
         command: string;
     };
     cancellationReason: string;
-
+    proofs: string[];
 }
 
-const requestSchema = new Schema<ICollection>(
+const collectionSchema = new Schema<ICollection>(
     {
         userId: { type: String, required: true },
         collectionId: { type: String, required: true },
-        collectorId: { type: Schema.Types.ObjectId, ref: "Collector" },
+        collectorId: { type: mongoose.Schema.Types.ObjectId, ref: "Collector" },
         type: { type: String, enum: ["waste", "scrap"], required: true },
+        districtId: { type: String, required: true },
+        serviceAreaId: { type: String, required: true },
         items: [
             {
-                categoryId: { type: Schema.Types.ObjectId, required: true },
+                _id: false,
+                categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+                name: { type: String, required: true },
+                rate: { type: Number, required: true },
                 qty: { type: Number, required: true },
             }
         ],
@@ -58,8 +66,6 @@ const requestSchema = new Schema<ICollection>(
         address: {
             name: { type: String, required: true },
             mobile: { type: String, required: true },
-            district: { type: String, required: true },
-            serviceArea: { type: String, required: true },
             pinCode: { type: String, required: true },
             locality: { type: String, required: true },
             addressLine: { type: String, required: true },
@@ -71,9 +77,10 @@ const requestSchema = new Schema<ICollection>(
             long: { type: Number },
             updatedAt: { type: Date }
         },
-        advancePayment: { type: Number, default: 50 },
-        paymentId: { type: String, required: true },
-        paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
+        // advancePaymentAmount: { type: Number, default: 50 },
+        // advancePaymentStatus: { type: String, enum: ["success", "failed"] },
+        paymentId: { type: String },
+        // paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
         status: { type: String, enum: ["pending", "scheduled", "cancelled", "completed"], default: "pending" },
         scheduledAt: { type: Date },
         collectionProof: { type: String },
@@ -81,10 +88,11 @@ const requestSchema = new Schema<ICollection>(
             rating: { type: Number, min: 1, max: 5 },
             comment: { type: String }
         },
-        cancellationReason: { type: String }
+        cancellationReason: { type: String },
+        proofs: { type: [String] }
     },
     { timestamps: true }
 );
 
-const Collection = model<ICollection>("Collection", requestSchema);
+const Collection = model<ICollection>("Collection", collectionSchema);
 export default Collection;

@@ -5,8 +5,7 @@ import collectionRepository from "../repositories/collectionRepository";
 import categoryRepository from "../repositories/categoryRepository";
 import redisRepository from "../repositories/redisRepository";
 // import path from "path";
-
-const PROTO_PATH = './src/gRPC/collection.proto';
+const PROTO_PATH = './src/gRPC/protos/collection.proto';
 
 const options = {
     keepCase: true,
@@ -43,7 +42,7 @@ server.addService(collectionProto.collectionService.service, {
     CreateCollection: async (call: any, callback: any) => {
         try {
             console.log("Received paynent data:", call.request);
-            const response = await collectionService.createCollectionRequest(call.request);
+            const response = await collectionService.createCollectionRequest(call.request.userId);
             callback(null, response);
         } catch (error: any) {
             console.error("Error in ValidateCollectionData:", error.message);

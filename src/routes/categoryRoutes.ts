@@ -8,11 +8,11 @@ const categoryController = new CategoryController(categoryService);
 
 const router = Router();
 
-router.post('/create-category', categoryController.createCategory.bind(categoryController));
+router.post('/', categoryController.createCategory.bind(categoryController));
 router.get('/category/:categoryId', categoryController.getCategory.bind(categoryController));
 router.get('/categories', categoryController.getCategories.bind(categoryController));
-router.put('/update-category/:categoryId', categoryController.updateCategory.bind(categoryController));
-router.put('/delete-category/:categoryId', categoryController.deleteCategory.bind(categoryController));
-router.post('/calculate-cost', categoryController.calculateCost.bind(categoryController));
+router.put('/:categoryId', categoryController.updateCategory.bind(categoryController));
+router.delete('/:categoryId', categoryController.deleteCategory.bind(categoryController));
+router.post('/total-cost', categoryController.calculateCost.bind(categoryController));
 
 export default router;

@@ -22,6 +22,14 @@ class RedisRepository implements IRedisRepository {
             throw new Error(`Failed to get data from Redis for key "${key}": ${error instanceof Error ? error.message : String(error)}`);
         }
     }
+
+    async delete(key: string): Promise<void> {
+        try {
+            await redisClient.del(key);
+        } catch (error) {
+            throw new Error(`Failed to delete data in Redis for key "${key}": ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
 }
 
 export default new RedisRepository();

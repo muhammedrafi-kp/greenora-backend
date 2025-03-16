@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { IUserController } from "../interfaces/user/IUserController";
 import { IUserService } from "../interfaces/user/IUserService";
-import passport from 'passport';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
 import { IUser } from "../models/User";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 
 import { configDotenv } from 'dotenv';
-import { error } from "console";
 configDotenv();
 
 export class UserController implements IUserController {
@@ -130,6 +128,90 @@ export class UserController implements IUserController {
         }
     }
 
+    async sendResetPasswordLink(req: Request, res: Response): Promise<void> {
+        try {
+            const { email } = req.body;
+
+            console.log("email:", email);
+
+            await this.userService.sendResetPasswordLink(email);
+
+            res.status(HTTP_STATUS.OK).json({ success: true });
+
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+
+                return;
+            }
+            console.error("Error sending reset link : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+
+            const { token, password } = req.body;
+            console.log("reset token : ", token);
+            console.log("password : ", password);
+
+            await this.userService.resetPassword(token, password);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.PASSWORD_UPDATED
+            });
+
+        } catch (error: any) {
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            console.error("Error while resetting password: ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async googleAuthCallback(req: Request, res: Response): Promise<void> {
+        try {
+            const { credential } = req.body;
+            const { accessToken, refreshToken, user: { name, email } } = await this.userService.handleGoogleAuth(credential);
+
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                maxAge: 24 * 60 * 60 * 1000,
+                sameSite: 'none',
+            });
+
+            const userData = { name, email };
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
+                token: accessToken,
+                role: "user",
+                data: userData
+            });
+
+        } catch (error: any) {
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async validateRefreshToken(req: Request, res: Response): Promise<void> {
         try {
 
@@ -175,36 +257,6 @@ export class UserController implements IUserController {
         }
     }
 
-    async googleAuthCallback(req: Request, res: Response): Promise<void> {
-        try {
-            const { credential } = req.body;
-            const { accessToken, refreshToken, user: { name, email } } = await this.userService.handleGoogleAuth(credential);
-
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            const userData = { name, email };
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                token: accessToken,
-                role: "user",
-                data: userData
-            });
-
-        } catch (error: any) {
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
-
     async getUser(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-user-id'];
@@ -212,6 +264,7 @@ export class UserController implements IUserController {
             const user = await this.userService.getUser(userId as string);
 
             const userData = {
+                id: user._id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
@@ -356,6 +409,50 @@ export class UserController implements IUserController {
             }
 
             console.error("Error while changing password in controller : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getCollector(req: Request, res: Response): Promise<void> {
+        try {
+            const collectorId = req.params.collectorId;
+            const collector = await this.userService.getCollector(collectorId);
+            res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
+        } catch (error: any) {
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            console.error("Error while fetching collector data in controller !!!!!!!!!!1: ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getAdmin(req: Request, res: Response): Promise<void> {
+        try {
+            const admin = await this.userService.getAdmin();
+            res.status(HTTP_STATUS.OK).json({ success: true, data: admin });
+        } catch (error: any) {
+            console.error("Error while fetching admin data in controller : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getUsers(req: Request, res: Response): Promise<void> {
+        try {
+            const userIds: string[] = req.body;
+
+            console.log("userids:", userIds);
+
+            const users = await this.userService.getUsers(userIds);
+
+            res.status(HTTP_STATUS.OK).json({ success: true, data: users });
+
+        } catch (error: any) {
+            console.error("Error while fetching users data in controller : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }

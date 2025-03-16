@@ -63,7 +63,7 @@ app.use('/admin', adminRoutes);
 
 
 app.listen(process.env.PORT, () => {
-    console.log(`user-service is running on port ${process.env.PORT}`);
+    console.log(`user-service is running on port ${process.env.PORT} ✅`);
 });
 
 

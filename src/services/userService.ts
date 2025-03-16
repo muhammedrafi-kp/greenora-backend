@@ -2,18 +2,22 @@ import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { IUserService } from "../interfaces/user/IUserService";
 import { IUser } from "../models/User";
+import { ICollector } from "../models/Collector";
 import OTP from "otp-generator";
-import { sendOtp } from "../utils/mail";
-import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken } from "../utils/token";
+import { sendOtp, sendResetPasswordLink } from "../utils/mail";
+import { generateAccessToken, generateRefreshToken, generateResetPasswordToken, verifyToken, verifyGoogleToken } from "../utils/token";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 // import jwt, { JwtPayload } from "jsonwebtoken";
 import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
-import userRepository from "../repositories/userRepository";
 import { TokenPayload } from "google-auth-library";
+import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
+import { IAdminRepository } from "../interfaces/admin/IAdminRepository";
+import { IAdmin } from "../models/Admin";
 
 configDotenv();
 
@@ -21,6 +25,8 @@ export class UserService implements IUserService {
 
     constructor(
         private userRepository: IUserRepository,
+        private collectorRepository: ICollectorRepository,
+        private adminRepository: IAdminRepository,
         private redisRepository: IRedisRepository
     ) { }
 
@@ -72,8 +78,8 @@ export class UserService implements IUserService {
             // const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 35, 'user');
-            await this.redisRepository.saveUserData(email, userData, 86400, 'user');
+            await this.redisRepository.set(`user-otp:${email}`, otp, 35);
+            await this.redisRepository.set(`user:${email}`, userData, 86400);
         } catch (error) {
             console.error('Error while storing otp and userData :', error);
             throw error;
@@ -84,7 +90,7 @@ export class UserService implements IUserService {
         try {
 
             // const prefix = "user";
-            const savedOtp = await this.redisRepository.getOtp(email, 'user');
+            const savedOtp = await this.redisRepository.get(`user-otp:${email}`);
             console.log("Enterd otp:", otp);
             console.log("saved Otp :", savedOtp);
 
@@ -95,7 +101,7 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            const userData = await this.redisRepository.getUserData(email, 'user') as IUser;
+            const userData = await this.redisRepository.get(`user:${email}`) as IUser;
 
 
             console.log("OTP verified successfully for email:", userData);
@@ -106,7 +112,7 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            await this.redisRepository.deleteUserData(email, 'user');
+            await this.redisRepository.delete(`user:${email}`);
 
 
             const hashedPassword = await bcrypt.hash(userData.password, 10);
@@ -132,7 +138,7 @@ export class UserService implements IUserService {
             const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 35, prefix);
+            await this.redisRepository.set(`user-otp:${email}`, otp, 35);
         } catch (error) {
             console.error('Error while resending otp:', error);
             throw error;
@@ -142,7 +148,7 @@ export class UserService implements IUserService {
     async validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
         try {
 
-            const decoded = verifyToken(token);
+            const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
             const user = await this.userRepository.getUserById(decoded.userId);
 
@@ -184,12 +190,12 @@ export class UserService implements IUserService {
             console.log("user :", user);
 
             if (!user) {
-                user  = await this.userRepository.createUser({
-                    name:payload.name,
-                    email:payload.email,
+                user = await this.userRepository.createUser({
+                    name: payload.name,
+                    email: payload.email,
                     phone: 'N/A',
                     password: '',
-                    profileUrl:payload.picture,
+                    profileUrl: payload.picture,
                     authProvider: "google",
                 });
             }
@@ -203,6 +209,57 @@ export class UserService implements IUserService {
 
         } catch (error) {
             console.error('Error while storing refreshToken :', error);
+            throw error;
+        }
+    }
+
+    async sendResetPasswordLink(email: string): Promise<void> {
+        try {
+            const user = await this.userRepository.getUserByEmail(email);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            const resetToken = generateResetPasswordToken(user._id as string)
+
+            // const hashedToken = await bcrypt.hash(resetToken, 10);
+
+            // await this.redisRepository.set(`resetToken:${email}`, hashedToken, 900);
+
+            const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+            await sendResetPasswordLink(email, resetURL);
+
+            console.log(`Password reset link sent to ${email}`);
+
+        } catch (error: any) {
+            console.log("Error while sending reset link user data :", error.message);
+            throw error;
+        }
+    }
+
+    async resetPassword(token: string, password: string): Promise<void> {
+        try {
+            const decoded = verifyToken(token, process.env.JWT_RESET_PASSOWORD_SECRET as string);
+
+            console.log("decode :", decoded)
+            const user = await this.userRepository.getUserById(decoded.userId);
+
+            if (!user) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("password :", password);
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await this.userRepository.updateById(user._id as string, { password: hashedPassword, authProvider: "local" });
+
+        } catch (error: any) {
+            console.log("Error while sending reset link user data :", error.message);
             throw error;
         }
     }
@@ -319,6 +376,42 @@ export class UserService implements IUserService {
             await this.userRepository.updateById(userId, user);
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
+            throw error;
+        }
+    }
+
+    async getCollector(collectorId: string): Promise<ICollector> {
+        try {
+            const collector = await this.collectorRepository.getCollectorById(collectorId);
+            if (!collector) {
+                const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+            return collector;
+        } catch (error: any) {
+            console.log("Error while fetching collector data!!!!!!!!!!!1 :", error.message);
+            throw error;
+        }
+    }
+
+    async getAdmin(): Promise<IAdmin | null> {
+        try {
+            const email = "admin@gmail.com";
+            return this.adminRepository.findAdminByEmail(email);
+        } catch (error) {
+            console.error('Error while fetching admin:', error);
+            throw error;
+        }
+    }
+
+    async getUsers(userIds: string[]): Promise<IUser[]> {
+        try {
+            const users = await this.userRepository.find({ _id: { $in: userIds } });
+            console.log("users :", users);
+            return users;
+        } catch (error) {
+            console.error('Error while fetching users:', error);
             throw error;
         }
     }

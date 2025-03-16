@@ -20,7 +20,7 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
         try {
             return await this.findOne({ email });
         } catch (error: unknown) {
-            throw new Error(`Error while creating admin : ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Error while finding admin : ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -28,7 +28,7 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
         try {
             return await this.findById(adminId);
         } catch (error) {
-            throw new Error(`Error while finding user:${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Error while finding admin:${error instanceof Error ? error.message : String(error)}`);
         }
     }
 

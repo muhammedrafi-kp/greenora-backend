@@ -60,8 +60,8 @@ export class CollectorService implements ICollectorService {
             const prefix = "collector";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 35, prefix);
-            await this.redisRepository.saveUserData(email, collectorData, 86400, prefix);
+            await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
+            await this.redisRepository.set(`collector:${email}`, collectorData, 86400);
         } catch (error) {
             console.error('Error while storing otp and collectorata :', error);
             throw error;
@@ -72,7 +72,7 @@ export class CollectorService implements ICollectorService {
         try {
 
             const prefix = "collector";
-            const savedOtp = await this.redisRepository.getOtp(email, prefix);
+            const savedOtp = await this.redisRepository.get(`collector-otp:${email}`);
             console.log("Enterd otp:", otp);
             console.log("saved Otp :", savedOtp);
 
@@ -83,7 +83,7 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            const collectorData = await this.redisRepository.getUserData(email, prefix) as ICollector;
+            const collectorData = await this.redisRepository.get(`collector:${email}`) as ICollector;
 
             console.log("OTP verified successfully for email:", collectorData);
 
@@ -91,7 +91,7 @@ export class CollectorService implements ICollectorService {
                 throw new Error(MESSAGES.UNKNOWN_ERROR);
             }
 
-            await this.redisRepository.deleteUserData(email, prefix);
+            await this.redisRepository.delete(`collector:${email}`);
 
             const hashedPassword = await bcrypt.hash(collectorData.password, 10);
             collectorData.password = hashedPassword;
@@ -113,10 +113,10 @@ export class CollectorService implements ICollectorService {
 
     async resendOtp(email: string): Promise<void> {
         try {
-            const prefix = "collector";
+            // const prefix = "collector";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             await sendOtp(email, otp);
-            await this.redisRepository.saveOtp(email, otp, 35, prefix);
+            await this.redisRepository.get(`collector-otp:${email}`);
         } catch (error) {
             console.error('Error while resending otp:', error);
             throw error;
@@ -126,7 +126,7 @@ export class CollectorService implements ICollectorService {
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
 
-            const decoded = verifyToken(token);
+            const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
             const user = await this.collectorRepository.getCollectorById(decoded.userId);
 
@@ -159,7 +159,6 @@ export class CollectorService implements ICollectorService {
                 error.status = HTTP_STATUS.UNAUTHORIZED;
                 throw error;
             }
-
 
             console.log("payload :", payload);
 
@@ -214,19 +213,30 @@ export class CollectorService implements ICollectorService {
         }
     }
 
+    async getCollectors(collectorIds: string[]): Promise<ICollector[]> {
+        try {
+            const collectors = await this.collectorRepository.find({ _id: { $in: collectorIds } });
+            console.log("collectors :", collectors);
+            return collectors;
+        } catch (error: any) {
+            console.log("Error while fetching collectorData :", error.message);
+            throw error;
+        }
+    }
+
     async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
         try {
-            const user = await this.collectorRepository.updateCollectorById(id, collectorData);
+            const collector = await this.collectorRepository.updateCollectorById(id, collectorData);
 
-            if (!user) {
+            if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
                 throw error;
             }
 
-            return user;
+            return collector;
         } catch (error: any) {
-            console.log("Error while fetching user data :", error.message);
+            console.log("Error while updating collector :", error.message);
             throw error;
         }
     }
@@ -266,11 +276,13 @@ export class CollectorService implements ICollectorService {
         try {
             const filter = {
                 serviceArea: serviceAreaId,
+                verificationStatus: "approved",
                 availabilityStatus: "available",
                 $expr: { $lt: ["$currentTasks", "$maxCapacity"] }
             }
 
             const projection = {
+                _id: 1,
                 collectorId: 1,
                 name: 1,
                 email: 1,
@@ -279,6 +291,7 @@ export class CollectorService implements ICollectorService {
                 currentTasks: 1,
                 maxCapacity: 1,
             }
+
             const collectors = await this.collectorRepository.find(filter, projection);
 
             return {

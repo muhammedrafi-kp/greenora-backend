@@ -3,25 +3,30 @@ import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { MESSAGES } from '../constants/messages';
 import { HTTP_STATUS } from '../constants/httpStatus';
 
+
+export function generateToken(
+    payload: object,
+    secret: string,
+    expiresIn: string
+): string {
+    return jwt.sign(payload, secret, { expiresIn });
+}
+
 export function generateAccessToken(userId: string, role: string): string {
-    return jwt.sign(
-        { userId, role },
-        process.env.JWT_ACCESS_SECRET as string,
-        { expiresIn: '15m' }
-    );
+    return generateToken({ userId, role }, process.env.JWT_ACCESS_SECRET as string, "15m");
 }
 
 export function generateRefreshToken(userId: string, role: string): string {
-    return jwt.sign(
-        { userId, role },
-        process.env.JWT_REFRESH_SECRET as string,
-        { expiresIn: '1d' }
-    );
+    return generateToken({ userId, role }, process.env.JWT_REFRESH_SECRET as string, "1d");
 }
 
-export const verifyToken = (token: string): JwtPayload => {
+export function generateResetPasswordToken(userId: string): string {
+    return generateToken({ userId }, process.env.JWT_RESET_PASSOWORD_SECRET as string, "1h");
+}
+
+export const verifyToken = (token: string, secret: string): JwtPayload => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as JwtPayload;
+        const decoded = jwt.verify(token, secret) as JwtPayload;
         console.log("decoded in util :", decoded)
         return decoded;
     } catch (err) {

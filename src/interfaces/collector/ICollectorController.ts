@@ -9,6 +9,7 @@ export interface ICollcetorController {
     googleAuthCallback(req: Request, res: Response): Promise<void>;
 
     getCollector(req: Request, res: Response): Promise<void>;
+    getCollectors(req: Request, res: Response): Promise<void>;
     getAvailableCollectors(req: Request, res: Response): Promise<void>;
     updateCollector(req: Request, res: Response): Promise<void>;
     changePassword(req: Request, res: Response): Promise<void>;

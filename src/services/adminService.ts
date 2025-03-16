@@ -63,7 +63,7 @@ export class AdminService implements IAdminService {
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
 
-            const decoded = verifyToken(token);
+            const decoded = verifyToken(token,process.env.JWT_REFRESH_SECRET as string);
 
             const user = await this.adminRepository.getAdminById(decoded.userId);
 

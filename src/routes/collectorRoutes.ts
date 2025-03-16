@@ -19,13 +19,15 @@ router.post('/verify-otp', collectorController.verifyOtp.bind(collectorControlle
 router.post('/resend-otp', collectorController.resendOtp.bind(collectorController));
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
 
-router.get('/profile', validateCollector, collectorController.getCollector.bind(collectorController));
-router.put('/update-profile', validateCollector, upload.fields([
+router.get('/', validateCollector, collectorController.getCollector.bind(collectorController));
+router.get('/collectors/batch', collectorController.getCollector.bind(collectorController));
+router.put('/', validateCollector, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'idProofFront', maxCount: 1 },
     { name: 'idProofBack', maxCount: 1 }]),
     collectorController.updateCollector.bind(collectorController)
 );
 router.post('/google/callback', collectorController.googleAuthCallback.bind(collectorController));
-router.patch('/change-password', validateCollector, collectorController.changePassword.bind(collectorController));
+router.patch('/password', validateCollector, collectorController.changePassword.bind(collectorController));
+
 export default router;

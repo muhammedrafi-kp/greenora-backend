@@ -200,13 +200,13 @@ export class CollcetorController implements ICollcetorController {
 
     async getCollector(req: Request, res: Response): Promise<void> {
         try {
-            console.log("req.headers[x-user-id] :", req.headers['x-user-id']);
-            const userId = req.headers['x-user-id'];
-            if (!userId) {
+            // console.log("req.headers[x-user-id] :", req.headers['x-user-id']);
+            const collectorId = req.headers['x-user-id']
+            if (!collectorId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "invalid user id" });
                 return
             }
-            const collector = await this.collectorService.getCollector(userId as string);
+            const collector = await this.collectorService.getCollector(collectorId as string);
 
             console.log("collector:", collector);
 
@@ -226,6 +226,16 @@ export class CollcetorController implements ICollcetorController {
             }
 
             console.error("Error while fetching collectorData : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getCollectors(req: Request, res: Response): Promise<void> {
+        try {
+            const collectorIds: string[] = req.body;
+
+        } catch (error: any) {
+            console.error("Error while getting available collectors : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }

@@ -1,4 +1,5 @@
 export const MESSAGES = {
+    PAYMENT_NOT_FOUND: "Payment not found.",
     PAYMENT_SUCCESSFULL: "Payment verified successfully",
     PAYMENT_FAILED: "Payment verification failed",
     COLLECTION_DATA_REQUIRED: "Collection data is required.",

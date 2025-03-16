@@ -24,16 +24,16 @@ export class CollectionPaymentController implements ICollectionPaymentController
                 return;
             }
 
-            const { orderId, amount } = await this.collectionPaymentService.initiatePayment(userId as string, collectionData);
+            // const { orderId, amount } = await this.collectionPaymentService.initiatePayment(userId as string, collectionData);
+            const { orderId } = await this.collectionPaymentService.initiatePayment(userId as string, collectionData);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 orderId,
-                amount
             })
 
         } catch (error: any) {
-            console.error("Error during initiating payment:", error);
+            console.error("Error during initiating payment:", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
@@ -43,10 +43,11 @@ export class CollectionPaymentController implements ICollectionPaymentController
             const userId = req.headers['x-user-id'];
             const razorpayVerificationData = req.body;
 
-            console.log("userId :",userId);
-            console.log("razorpayVerificationData :",razorpayVerificationData)
+            console.log("userId :", userId);
+            console.log("razorpayVerificationData :", razorpayVerificationData)
 
-            const response = await this.collectionPaymentService.verifyPayment(userId as string,razorpayVerificationData);
+            // const response = await this.collectionPaymentService.verifyPayment(userId as string,razorpayVerificationData);
+            const response = await this.collectionPaymentService.verifyPayment(userId as string, razorpayVerificationData);
 
             if (!response) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -61,7 +62,29 @@ export class CollectionPaymentController implements ICollectionPaymentController
             });
 
         } catch (error: any) {
-            console.error("Error during initiating payment:", error);
+            console.error("Error during verifying payment:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getPaymentData(req: Request, res: Response): Promise<void> {
+        try {
+            const paymentId = req.params.paymentId;
+            const paymentDetails = await this.collectionPaymentService.getPaymentData(paymentId);
+            if (!paymentDetails) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: MESSAGES.PAYMENT_NOT_FOUND
+                });
+                return;
+            }
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                data: paymentDetails
+            });
+
+
+        } catch (error: any) {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }

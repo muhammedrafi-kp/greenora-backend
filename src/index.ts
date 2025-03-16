@@ -21,5 +21,5 @@ app.use("/collection-payment",collectionPaymentRoutes);
 app.use("/subscription-payment",subscriptionPaymentRoutes);
 
 app.listen(process.env.PORT,()=>{
-    console.log(`payment-service is running on port ${process.env.PORT}`);
+    console.log(`payment-service is running on port ${process.env.PORT} ✅`);
 });

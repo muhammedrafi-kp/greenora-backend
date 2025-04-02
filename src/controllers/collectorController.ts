@@ -233,6 +233,11 @@ export class CollcetorController implements ICollcetorController {
     async getCollectors(req: Request, res: Response): Promise<void> {
         try {
             const collectorIds: string[] = req.body;
+            console.log("collectorIds:", collectorIds);
+
+            const collectors = await this.collectorService.getCollectors(collectorIds);
+            
+            res.status(HTTP_STATUS.OK).json({ success: true, data: collectors });
 
         } catch (error: any) {
             console.error("Error while getting available collectors : ", error.message);

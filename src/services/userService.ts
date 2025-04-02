@@ -18,17 +18,23 @@ import { TokenPayload } from "google-auth-library";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IAdminRepository } from "../interfaces/admin/IAdminRepository";
 import { IAdmin } from "../models/Admin";
+import amqp from "amqplib";
+import RabbitMQ from "../utils/rabbitmq";
 
 configDotenv();
 
 export class UserService implements IUserService {
+
+    // private channel!: amqp.Channel;
 
     constructor(
         private userRepository: IUserRepository,
         private collectorRepository: ICollectorRepository,
         private adminRepository: IAdminRepository,
         private redisRepository: IRedisRepository
-    ) { }
+    ) {
+    }
+
 
     async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
@@ -120,6 +126,10 @@ export class UserService implements IUserService {
 
             const user = await this.userRepository.createUser(userData);
 
+            // this.channel.sendToQueue("userCreatedQueue", Buffer.from(JSON.stringify(user._id)), { persistent: true });
+            RabbitMQ.publish("userCreatedQueue", { userId: user._id });
+            console.log("User created and sent to queue:", user._id);
+
             const accessToken = generateAccessToken(user._id as string, 'user');
             const refreshToken = generateRefreshToken(user._id as string, 'user');
 
@@ -137,6 +147,7 @@ export class UserService implements IUserService {
         try {
             const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            console.log("otp :", otp);
             await sendOtp(email, otp);
             await this.redisRepository.set(`user-otp:${email}`, otp, 35);
         } catch (error) {
@@ -198,9 +209,11 @@ export class UserService implements IUserService {
                     profileUrl: payload.picture,
                     authProvider: "google",
                 });
-            }
 
-            console.log("user :", user);
+                // this.channel.sendToQueue("userCreatedQueue", Buffer.from(user._id as string), { persistent: true });
+                RabbitMQ.publish("userCreatedQueue", { userId: user._id });
+                console.log("User created and sent to queue:", user._id);
+            }
 
             const accessToken = generateAccessToken(user._id as string, 'user');
             const refreshToken = generateRefreshToken(user._id as string, 'user');
@@ -224,10 +237,6 @@ export class UserService implements IUserService {
             }
 
             const resetToken = generateResetPasswordToken(user._id as string)
-
-            // const hashedToken = await bcrypt.hash(resetToken, 10);
-
-            // await this.redisRepository.set(`resetToken:${email}`, hashedToken, 900);
 
             const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 

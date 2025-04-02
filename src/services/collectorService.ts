@@ -303,4 +303,17 @@ export class CollectorService implements ICollectorService {
             throw error
         }
     }
+
+    async deductTaskCount(collectorId: string): Promise<void> {
+        try {
+            await this.collectorRepository.updateById(
+                collectorId,
+                { $inc: { currentTasks: -1 } }
+            );
+
+        } catch (error: any) {
+            console.error("Error while updating payment details :", error.message);
+            throw error;
+        }
+    }
 };

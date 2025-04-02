@@ -13,4 +13,5 @@ export interface ICollectorService {
     updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
     getAvailableCollectors(serviceAreaId: string): Promise<{ success: boolean; collectors: ICollector[] }>
+    deductTaskCount(collectorId:string):Promise<void>;
 }

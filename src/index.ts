@@ -8,7 +8,8 @@ import session from 'express-session';
 import passportConfig from "./config/passportConfig"
 import connectDB from './config/dbConfig';
 import startGrpcServer from './gRPC/grpcServer';
-import { connectToRedis, logRedisData } from './config/redisConfig'
+import { connectToRedis, logRedisData } from './config/redisConfig';
+import UserConsumer from './consumers/userConsumer';
 
 import userRoutes from './routes/userRoutes';
 import collectorRoutes from './routes/collectorRoutes';
@@ -41,6 +42,7 @@ app.use(morgan('combined', { stream }));
 connectDB();
 startGrpcServer();
 connectToRedis();
+UserConsumer.initialize();
 
 // app.use(morgan('dev'));
 app.use(express.json());

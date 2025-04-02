@@ -20,7 +20,7 @@ router.post('/resend-otp', collectorController.resendOtp.bind(collectorControlle
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
 
 router.get('/', validateCollector, collectorController.getCollector.bind(collectorController));
-router.get('/collectors/batch', collectorController.getCollector.bind(collectorController));
+router.post('/collectors/batch', collectorController.getCollectors.bind(collectorController));
 router.put('/', validateCollector, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'idProofFront', maxCount: 1 },

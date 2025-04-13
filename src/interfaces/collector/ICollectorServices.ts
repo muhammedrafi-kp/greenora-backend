@@ -15,6 +15,5 @@ export interface ICollectorService {
     getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector>|null }>
     calculateCollectorScore(collector: ICollector, dateKey: string): Promise<number>;
     assignCollectionToCollector(collectorId: string, collectionId: string, preferredDate: string): Promise<void>;
-    getAvailableCollectors(serviceAreaId: string): Promise<{ success: boolean; collectors: ICollector[] }>
     deductTaskCount(collectorId:string):Promise<void>;
 }

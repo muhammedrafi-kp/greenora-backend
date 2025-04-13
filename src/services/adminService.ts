@@ -250,6 +250,20 @@ export class AdminService implements IAdminService {
         }
     }
 
+    async getAvailableCollectors(serviceArea: string, preferredDate: string): Promise<Partial<ICollector>[]> {
+        try {
+            const collectionDate = new Date(preferredDate);
+            const dateKey = collectionDate.toISOString().split('T')[0];
+            console.log("dateKey :", dateKey);
+            const collectors = await this.adminRepository.getAvailableCollectors(serviceArea, dateKey);
+            console.log("collectors :", collectors);
+            return collectors;
+        } catch (error) {
+            console.error('Error while fetching available collectors:', error);
+            throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
     async getVerificationRequests(): Promise<ICollector[]> {
         try {
             const query = { verificationStatus: 'requested' };

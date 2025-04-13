@@ -71,7 +71,6 @@ export class CollectorService implements ICollectorService {
     async verifyOtp(email: string, otp: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector }> {
         try {
 
-            const prefix = "collector";
             const savedOtp = await this.redisRepository.get(`collector-otp:${email}`);
             console.log("Enterd otp:", otp);
             console.log("saved Otp :", savedOtp);
@@ -113,13 +112,10 @@ export class CollectorService implements ICollectorService {
 
     async resendOtp(email: string): Promise<void> {
         try {
-            // const prefix = "collector";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             console.log("otp :", otp);
             await sendOtp(email, otp);
             await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
-
-            // await this.redisRepository.get(`collector-otp:${email}`);
         } catch (error) {
             console.error('Error while resending otp:', error);
             throw error;
@@ -360,38 +356,6 @@ export class CollectorService implements ICollectorService {
         } catch (error: any) {
             console.log("Error while assigning collection to collector :", error.message);
             throw error;
-        }
-    }
-
-    async getAvailableCollectors(serviceAreaId: string): Promise<{ success: boolean; collectors: ICollector[] }> {
-        try {
-            const filter = {
-                serviceArea: serviceAreaId,
-                verificationStatus: "approved",
-                availabilityStatus: "available",
-                $expr: { $lt: ["$currentTasks", "$maxCapacity"] }
-            }
-
-            const projection = {
-                _id: 1,
-                collectorId: 1,
-                name: 1,
-                email: 1,
-                phone: 1,
-                availabilityStatus: 1,
-                currentTasks: 1,
-                maxCapacity: 1,
-            }
-
-            const collectors = await this.collectorRepository.find(filter, projection);
-
-            return {
-                success: true,
-                collectors
-            };
-        } catch (error: any) {
-            console.log("Error while fetching colloctors data :", error.message);
-            throw error
         }
     }
 

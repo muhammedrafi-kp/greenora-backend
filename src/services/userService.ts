@@ -81,8 +81,8 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            // const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            console.log("otp :", otp);
             await sendOtp(email, otp);
             await this.redisRepository.set(`user-otp:${email}`, otp, 35);
             await this.redisRepository.set(`user:${email}`, userData, 86400);
@@ -145,7 +145,6 @@ export class UserService implements IUserService {
 
     async resendOtp(email: string): Promise<void> {
         try {
-            const prefix = "user";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             console.log("otp :", otp);
             await sendOtp(email, otp);

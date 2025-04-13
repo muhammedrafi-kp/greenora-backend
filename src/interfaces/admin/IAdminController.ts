@@ -6,6 +6,7 @@ export interface IAdminController {
     validateRefreshToken(req: Request, res: Response): Promise<void>;
     getUsers(req: Request, res: Response): Promise<void>;
     getCollectors(req: Request, res: Response): Promise<void>;
+    getAvailableCollectors(req: Request, res: Response): Promise<void>;
     getVerificationRequests(req: Request, res: Response): Promise<void>;
     updateVerificationStatus(req: Request, res: Response): Promise<void>;
     updateUserStatus(req: Request, res: Response): Promise<void>;

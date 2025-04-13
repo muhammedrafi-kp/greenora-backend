@@ -29,6 +29,8 @@ export interface IAdminService {
         limit?: number;
     }): Promise<{ collectors: Partial<ICollector>[], totalItems: number, totalPages: number }>;
 
+    getAvailableCollectors(serviceArea: string, preferredDate: string): Promise<Partial<ICollector>[]>;
+
     getVerificationRequests(): Promise<ICollector[]>;
     updateVerificationStatus(id: string, status: string): Promise<ICollector | null>;
     updateUserStatus(id: string): Promise<string>;

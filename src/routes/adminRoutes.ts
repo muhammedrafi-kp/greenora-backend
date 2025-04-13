@@ -18,6 +18,7 @@ router.post('/refresh-token', adminController.validateRefreshToken.bind(adminCon
 
 router.get('/users', validateAdmin, adminController.getUsers.bind(adminController));
 router.get('/collectors', validateAdmin, adminController.getCollectors.bind(adminController));
+router.get('/available-collectors', adminController.getAvailableCollectors.bind(adminController));
 router.get('/verification-requests', validateAdmin, adminController.getVerificationRequests.bind(adminController));
 router.patch('/update-verification-status/:id', validateAdmin, adminController.updateVerificationStatus.bind(adminController));
 router.patch('/update-user-status/:id', validateAdmin, adminController.updateUserStatus.bind(adminController));

@@ -177,6 +177,24 @@ export class AdminController implements IAdminController {
         }
     }
 
+    async getAvailableCollectors(req: Request, res: Response): Promise<void> {
+        try {
+            const { serviceArea, preferredDate } = req.query;
+
+            console.log("serviceArea :", serviceArea, "preferredDate :", preferredDate);
+            console.log(typeof serviceArea, typeof preferredDate);
+            const collectors = await this.adminService.getAvailableCollectors(serviceArea as string, preferredDate as string);
+            console.log("collectors :", collectors);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                collectors
+            });
+        }catch (error: any) {
+            console.error("Error while fetching available collectors data", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
     async getVerificationRequests(req: Request, res: Response): Promise<void> {
         try {
             const verificationRequests = await this.adminService.getVerificationRequests();

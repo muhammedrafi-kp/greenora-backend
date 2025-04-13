@@ -1,7 +1,7 @@
 import Admin, { IAdmin } from '../models/Admin';
 import { IAdminRepository } from '../interfaces/admin/IAdminRepository';
 import { BaseRepository } from './baseRepository';
-// import { IUser } from '../models/User';
+import Collector, { ICollector } from '../models/Collector';
 
 class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository {
     constructor() {
@@ -32,6 +32,33 @@ class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository
         }
     }
 
+    async getAvailableCollectors(serviceArea: string, dateKey: string): Promise<Partial<ICollector>[]> {
+        try {
+            const collectors: Partial<ICollector>[] = await Collector.aggregate([
+                {
+                  $match: {
+                    serviceArea: serviceArea
+                  }
+                },
+                {
+                  $project: {
+                    id: '$_id',
+                    name: 1,
+                    taskCount: {
+                      $ifNull: [
+                        { $toInt: { $ifNull: [`$dailyTaskCounts.${dateKey}`, 0] } },
+                        0
+                      ]
+                    }
+                  }
+                }
+              ]);
+          
+              return collectors;
+        } catch (error) {
+            throw new Error(`Error while fetching available collectors:${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
 
 }
 

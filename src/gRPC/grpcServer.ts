@@ -37,29 +37,6 @@ const userService = new UserService(userRepository, collectorRepository, adminRe
 const server = new grpc.Server();
 
 server.addService(collectorProto.collectorService.service, {
-    GetAvailableCollectors: async (call: any, callback: any) => {
-        try {
-            console.log("data in grpc server: ", call.request);
-            const serviceAreaId = call.request.serviceAreaId;
-            const response = await collectorService.getAvailableCollectors(serviceAreaId);
-
-            
-
-            const collectors = response.collectors.map((collector: any) => ({
-                id: collector._id.toString(),
-                ...collector,
-            }));
-
-            console.log("response :", collectors);
-            callback(null, response);
-        } catch (error: any) {
-            console.error("Error in GetAvailableCollectors:", error.message);
-            callback({
-                code: grpc.status.INVALID_ARGUMENT,
-                message: error.message,
-            });
-        }
-    },
 
     GetAvailableCollector: async (call: any, callback: any) => {
         try {

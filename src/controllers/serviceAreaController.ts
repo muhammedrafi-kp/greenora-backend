@@ -224,4 +224,34 @@ export class ServiceAreaController implements IServiceAreaController {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
+
+    async getDistrictsByIds(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.query;
+            console.log("districtIds:", ids);
+            const districtIds = typeof ids === 'string' ? ids.split(',') : [];
+            console.log("districtIds:", districtIds);
+            const districts = await this.serviceAreaService.getDistrictsByIds(districtIds);
+            console.log("districts:", districts);
+            res.status(HTTP_STATUS.OK).json(districts);
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getServiceAreasByIds(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.query;
+            console.log("serviceAreaIds:", ids);
+            const serviceAreaIds = typeof ids === 'string' ? ids.split(',') : [];
+            console.log("serviceAreaIds:", serviceAreaIds);
+            const serviceAreas = await this.serviceAreaService.getServiceAreasByIds(serviceAreaIds);
+            console.log("serviceAreas:", serviceAreas);  
+            res.status(HTTP_STATUS.OK).json( serviceAreas);
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
 }

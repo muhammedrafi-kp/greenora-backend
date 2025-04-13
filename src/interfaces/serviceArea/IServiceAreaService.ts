@@ -12,4 +12,6 @@ export interface IServiceAreaService {
     getDistrictsWithServiceAreas(): Promise<IDistrict[]>;
     isServiceAvailable(serviceAreaId: string, pincode: string): Promise<IServiceArea | null>;
     getDistrictWithServiceArea(districtId:string,serviceAreaId:string):Promise<{ district: IDistrict; serviceArea: IServiceArea; }>
+    getDistrictsByIds(ids: string[]): Promise<IDistrict[]>;
+    getServiceAreasByIds(ids: string[]): Promise<IServiceArea[]>;
 }

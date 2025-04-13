@@ -129,4 +129,22 @@ export class ServiceAreaService implements IServiceAreaService {
             throw error;
         }
     }
+
+    async getDistrictsByIds(ids: string[]): Promise<IDistrict[]> {
+        try {
+            return await this.districtRepository.find({ _id: { $in: ids } });
+        } catch (error) {
+            console.error('Error while finding districts by IDs:', error);
+            throw error;    
+        }
+    }
+
+    async getServiceAreasByIds(ids: string[]): Promise<IServiceArea[]> {
+        try {
+            return await this.serviceAreaRepository.find({ _id: { $in: ids } });
+        } catch (error) {
+            console.error('Error while finding service areas by IDs:', error);
+            throw error;
+        }
+    }
 }

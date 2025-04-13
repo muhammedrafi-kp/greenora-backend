@@ -8,5 +8,5 @@ export interface IChatService {
     // sendMessage(chatId: string, senderId: string, receiverId: string, message: string): Promise<IMessage>;
     sendMessage(messageData: Partial<IMessage>): Promise<IMessage>;
     getMessages(chatId: string): Promise<IMessage[]>;
-    markMessagesAsRead(senderId: string, receiverId: string): Promise<IMessage | null>
+    markMessagesAsRead(chatId: string, userId: string): Promise<IMessage | null>
 }

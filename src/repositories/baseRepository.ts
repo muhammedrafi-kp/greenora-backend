@@ -46,6 +46,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
+    async updateMany(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<any> {
+        try {
+            return await this.model.updateMany(filter, data);
+        } catch (error) {
+            throw new Error(`UpdateMany failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
     async deleteById(id: string | Types.ObjectId): Promise<T | null> {
         try {
             return await this.model.findByIdAndDelete(id);

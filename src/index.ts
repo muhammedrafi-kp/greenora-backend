@@ -20,28 +20,7 @@ const io = new Server(server, {
     },
 });
 
-// io.on("connection", (socket) => {
-//     console.log("A user connected:", socket.id);
-
-//     socket.on("join-room", ({ roomId, userId }) => {
-//         socket.join(roomId);
-//         socket.data.userId = userId;
-//         console.log(`User ${socket.id} (userId: ${userId}) joined room ${roomId}`);
-//     });
-
-//     socket.on("leave-room", (roomId) => {
-//         socket.leave(roomId);
-//         console.log(`User ${socket.id} left room ${roomId}`);
-//     });
-
-//     socket.on("send-message", (message) => {
-//         socket.to(message.roomId).emit("receive-message", message);
-//     });
-
-//     socket.on("disconnect", () => {
-//         console.log("A user disconnected:", socket.id);
-//     });
-// });
+// const io = new Server(server);
 
 initializeSocket(io);
 connectDB();

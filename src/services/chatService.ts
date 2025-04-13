@@ -47,10 +47,10 @@ export class ChatService implements IChatService {
             // const filter = { $or: [{ senderId: userId }, { receiverId: userId }] };
             const chats = await this.chatRepository.find({});
 
-            console.log("chats:", chats);
+            // console.log("chats:", chats);
 
             const userIds = new Set<string>();
-            // const collectorIds = new Set<string>();
+            const collectorIds = new Set<string>();
 
             // chats.forEach((chat) => {
             //     if (chat.participant1Role === "user") {
@@ -76,14 +76,24 @@ export class ChatService implements IChatService {
                 }
             });
 
+            chats.forEach((chat) => {
+                if (chat.participant1Role === "collector") {
+                    userIds.add(chat.participant1);
+                }
 
-            console.log("userIds:", Array.from(userIds));
+                if (chat.participant2Role === "collector") {
+                    userIds.add(chat.participant2);
+                }
+            });
+
+
+            // console.log("userIds:", Array.from(userIds));
             // console.log("collectorIds:", Array.from(collectorIds));
 
             const usersResponse = await axios.post("http://localhost:3001/user/users/batch", Array.from(userIds));
             // const collectorsResponse = await axios.post("http://localhost:3001/collector/collectors/batch", Array.from(collectorIds));
 
-            console.log("response from user service:", usersResponse.data);
+            // console.log("response from user service:", usersResponse.data);
 
             const usersData = usersResponse.data.data;
             // const collectorsData = collectorsResponse.data.collectors;
@@ -134,7 +144,7 @@ export class ChatService implements IChatService {
             });
 
 
-            console.log("final chats :", enrichedChats);
+            // console.log("final chats :", enrichedChats);
 
             return enrichedChats;
         } catch (error) {
@@ -167,9 +177,12 @@ export class ChatService implements IChatService {
         }
     }
 
-    async markMessagesAsRead(messageId: string): Promise<IMessage | null> {
+    async markMessagesAsRead(chatId: string, userId: string): Promise<any> {
         try {
-            return this.messageRepository.markMessagesAsRead(messageId);
+            return this.messageRepository.updateMany(
+                { chatId, receiverId: userId, isRead: false },
+                { $set: { isRead: true } }
+            );
         } catch (error) {
             console.error('Error while marking message as read:', error);
             throw error;

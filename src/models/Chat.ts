@@ -30,6 +30,7 @@ export interface IMessage extends Document {
     isRead: boolean;
 }
 
+
 const messageSchema = new Schema<IMessage>({
     chatId: { type: String, required: true, index: true },
     senderId: { type: String, required: true },
@@ -37,6 +38,7 @@ const messageSchema = new Schema<IMessage>({
     message: { type: String, required: true },
     timestamp: { type: Date, default: Date.now },
     isRead: { type: Boolean, default: false }
-});
+})
+
 
 export const Message = model("Message", messageSchema);

@@ -30,7 +30,7 @@ export class ChatController implements IChatController {
             const chatData = req.body;
             console.log("chatData :",chatData);
             const chat = await this.chatService.startChat(chatData);
-            console.log("chat :",chat);
+            // console.log("chat :",chat);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: chat
@@ -61,7 +61,7 @@ export class ChatController implements IChatController {
             const { chatId } = req.params;
             const messages = await this.chatService.getMessages(chatId);
 
-            console.log("messages :",messages);
+            // console.log("messages :",messages);
             
             res.status(HTTP_STATUS.OK).json({
                 success: true,

@@ -8,36 +8,8 @@ import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
 
 export class CollectionController implements ICollectionController {
+  
   constructor(private collectionService: ICollectionservice) { };
-
-  // async createCollectionRequest(req: Request, res: Response): Promise<void> {
-  //   try {
-
-  //     const userId = req.headers['x-user-id'];
-  //     const collectionData = { ...req.body, userId };
-
-  //     console.log("collectionData", collectionData);
-
-  //     const collection = await this.collectionService.createCollectionRequest(collectionData);
-
-  //     if (!collection) {
-  //       res.status(HTTP_STATUS.NOT_FOUND).json({
-  //         success: false,
-  //         message: MESSAGES.CATEGORY_NOT_FOUND,
-  //       });
-  //       return;
-  //     }
-
-  //     res.status(HTTP_STATUS.OK).json({
-  //       success: true,
-  //       data: collection
-  //     });
-
-  //   } catch (error: any) {
-  //     console.error("Error during login:", error);
-  //     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-  //   }
-  // }
 
   async getCollectionHistory(req: Request, res: Response): Promise<void> {
     try {
@@ -96,28 +68,7 @@ export class CollectionController implements ICollectionController {
         success: true,
         collector
       });
-      
-    } catch (error: any) {
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
-    }
-  }
 
-  async getPendingRequests(req: Request, res: Response): Promise<void> {
-    try {
-      const response = await this.collectionService.processPendingRequests();
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        data: response
-      });
-    } catch (error: any) {
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
-    }
-  }
-
-  async assignRequests(req: Request, res: Response): Promise<void> {
-    try {
-      await this.collectionService.processPendingRequests();
-      res.status(200).json({ message: "Requests processed successfully" });
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }

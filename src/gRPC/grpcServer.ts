@@ -28,9 +28,9 @@ server.addService(collectionProto.collectionService.service, {
             console.log("Received collection data:", call.request);
             const userId = call.request.userId;
             const collectionData = call.request.collectionData;
-            const response = await collectionService.validateCollectionData(userId, collectionData);
-            console.log("response in grpc server :",response);
-            callback(null, response);
+            // const response = await collectionService.validateCollectionData(userId, collectionData);
+            // console.log("response in grpc server :",response);
+            // callback(null, response);
         } catch (error: any) {
             console.error("Error in ValidateCollectionData:", error.message);
             callback({
@@ -42,8 +42,8 @@ server.addService(collectionProto.collectionService.service, {
     CreateCollection: async (call: any, callback: any) => {
         try {
             console.log("Received paynent data:", call.request);
-            const response = await collectionService.createCollectionRequest(call.request.userId);
-            callback(null, response);
+            // const response = await collectionService.createCollectionRequest(call.request.userId);
+            // callback(null, response);
         } catch (error: any) {
             console.error("Error in ValidateCollectionData:", error.message);
             callback({

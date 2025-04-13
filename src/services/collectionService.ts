@@ -25,6 +25,7 @@ export class CollectionService implements ICollectionservice {
 
     async validateCollection(userId: string, collectionData: ICollection): Promise<string> {
         try {
+            console.log("they used us-1-validateCollection")
             if (!collectionData.items || collectionData.items.length === 0) {
                 throw new Error("Items data is missing in the collection request.");
             }
@@ -62,6 +63,8 @@ export class CollectionService implements ICollectionservice {
 
     async createCollection(userId: string, paymentId: string): Promise<ICollection> {
         try {
+            console.log("they used us-1-createCollection")
+
             console.log("userId in collection service!!:", userId);
             const redisKey = `collection:${userId}`
             let collectionData: ICollection | null = await this.redisRepository.get(redisKey);
@@ -95,7 +98,7 @@ export class CollectionService implements ICollectionservice {
             console.log("collector :", collector);
 
             if (!collector) {
-                
+            
                 throw new Error("No available collector found");
             }
 
@@ -183,72 +186,8 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async validateCollectionData(userId: string, collectionData: Partial<ICollection>): Promise<{ success: boolean; message: string; collectionId: string; totalCost: number }> {
-        try {
-            if (!collectionData.items || collectionData.items.length === 0) {
-                throw new Error("Items data is missing in the collection request.");
-            }
-            let totalCost = 0;
+    
 
-            for (const item of collectionData.items) {
-                if (!item.categoryId || !item.qty) {
-                    throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
-                }
-
-                const categoryData = await this.categoryRepository.findById(item.categoryId);
-
-                if (!categoryData) {
-                    throw new Error(`Category with ID ${item.categoryId} not found.`);
-                }
-
-                totalCost += categoryData.rate * Number(item.qty);
-            }
-
-            const collectionId = uuidv4().replace(/-/g, '').substring(0, 16);
-
-            Object.assign(collectionData, { collectionId, estimatedCost: totalCost, });
-
-            await this.redisRepository.set(userId, collectionData, 600);
-
-            return {
-                success: true,
-                message: MESSAGES.COLLECTION_VALIDATED,
-                collectionId,
-                totalCost
-            };
-
-        } catch (error) {
-            console.error('Error while validating collection data:', error);
-            throw error;
-        }
-    }
-
-    async createCollectionRequest(userId: string): Promise<{ success: boolean, message: string, data: ICollection }> {
-        try {
-            console.log("userId in collection service!!:", userId);
-            let collectionData: ICollection | null = await this.redisRepository.get(userId);
-
-            if (!collectionData) {
-                throw new Error(`No collection data found in Redis for userId: ${userId}`);
-            }
-
-            Object.assign(collectionData, { userId, advancePaymentStatus: "paid" });
-
-            console.log("Final collection data before saving:", collectionData);
-
-            // Store collection data in the main repository (DB)
-            const collection = await this.collectionRepository.create(collectionData);
-
-            return {
-                success: true,
-                message: MESSAGES.COLLECTION_CREATED,
-                data: collection
-            };
-        } catch (error) {
-            console.error('Error while creating pickup request:', error);
-            throw error;
-        }
-    }
 
     async getCollectionHistory(userId: string): Promise<ICollection[]> {
         try {
@@ -358,179 +297,6 @@ export class CollectionService implements ICollectionservice {
 
         } catch (error) {
             console.error('Error while fetching collection histories:', error);
-            throw error;
-        }
-    }
-
-
-
-
-    async processPendingRequests(): Promise<void> {
-        try {
-            const pendingRequests = await this.collectionRepository.getPendingRequests();
-            console.log("pending requests :", pendingRequests);
-
-            for (const request of pendingRequests) {
-                await this.assignCollectorToRequest(request);
-            }
-        } catch (error) {
-            console.error('Error while fetching available collectors:', error);
-            throw error;
-        }
-    }
-
-    // async assignCollectorToRequest(request: ICollection): Promise<void> {
-    //     try {
-    //         const { serviceAreaId } = request;
-
-    //         const response: { success: boolean; collectors: ICollector[] } = await new Promise((resolve, reject) => {
-    //             collectorClient.GetAvailableCollectors({ serviceAreaId }, (error: any, response: any) => {
-    //                 if (error) {
-    //                     return reject(error)
-    //                 }
-
-    //                 resolve(response);
-    //             });
-    //         });
-
-    //         console.log("availableCollectors :", response);
-
-    //         if (!response.success) {
-    //             throw new Error("getting collectors failed!");
-    //         }
-    //         const availableCollectors = response.collectors;
-    //         availableCollectors.sort((a, b) => a.currentTasks - b.currentTasks);
-
-    //         if (availableCollectors.length > 0) {
-    //             const assignedCollector = availableCollectors[0];
-    //             assignedCollector.currentTasks += 1;
-    //             if (assignedCollector.currentTasks >= assignedCollector.maxCapacity) {
-    //                 assignedCollector.availabilityStatus = "unavailable";
-    //             }
-
-    //             const updateResponse: { success: boolean; message: string } = await new Promise((resolve, reject) => {
-    //                 collectorClient.UpdateCollector({
-    //                     id: assignedCollector.id,
-    //                     currentTasks: assignedCollector.currentTasks,
-    //                     availabilityStatus: assignedCollector.availabilityStatus
-    //                 }, (error: any, response: any) => {
-    //                     if (error) {
-    //                         return reject(error)
-    //                     }
-
-    //                     resolve(response);
-    //                 });
-    //             });
-
-    //             console.log("updateResponse : ", updateResponse);
-
-    //             if (!updateResponse.success) {
-    //                 throw new Error("Failed to update collector state");
-    //             }
-
-    //             // Step 5: Update request status and assign collector
-    //             await this.collectionRepository.updateById(request._id as mongoose.Types.ObjectId, {
-    //                 collectorId: assignedCollector.id,
-    //                 status: "scheduled"
-    //             });
-
-    //             // Step 4: Publish a notification message to RabbitMQ
-    //             const queue = "notification";
-
-    //             const notification: INotification = {
-    //                 userId: request.userId,
-    //                 title: "Pickup Scheduled",
-    //                 message: `Your waste pickup has been successfully scheduled with collector ${assignedCollector.name}. You can track the status and view details in your collection history.`,
-    //                 url: "/account/waste-collection-history",
-    //                 createdAt: new Date()
-    //             };
-
-
-    //             RabbitMQ.publish(queue, notification);
-
-    //         } else {
-    //             await this.collectionRepository.updateById(request._id as mongoose.Types.ObjectId, { status: "pending" });
-    //         }
-    //     } catch (error) {
-    //         console.error('Error while assigning available collectors:', error);
-    //         throw error;
-    //     }
-    // }
-
-    async assignCollectorToRequest(request: ICollection): Promise<void> {
-        try {
-            const { serviceAreaId } = request;
-
-            const response: { success: boolean; collectors: ICollector[] } = await new Promise((resolve, reject) => {
-                collectorClient.GetAvailableCollectors({ serviceAreaId }, (error: any, response: any) => {
-                    if (error) {
-                        return reject(error)
-                    }
-
-                    resolve(response);
-                });
-            });
-
-            console.log("availableCollectors :", response);
-
-            if (!response.success) {
-                throw new Error("getting collectors failed!");
-            }
-            const availableCollectors = response.collectors;
-            availableCollectors.sort((a, b) => a.currentTasks - b.currentTasks);
-
-            if (availableCollectors.length > 0) {
-                const assignedCollector = availableCollectors[0];
-                assignedCollector.currentTasks += 1;
-                if (assignedCollector.currentTasks >= assignedCollector.maxCapacity) {
-                    assignedCollector.availabilityStatus = "unavailable";
-                }
-
-                const updateResponse: { success: boolean; message: string } = await new Promise((resolve, reject) => {
-                    collectorClient.UpdateCollector({
-                        id: assignedCollector.id,
-                        currentTasks: assignedCollector.currentTasks,
-                        availabilityStatus: assignedCollector.availabilityStatus
-                    }, (error: any, response: any) => {
-                        if (error) {
-                            return reject(error)
-                        }
-
-                        resolve(response);
-                    });
-                });
-
-                console.log("updateResponse : ", updateResponse);
-
-                if (!updateResponse.success) {
-                    throw new Error("Failed to update collector state");
-                }
-
-                // Step 5: Update request status and assign collector
-                await this.collectionRepository.updateById(request._id as mongoose.Types.ObjectId, {
-                    collectorId: assignedCollector.id,
-                    status: "scheduled"
-                });
-
-                // Step 4: Publish a notification message to RabbitMQ
-                const queue = "notification";
-
-                const notification: INotification = {
-                    userId: request.userId,
-                    title: "Pickup Scheduled",
-                    message: `Your waste pickup has been successfully scheduled with collector ${assignedCollector.name}. You can track the status and view details in your collection history.`,
-                    url: "/account/waste-collection-history",
-                    createdAt: new Date()
-                };
-
-
-                RabbitMQ.publish(queue, notification);
-
-            } else {
-                await this.collectionRepository.updateById(request._id as mongoose.Types.ObjectId, { status: "pending" });
-            }
-        } catch (error) {
-            console.error('Error while assigning available collectors:', error);
             throw error;
         }
     }

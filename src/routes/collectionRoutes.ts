@@ -15,8 +15,6 @@ const router = Router();
 router.get('/', collectionController.getCollectionHistory.bind(collectionController));
 router.get('/collections', collectionController.getCollectionHistories.bind(collectionController));
 router.get('/available-collectors/:serviceAreaId', collectionController.getAvailableCollectors.bind(collectionController));
-router.get('/pending-requests',collectionController.getPendingRequests.bind(collectionController));
-router.post('/assign-requests',collectionController.assignRequests.bind(collectionController));
 router.get('/collector/assigned-collections',collectionController.getAssignedCollections.bind(collectionController));
 router.post('/:collectionId', collectionController.completeCollection.bind(collectionController));
 router.patch('/cancel',collectionController.cancelCollection.bind(collectionController));

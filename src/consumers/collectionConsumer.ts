@@ -73,12 +73,12 @@ export default class CollectionConsumer {
                 // Create collection only if payment is successful
                 const collection = await collectionService.createCollection(message.userId, message.paymentId);
 
-                await RabbitMQ.publish("scheduleCollection", {
-                    collectionId: collection.collectionId,
-                    userId: collection.userId,
-                    serviceAreaId: collection.serviceAreaId,
-                    preferredDate: collection.preferredDate
-                });
+                // await RabbitMQ.publish("scheduleCollection", {
+                //     collectionId: collection.collectionId,
+                //     userId: collection.userId,
+                //     serviceAreaId: collection.serviceAreaId,
+                //     preferredDate: collection.preferredDate
+                // });
 
             } catch (error) {
                 console.error("Error processing PaymentCompletedEvent:", error);

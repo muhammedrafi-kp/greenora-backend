@@ -6,7 +6,6 @@ import connectDB from './config/dbConfig';
 import startGrpcServer from "./gRPC/grpcServer";
 import { connectToRedis, logRedisData } from './config/redisConfig';
 import CollectionConsumer from "./consumers/collectionConsumer";
-// import "./crone";
 
 import categoryRoutes from "../src/routes/categoryRoutes";
 import collectionRoutes from "./routes/collectionRoutes";

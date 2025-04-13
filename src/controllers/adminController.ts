@@ -99,27 +99,36 @@ export class AdminController implements IAdminController {
         }
     }
 
-    // async getUsers(req: Request, res: Response): Promise<void> {
-    //     try {
-    //         const { search, filter, sort, page = 1, limit = 10 } = req.query;
-
-
-    //         console.log("heloooooo",search, filter, sort, page, limit);
-
-    //         res.json({ message: "ok" });
-    //     } catch (error: any) {
-    //         console.error("Error while fetching users data : ", error);
-    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    //     }
-    // }
 
     async getUsers(req: Request, res: Response): Promise<void> {
         try {
-            const users = await this.adminService.getUsers();
+            const { 
+                search, 
+                status, 
+                sortField, 
+                sortOrder, 
+                page = 1, 
+                limit = 10 
+            } = req.query;
+
+            const queryOptions = {
+                search: search as string,
+                status: status as string,
+                sortField: sortField as string,
+                sortOrder: sortOrder as string,
+                page: Number(page),
+                limit: Number(limit)
+            }
+
+            console.log("queryOptions :", queryOptions);
+            const { users, totalItems,totalPages } = await this.adminService.getUsers(queryOptions);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: users
+                users,
+                totalItems,
+                currentPage: Number(page),
+                totalPages
             });
 
         } catch (error: any) {
@@ -130,11 +139,37 @@ export class AdminController implements IAdminController {
 
     async getCollectors(req: Request, res: Response): Promise<void> {
         try {
-            const collectors = await this.adminService.getCollectors();
+            const {
+                search,
+                status,
+                district,
+                serviceArea,
+                sortField,
+                sortOrder,
+                page = 1,
+                limit = 10
+            } = req.query;
+
+            const queryOptions = {
+                search: search as string,
+                status: status as string,
+                district: district as string,
+                serviceArea: serviceArea as string,
+                sortField: sortField as string,
+                sortOrder: sortOrder as string,
+                page: Number(page),
+                limit: Number(limit)
+            }
+
+            console.log("queryOptions :", queryOptions);
+
+            const { collectors, totalItems, totalPages } = await this.adminService.getCollectors(queryOptions);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: collectors
+                collectors,
+                totalItems,
+                totalPages
             });
         } catch (error: any) {
             console.error("Error while fetching collectors data", error);

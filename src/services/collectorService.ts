@@ -1,7 +1,7 @@
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
-import { ICollector } from "../models/Collector";
+import Collector, { ICollector } from "../models/Collector";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
@@ -57,8 +57,8 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            const prefix = "collector";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            console.log("otp :", otp);
             await sendOtp(email, otp);
             await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
             await this.redisRepository.set(`collector:${email}`, collectorData, 86400);
@@ -115,8 +115,11 @@ export class CollectorService implements ICollectorService {
         try {
             // const prefix = "collector";
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
+            console.log("otp :", otp);
             await sendOtp(email, otp);
-            await this.redisRepository.get(`collector-otp:${email}`);
+            await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
+
+            // await this.redisRepository.get(`collector-otp:${email}`);
         } catch (error) {
             console.error('Error while resending otp:', error);
             throw error;
@@ -241,7 +244,6 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         try {
             const collector = await this.collectorRepository.getCollectorById(userId);
@@ -268,6 +270,95 @@ export class CollectorService implements ICollectorService {
             await this.collectorRepository.updateCollectorById(userId, collector);
         } catch (error: any) {
             console.log("Error while changing collector password :", error.message);
+            throw error;
+        }
+    }
+
+    async getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector>|null }> {
+        try {
+            const collectionDate = new Date(preferredDate);
+            const dateKey = collectionDate.toISOString().split('T')[0];
+
+            console.log("serviceAreaId :", serviceAreaId);
+            console.log("dateKey :", dateKey);
+
+        
+            const filter = {
+                serviceArea: serviceAreaId,
+                isBlocked: false,
+                // isVerified: true,
+                verificationStatus: "approved",
+                $or: [
+                    { [`dailyTaskCounts.${dateKey}`]: { $lt: 5 } },
+                    { [`dailyTaskCounts.${dateKey}`]: { $exists: false } }
+                ]
+            };
+
+            const projection = {
+                _id: 1,
+                collectorId: 1, 
+                name: 1,
+                email: 1,
+                phone: 1,
+                dailyTaskCounts: 1
+            }  
+
+            const collectors = await this.collectorRepository.find(filter, projection);
+
+            if (collectors.length === 0) {
+                return {
+                    success: true,
+                    collector: null
+                }
+            }
+
+            console.log("collectors:", collectors);
+
+                const scoredCollectors = await Promise.all(collectors.map(async collector => ({
+                    ...collector.toObject(),
+                    score: await this.calculateCollectorScore(collector, dateKey)
+                })));
+
+                console.log("scoredCollectors :", scoredCollectors);
+        
+                scoredCollectors.sort((a: any, b: any) => b.score - a.score);
+        
+                return {
+                    success: true,
+                    collector: scoredCollectors[0]
+                };
+            
+        } catch (error: any) {
+            console.log("Error while fetching available collector :", error.message);
+            throw error;
+        }
+    }
+
+    async calculateCollectorScore(collector: ICollector, dateKey: string): Promise<number> {
+        try {
+            console.log("dateKey :", dateKey);
+            console.log("collector in calculateCollectorScore :", collector);
+            const dailyTasks = collector.dailyTaskCounts?.get?.(dateKey) || 0;
+            console.log("dailyTasks :", dailyTasks);
+            return 100 - dailyTasks;
+        } catch (error: any) {
+            console.log("Error while calculating collector score :", error.message);
+            throw error;
+        }
+    }
+
+    async assignCollectionToCollector(id: string, collectionId: string, preferredDate: string): Promise<void> {
+        try {
+            console.log("id :", id);
+            console.log("collectionId :", collectionId);
+            console.log("preferredDate :", preferredDate);
+            await this.collectorRepository.updateById(id, { $push: { assignedTasks: collectionId } });
+
+            const taskDateKey = new Date(preferredDate).toISOString().split('T')[0];
+            await this.collectorRepository.updateById(id, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: 1 } });
+
+        } catch (error: any) {
+            console.log("Error while assigning collection to collector :", error.message);
             throw error;
         }
     }

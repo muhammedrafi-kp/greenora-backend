@@ -398,13 +398,16 @@ export class CollcetorController implements ICollcetorController {
         }
     }
 
-    async getAvailableCollectors(req: Request, res: Response): Promise<void> {
+    async getAvailableCollector(req: Request, res: Response): Promise<void> {
         try {
+            const { serviceAreaId, preferredDate } = req.body;
+
+            const collector = await this.collectorService.getAvailableCollector(serviceAreaId, preferredDate);
+
+            res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
 
 
         } catch (error: any) {
-
-
 
             console.error("Error while getting available collectors : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });

@@ -12,6 +12,9 @@ export interface ICollectorService {
     getCollectors(collectorIds: string[]): Promise<ICollector[]>;
     updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
+    getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector>|null }>
+    calculateCollectorScore(collector: ICollector, dateKey: string): Promise<number>;
+    assignCollectionToCollector(collectorId: string, collectionId: string, preferredDate: string): Promise<void>;
     getAvailableCollectors(serviceAreaId: string): Promise<{ success: boolean; collectors: ICollector[] }>
     deductTaskCount(collectorId:string):Promise<void>;
 }

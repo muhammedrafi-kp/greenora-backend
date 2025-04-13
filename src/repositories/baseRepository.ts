@@ -30,16 +30,13 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    // async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>): Promise<T[]> {
-    //     try {
-    //         return await this.model.find(filter, projection);
-    //     } catch (error) {
-    //         throw new Error(`Find failed: ${error instanceof Error ? error.message : String(error)}`);
-    //     }
-    // }
-    async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>): Promise<T[]> {
+
+    async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>,sort?: Record<string, 1 | -1>, skip?: number, limit?: number): Promise<T[]> {
         try {
-            return await this.model.find(filter, projection);
+            if(skip && limit){
+                return await this.model.find(filter, projection).sort(sort).skip(skip).limit(limit);
+            }
+            return await this.model.find(filter, projection).sort(sort);
         } catch (error) {
             throw new Error(`Find failed: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -66,6 +63,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
             return await this.model.findByIdAndDelete(id);
         } catch (error) {
             throw new Error(`DeleteById failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async countDocuments(filter: FilterQuery<T> = {}): Promise<number> {
+        try {
+            return await this.model.countDocuments(filter);
+        } catch (error) {
+            throw new Error(`CountDocuments failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 

@@ -9,7 +9,9 @@ import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
 import { IUser } from '../models/User';
 import { ICollector } from '../models/Collector';
-
+import { IDistrict } from '../interfaces/external/locationService';
+import { IServiceArea } from '../interfaces/external/locationService';
+import axios from 'axios';
 
 export class AdminService implements IAdminService {
 
@@ -63,7 +65,7 @@ export class AdminService implements IAdminService {
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
 
-            const decoded = verifyToken(token,process.env.JWT_REFRESH_SECRET as string);
+            const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
             const user = await this.adminRepository.getAdminById(decoded.userId);
 
@@ -86,28 +88,164 @@ export class AdminService implements IAdminService {
         }
     }
 
-    // async getUsers(search: string, filter: string, sort: string, page: number, limit: number): Promise<IUser[]> {
-    //     try {
-
-    //     } catch (error) {
-
-    //     }
-    // }
-
-    async getUsers(): Promise<IUser[]> {
+    async getUsers(options: {
+        search?: string;
+        status?: string;
+        sortField?: string;
+        sortOrder?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ users: IUser[], totalItems: number, totalPages: number }> {
         try {
-            return this.userRepository.getUsers();
+            const {
+                search,
+                status,
+                sortField = 'name',
+                sortOrder = 'asc',
+                page = 1,
+                limit = 10
+            } = options;
+
+            const filter: any = {};
+
+            if (search) {
+                filter.$or = [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ];
+            }
+
+            if (status && status !== 'all') {
+                filter.isBlocked = status === 'blocked';
+            }
+
+            const sort: Record<string, 1 | -1> = {};
+            sort[sortField] = sortOrder === 'asc' ? 1 : -1;
+
+            const skip = (page - 1) * limit;
+            const totalItems = await this.userRepository.countDocuments(filter);
+            const totalPages = Math.ceil(totalItems / limit);
+
+            const users = await this.userRepository.find(filter, {}, sort, skip, limit);
+
+            return { users, totalItems, totalPages };
         } catch (error) {
             console.error('Error while fetching users:', error);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
         }
     }
 
-    async getCollectors(): Promise<ICollector[]> {
+    async getDistrictsByIds(districtIds: string[]): Promise<IDistrict[]> {
         try {
-            return this.collectorRepository.getCollectors();
+            const response = await axios.get(`${process.env.LOCATION_SERVICE_URL}/service-area/admin/districts/bulk`, {
+                params: { ids: districtIds.join(',') }
+            });
+            return response.data;
         } catch (error) {
-            console.error('Error while fetching users:', error);
+            console.error('Error while fetching districts:', error);
+            throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
+    async getServiceAreasByIds(serviceAreaIds: string[]): Promise<IServiceArea[]> {
+        try {
+            const response = await axios.get(`${process.env.LOCATION_SERVICE_URL}/service-area/admin/service-areas/bulk`, {
+                params: { ids: serviceAreaIds.join(',') }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error while fetching service areas:', error);
+            throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
+        }
+    }
+
+    async getCollectors(queryOptions: {
+        search?: string;
+        status?: string;
+        district?: string;
+        serviceArea?: string;
+        sortField?: string;
+        sortOrder?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ collectors: Partial<ICollector>[], totalItems: number, totalPages: number }> {
+        try {
+            const {
+                search,
+                status,
+                district,
+                serviceArea,
+                sortField = 'name',
+                sortOrder = 'asc',
+                page = 1,
+                limit = 10
+            } = queryOptions;
+
+            const filter: any = {};
+
+            if (search) {
+                filter.$or = [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ];
+            } 
+            if (district !== 'all') filter.district = district;
+            if (serviceArea !== 'all') filter.serviceArea = serviceArea;
+            if (status && status !== 'all') filter.isBlocked = status === 'blocked';
+            
+            const projection = {
+                password: 0,
+            }
+
+            const sort: Record<string, 1 | -1> = {};
+            sort[sortField] = sortOrder === 'asc' ? 1 : -1;
+
+            const skip = (page - 1) * limit;
+
+            const totalItems = await this.collectorRepository.countDocuments(filter);
+            const totalPages = Math.ceil(totalItems / limit);
+            console.log("filter :", filter);
+            console.log("projection :", projection);
+            console.log("sort :", sort);
+            console.log("skip :", skip);
+            console.log("limit :", limit);
+            const collectors = await this.collectorRepository.find(filter, projection, sort, skip, limit);
+
+            const districtIds = [...new Set(collectors.map(c => c.district).filter(Boolean))] as string[];
+            const serviceAreaIds = [...new Set(collectors.map(c => c.serviceArea).filter(Boolean))] as string[];
+
+            const [districts, serviceAreas] = await Promise.all([
+                districtIds.length ? this.getDistrictsByIds(districtIds) : Promise.resolve([]),
+                serviceAreaIds.length ? this.getServiceAreasByIds(serviceAreaIds) : Promise.resolve([])
+            ]);
+            // console.log("districts:", districts);
+            // console.log("serviceAreas:", serviceAreas);
+
+            const districtMap = new Map(districts.map(d => [d._id.toString(), d]));
+            const serviceAreaMap = new Map(serviceAreas.map(s => [s._id.toString(), s]));
+
+            // console.log("districtMap:", districtMap);
+            // console.log("serviceAreaMap:", serviceAreaMap);
+
+            // return collectors;
+
+          
+
+            const enrichedCollectors = collectors.map(collector => {
+                const plainCollector = collector.toObject();
+                return {
+                    ...plainCollector,
+                    district: collector.district ? districtMap.get(collector.district) : null,
+                    serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+                };
+            });
+
+            // console.log("enrichedCollectors:", enrichedCollectors);
+
+            return { collectors: enrichedCollectors, totalItems, totalPages };
+
+        } catch (error: any) {
+            console.error('Error while fetching users:', error.message);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
         }
     }
@@ -124,8 +262,8 @@ export class AdminService implements IAdminService {
 
     async updateVerificationStatus(id: string, status: string): Promise<ICollector | null> {
         try {
-            if(status === 'approve') status = 'approved';
-            if(status === 'reject') status = 'rejected';
+            if (status === 'approve') status = 'approved';
+            if (status === 'reject') status = 'rejected';
             return this.collectorRepository.updateById(id, { verificationStatus: status });
         } catch (error) {
             console.error('Error while updating verification status:', error);
@@ -135,7 +273,7 @@ export class AdminService implements IAdminService {
 
     async updateUserStatus(id: string): Promise<string> {
         try {
-            
+
             const user = await this.userRepository.getUserById(id);
 
             if (!user) {

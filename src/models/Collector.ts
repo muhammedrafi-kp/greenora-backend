@@ -1,5 +1,4 @@
-import { c } from "framer-motion/dist/types.d-O7VGXDJe";
-import { Schema, Document, model } from "mongoose";
+import { Schema, Document, model, Types } from "mongoose";
 
 export interface ICollector extends Document {
     collectorId: string;
@@ -22,6 +21,8 @@ export interface ICollector extends Document {
     availabilityStatus: "available" | "unavailable" | "on_break";
     currentTasks: number;
     maxCapacity: number;
+    assignedTasks: string; 
+    dailyTaskCounts: Map<string, number>;
     performanceMetrics: {
         totalCollections: number;
         averageRating: number;
@@ -55,6 +56,8 @@ const collectorSchema = new Schema<ICollector>({
     availabilityStatus: { type: String, enum: ["available", "unavailable", "on_break"], default: "available" },
     currentTasks: { type: Number, default: 0 },
     maxCapacity: { type: Number, default: 5 },
+    assignedTasks: [{ type: String }], 
+    dailyTaskCounts: { type: Map, of: Number, default: {} },
     performanceMetrics: {
         totalCollections: { type: Number, default: 0 },
         averageRating: { type: Number, default: 0 },

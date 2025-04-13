@@ -30,4 +30,6 @@ router.put('/', validateCollector, upload.fields([
 router.post('/google/callback', collectorController.googleAuthCallback.bind(collectorController));
 router.patch('/password', validateCollector, collectorController.changePassword.bind(collectorController));
 
+router.post('/available-collector', collectorController.getAvailableCollector.bind(collectorController));
+
 export default router;

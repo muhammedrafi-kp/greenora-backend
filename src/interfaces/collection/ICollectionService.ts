@@ -1,19 +1,47 @@
 import { Decimal128 } from "mongoose";
 import { ICollection } from "../../models/Collection";
+import { ICollector } from "../external/external";
+
+export interface IPayment {
+    paymentId: string;
+    advanceAmount: number;
+    advancePaymentStatus: string;
+    amount: number;
+    status: "pending" | "success" | "failed";
+    method: "wallet" | "online" | "cash";
+    paymentDate: string;
+}
 
 export interface ICollectionservice {
     validateCollectionData(userId: string, collectionData: Partial<ICollection>): Promise<{ success: boolean; message: string; collectionId: string; totalCost: number }>;
     createCollectionRequest(userId: string): Promise<{ success: boolean, message: string, data: ICollection }>;
 
-    validateCollection(userId:String,collectionData:ICollection):Promise<string>;
-    createCollection(userId: string,paymentId:string):Promise<ICollection>;
+    validateCollection(userId: String, collectionData: ICollection): Promise<string>;
+    createCollection(userId: string, paymentId: string): Promise<ICollection>;
+    scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void>;
 
     getCollectionHistory(userId: string): Promise<ICollection[]>;
-    getCollectionHistories(): Promise<Partial<ICollection>[]>;
 
-    getAvailableCollectors(serviceAreaId: string): Promise<{ success: true, collectors: object[] }>
+    getCollectionHistories(options: {
+        status?: string;
+        districtId?: string;
+        serviceAreaId?: string;
+        startDate?: string;
+        endDate?: string;
+        sortBy?: string;
+        sortOrder?: string;
+        search?: string;
+        page: number;
+        limit: number;
+    }): Promise<{collections: Partial<ICollection>[], totalItems: number}>;
+    findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector>;
+    assignCollectionToCollector(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
+    // getAvailableCollectors(serviceAreaId: string): Promise<{ success: true, collectors: object[] }>
     // processPendingRequests(): Promise<ICollection[]>;
     processPendingRequests(): Promise<void>;
     assignCollectorToRequest(request: ICollection): Promise<void>;
-    getAssignedCollections(collectorId:string): Promise<Partial<ICollection>[]>;
+    getAssignedCollections(collectorId: string): Promise<Partial<ICollection>[]>;
+    processCashPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void>;
+    processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void>;
+    cancelCollection(collectionId: string, reason: string): Promise<void>;
 }

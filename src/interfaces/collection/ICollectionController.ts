@@ -11,4 +11,6 @@ export interface ICollectionController{
     getPendingRequests(req:Request,res:Response):Promise<void>;
     assignRequests(req:Request,res:Response):Promise<void>;
     getAssignedCollections(req:Request,res:Response):Promise<void>;
+    completeCollection(req:Request,res:Response):Promise<void>;
+    cancelCollection(req:Request,res:Response):Promise<void>;
 }

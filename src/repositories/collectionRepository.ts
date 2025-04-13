@@ -10,19 +10,11 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
 
     async getCollections(userId: string): Promise<ICollection[]> {
         try {
-            // return this.model.find({ userId })
-            // .populate({
-            //   path: 'items.categoryId',
-            //   model: 'Category',
-            //   select: 'name rate',
-            // })
-            // .lean()
-            // .exec() as unknown as ICollection[];
             return await this.model.find({ userId }).populate({
                 path: "items.categoryId", // populate inside array
                 model: "Category",         // your category model name
                 select: "name"   // fields you want to include, exclude _id if needed
-            });
+            }).sort({ createdAt: -1 });
 
         } catch (error) {
             throw new Error(`Error while finding pending collection requests: ${error instanceof Error ? error.message : String(error)}`);
@@ -33,7 +25,6 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
     async getPendingRequests(): Promise<ICollection[]> {
         try {
             const filter = { status: "pending" };
-            // const sort = { preferredDate: 1 };
             return this.findAll(filter, {}, { preferredDate: 1 });
         } catch (error) {
             throw new Error(`Error while finding pending collection requests: ${error instanceof Error ? error.message : String(error)}`);

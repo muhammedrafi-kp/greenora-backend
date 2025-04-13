@@ -1,4 +1,4 @@
-import mongoose,{ Types, Schema, model, Document, Decimal128 } from "mongoose";
+import mongoose, { Types, Schema, model, Document, Decimal128 } from "mongoose";
 
 export interface ICollection extends Document {
     userId: string;
@@ -28,19 +28,16 @@ export interface ICollection extends Document {
         long: number;
         updatedAt: Date;
     };
-    // advancePaymentAmount: number;
-    // advancePaymentStatus: string;
     paymentId: string;
-    // paymentStatus: "pending" | "paid" | "failed";
-    status: "pending" | "scheduled" | "cancelled" | "completed";
+    status: "pending" | "scheduled" | "in progress" | "cancelled" | "completed";
     scheduledAt: Date;
     collectionProof: string;
     userFeedback: {
         rating: number;
-        command: string;
+        comment: string;
     };
     cancellationReason: string;
-    proofs: string[];
+    proofs?: string[];
 }
 
 const collectionSchema = new Schema<ICollection>(
@@ -81,7 +78,7 @@ const collectionSchema = new Schema<ICollection>(
         // advancePaymentStatus: { type: String, enum: ["success", "failed"] },
         paymentId: { type: String },
         // paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
-        status: { type: String, enum: ["pending", "scheduled", "cancelled", "completed"], default: "pending" },
+        status: { type: String, enum: ["pending", "scheduled", "in progress", "cancelled", "completed"], default: "pending" },
         scheduledAt: { type: Date },
         collectionProof: { type: String },
         userFeedback: {

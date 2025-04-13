@@ -4,7 +4,7 @@ import { CollectionService } from "../services/collectionService";
 import collectionRepository from "../repositories/collectionRepository";
 import categoryRepository from "../repositories/categoryRepository";
 import redisRepository from "../repositories/redisRepository";
-
+import multer from 'multer';
 const collectionService = new CollectionService(collectionRepository, categoryRepository, redisRepository);
 const collectionController = new CollectionController(collectionService);
 
@@ -18,5 +18,7 @@ router.get('/available-collectors/:serviceAreaId', collectionController.getAvail
 router.get('/pending-requests',collectionController.getPendingRequests.bind(collectionController));
 router.post('/assign-requests',collectionController.assignRequests.bind(collectionController));
 router.get('/collector/assigned-collections',collectionController.getAssignedCollections.bind(collectionController));
+router.post('/:collectionId', collectionController.completeCollection.bind(collectionController));
+router.patch('/cancel',collectionController.cancelCollection.bind(collectionController));
 
 export default router;

@@ -4,7 +4,8 @@ import morgan from "morgan";
 
 import connectDB from './config/dbConfig';
 import startGrpcServer from "./gRPC/grpcServer";
-import { connectToRedis, logRedisData } from './config/redisConfig'
+import { connectToRedis, logRedisData } from './config/redisConfig';
+import CollectionConsumer from "./consumers/collectionConsumer";
 // import "./crone";
 
 import categoryRoutes from "../src/routes/categoryRoutes";
@@ -16,7 +17,8 @@ const app = express();
 
 connectDB();
 startGrpcServer();
-connectToRedis()
+connectToRedis();
+CollectionConsumer.initialize()
 
 app.use(morgan('dev'));
 app.use(express.json());

@@ -10,31 +10,43 @@ export class CollectionPaymentController implements ICollectionPaymentController
     async initiatePayment(req: Request, res: Response): Promise<void> {
         try {
 
-            const userId = req.headers['x-user-id'];
-            const collectionData = req.body;
+            const userId = req.headers['x-user-id'] as string;
+            const { paymentMethod, collectionData } = req.body;
 
             console.log("collectionData :", collectionData);
-            console.log("userId :", userId);
+            console.log("Payment Method:", paymentMethod);
+            console.log("UserId:", userId);
 
-            if (!collectionData || Object.keys(collectionData).length === 0) {
+            if (!collectionData || Object.keys(collectionData).length === 0 || !paymentMethod) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
                     message: MESSAGES.COLLECTION_DATA_REQUIRED,
                 });
                 return;
             }
+            if (paymentMethod === "razorpay") {
+                const { orderId } = await this.collectionPaymentService.processRazorpayPayment(userId, collectionData);
+                res.status(HTTP_STATUS.OK).json({
+                    success: true,
+                    orderId,
+                });
 
-            // const { orderId, amount } = await this.collectionPaymentService.initiatePayment(userId as string, collectionData);
-            const { orderId } = await this.collectionPaymentService.initiatePayment(userId as string, collectionData);
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                orderId,
-            })
+            } else if (paymentMethod === "wallet") {
+                await this.collectionPaymentService.processWalletPayment(userId, collectionData);
+                res.status(HTTP_STATUS.OK).json({
+                    success: true,
+                    message: MESSAGES.PAYMENT_SUCCESSFULL
+                });
+            }
 
         } catch (error: any) {
-            console.error("Error during initiating payment:", error.message);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({ message: error.message });
+            } else {
+                console.error("Error during initiating payment:", error.message);
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+            }
         }
     }
 

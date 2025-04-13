@@ -1,9 +1,10 @@
 import { Router } from "express";
-import collectionPaymentRepository from "../repositories/collectionPaymentRepository";
 import { CollectionPaymentService } from "../services/collectionPaymentService";
 import { CollectionPaymentController } from "../controllers/collectionPaymentController";
+import collectionPaymentRepository from "../repositories/collectionPaymentRepository";
+import walletRepository from "../repositories/walletRepository";
 
-const collectionPaymentService = new CollectionPaymentService(collectionPaymentRepository);
+const collectionPaymentService = new CollectionPaymentService(collectionPaymentRepository,walletRepository);
 const collectionPaymentController = new CollectionPaymentController(collectionPaymentService);
 
 const router = Router();

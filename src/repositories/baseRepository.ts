@@ -45,6 +45,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
+    async updateOne(filter: FilterQuery<T>, data: UpdateQuery<T>, options?: QueryOptions): Promise<T | null> {
+        try {
+            return await this.model.findOneAndUpdate(filter, data, { ...options, new: true });
+        } catch (error) {
+            throw new Error(`UpdateOne failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
     async deleteById(id: string | Types.ObjectId): Promise<T | null> {
         try {
             return this.model.findByIdAndDelete(id);

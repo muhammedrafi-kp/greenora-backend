@@ -1,36 +1,34 @@
-import amqp from "amqplib";
+import RabbitMQ from "../utils/rabbitmq";
+import { io } from "../index";
+import { INotification } from "../models/Notification";
+import { NotificationService } from "../services/notificationService";
+import notificationRepository from "../repositories/notificationRepository";
+import { INotificationService } from "../interfaces/INotificationService";
 
-async function startNotificationConsumer() {
-    try {
-        const connection = await amqp.connect("amqp://localhost");
-        const channel = await connection.createChannel();
-        const queue = "notifications";
+const notificationService: INotificationService = new NotificationService(notificationRepository);
 
-        await channel.assertQueue(queue, { durable: true });
+export default class NotificationConsumer {
 
-        console.log("Waiting for notification messages...");
+    static async initialize() {
+        await RabbitMQ.connect();
 
-        channel.consume(queue, async (message) => {
-            if (message) {
-                try {
-                    // Parse the message
-                    const notification = JSON.parse(message.content.toString());
-                    console.log("Received notification:", notification);
+        await RabbitMQ.consume("notification", async (msg) => {
+            console.log("Received pickup.cancelled:", msg.content.toString());
 
-                    // Step 5: Acknowledge the message (mark as processed)
-                    channel.ack(message);
-                } catch (error) {
-                    console.error("Failed to process notification:", error);
+            const notification: INotification = JSON.parse(msg.content.toString());
 
-                    // Step 6: Requeue the message for retry
-                    channel.nack(message);
-                }
+            console.log(notification)
+
+            try {
+
+                const newNotification = await notificationService.createNotification(notification);
+                console.log("newNotification :",newNotification);
+
+                io.to(notification.userId).emit("receive-notification", notification);
+
+            } catch (error) {
+                RabbitMQ.nack(msg, false, false);
             }
-        }, { noAck: false });
-        
-    } catch (error) {
-        console.error("Error in notification consumer:", error);
+        });
     }
 }
-
-export default startNotificationConsumer;

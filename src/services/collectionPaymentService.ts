@@ -8,7 +8,7 @@ import { ICollectionPayment } from "../models/CollectionPayment";
 import RabbitMQ from "../utils/rabbitmq";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
 import { ITransaction } from "../models/Wallet";
-import { ICollection } from "../interfaces/external/ICollection";
+import { ICollection, INotification } from "../interfaces/external/external";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import { ClientSession } from "mongoose";
@@ -116,7 +116,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
                 collectionData
             };
 
-            RabbitMQ.publish("paymentInitiatedQueue", paymentInitiatedEvent)
+            await RabbitMQ.publish("paymentInitiatedQueue", paymentInitiatedEvent)
 
             const order = await this.razorpay.orders.create({
                 // amount: response.totalCost * 100,
@@ -168,7 +168,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
                     // status: "success"
                 };
 
-                RabbitMQ.publish("paymentCompletedQueue", paymentCompletedEvent)
+                await RabbitMQ.publish("paymentCompletedQueue", paymentCompletedEvent)
             }
 
             return isPaymentValid;
@@ -225,9 +225,51 @@ export class CollectionPaymentService implements ICollectionPaymentService {
         try {
             const options = session ? { session } : {};
 
+            console.log("paymentId:", paymentId)
+            console.log("paymentId:", paymentData)
+
+
             return await this.collectionPaymentRepository.updateOne({ paymentId }, paymentData, options);
         } catch (error: any) {
             console.error("Error while updating payment details :", error.message);
+            throw error;
+        }
+    }
+
+    async requestPayment(userId: string, paymentId: string, amount: number): Promise<void> {
+        try {
+            const paymentData = await this.collectionPaymentRepository.findOne({ paymentId });
+            console.log("paymentData :", paymentData);
+
+            if (!paymentData) {
+                const error: any = new Error(MESSAGES.PAYMENT_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            const order = await this.razorpay.orders.create({
+                amount: (amount - paymentData.advanceAmount) * 100,
+                currency: "INR",
+                receipt: paymentId,
+                payment_capture: true
+            });
+
+            await this.updatePaymentData(paymentId, { amount: amount, orderId: order.id });
+
+            const queue = "notification";
+
+            const notification: INotification = {
+                userId: userId,
+                title: "Payment Request for Waste Pickup",
+                message: `The waste pickup is ready and a payment request has been generated. Please complete the payment to proceed.`,
+                url: `/account/collections`,
+                createdAt: new Date()
+            };
+
+            await RabbitMQ.publish(queue, notification);
+
+        } catch (error: any) {
+            console.error("Error while requesting payment :", error.message);
             throw error;
         }
     }

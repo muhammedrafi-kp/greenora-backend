@@ -10,7 +10,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
     async initiatePayment(req: Request, res: Response): Promise<void> {
         try {
 
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const { paymentMethod, collectionData } = req.body;
 
             console.log("collectionData :", collectionData);
@@ -50,9 +50,9 @@ export class CollectionPaymentController implements ICollectionPaymentController
         }
     }
 
-    async verifyPayment(req: Request, res: Response): Promise<void> {
+    async verifyAdvancePayment(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
             const razorpayVerificationData = req.body;
 
             console.log("userId :", userId);
@@ -82,8 +82,9 @@ export class CollectionPaymentController implements ICollectionPaymentController
     async getPaymentData(req: Request, res: Response): Promise<void> {
         try {
             const paymentId = req.params.paymentId;
-            const paymentDetails = await this.collectionPaymentService.getPaymentData(paymentId);
-            if (!paymentDetails) {
+            const paymentData = await this.collectionPaymentService.getPaymentData(paymentId);
+            console.log("payment data:",paymentData)
+            if (!paymentData) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
                     message: MESSAGES.PAYMENT_NOT_FOUND
@@ -92,12 +93,41 @@ export class CollectionPaymentController implements ICollectionPaymentController
             }
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: paymentDetails
+                data: paymentData
             });
 
 
         } catch (error: any) {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async requestPayment(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId, paymentId, amount } = req.body;
+            console.log("paymentId:", paymentId)
+            await this.collectionPaymentService.requestPayment(userId, paymentId, amount);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.PAYMENT_SUCCESSFULL
+            });
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
+        }
+    }
+
+    async verifyPayment(req: Request, res: Response): Promise<void> {
+        try {
+
+        } catch (error: any) {
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+
         }
     }
 }

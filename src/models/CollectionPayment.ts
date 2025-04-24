@@ -10,6 +10,7 @@ export interface ICollectionPayment extends Document {
     amount: number;
     status: "pending" | "success" | "failed";
     method: "online" | "wallet" | "cash";
+    orderId?: string;
     paidAt?: Date;
 };
 
@@ -23,6 +24,7 @@ const collectionPaymentSchema = new Schema<ICollectionPayment>({
     advancePaymentStatus: { type: String, enum: ["success", "failed", "refunded"] },
     advancePaymentMethod: { type: String, enum: ["online", "wallet"], required: true },
     method: { type: String, enum: ["online", "wallet", "cash"] },
+    orderId: { type: String },
     paidAt: { type: Date },
 }, { timestamps: true });
 

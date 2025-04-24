@@ -40,3 +40,12 @@ export interface ICollection extends Document {
     cancellationReason: string;
     proofs?: string[];
 }
+
+
+export interface INotification {
+    userId: string;
+    title: string;
+    message: string;
+    url: string;
+    createdAt: Date;
+}

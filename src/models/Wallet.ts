@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Double } from "mongoose";
 
 export interface ITransaction {
-    type: "debit" | "credit"|"refund";
+    type: "debit" | "credit" | "refund";
     amount: number;
     timestamp: Date;
     status: "pending" | "completed" | "failed";
@@ -16,13 +16,12 @@ export interface IWallet extends Document {
 }
 
 const TransactionSchema = new Schema<ITransaction>({
-    type: { type: String, enum: ["debit", "credit","refund"], required: true },
+    type: { type: String, enum: ["debit", "credit", "refund"], required: true },
     amount: { type: Number, required: true },
     timestamp: { type: Date, default: Date.now },
     status: { type: String, enum: ["pending", "completed", "failed"], required: true },
     serviceType: { type: String, required: true }
-},
-    { _id: false }
+}
 );
 
 const WalletSchema = new Schema<IWallet>({

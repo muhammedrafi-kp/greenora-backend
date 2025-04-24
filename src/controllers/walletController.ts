@@ -8,7 +8,7 @@ export class WalletController implements IWalletController {
 
     async getWalletData(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const wallet = await this.walletService.getWalletData(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -26,7 +26,7 @@ export class WalletController implements IWalletController {
 
     async initiateDeposit(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const amount = req.body.amount;
             const { amount: orderAmount, orderId } = await this.walletService.initiateDeposit(userId, amount);
 
@@ -44,7 +44,7 @@ export class WalletController implements IWalletController {
 
     async verifyDeposit(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const razorpayVerificationData = req.body;
             console.log("razorpayVerificationData:", razorpayVerificationData);
             await this.walletService.verifyDeposit(userId, razorpayVerificationData);
@@ -65,7 +65,7 @@ export class WalletController implements IWalletController {
 
     async withdrawMoney(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const amount = req.body.amount;
             await this.walletService.withdrawMoney(userId, amount);
             res.status(HTTP_STATUS.OK).json({

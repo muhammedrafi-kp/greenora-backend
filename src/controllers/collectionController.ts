@@ -8,12 +8,29 @@ import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
 
 export class CollectionController implements ICollectionController {
-  
+
   constructor(private collectionService: ICollectionservice) { };
+
+
+  async scheduleCollectionManually(req: Request, res: Response): Promise<void> {
+    try {
+      const collectionId = req.params.collectionId;
+      const { collectorId, userId, preferredDate } = req.body;
+      console.log("collectionId :", collectionId);
+      console.log("collectorId :", collectorId);
+      console.log("userId :", userId);
+      console.log("preferredDate :", preferredDate);
+      const response = await this.collectionService.scheduleCollectionManually(collectionId, collectorId, userId, preferredDate);
+      console.log("response :", response);
+      res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection scheduled successfully" });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
 
   async getCollectionHistory(req: Request, res: Response): Promise<void> {
     try {
-      const userId = req.headers['x-user-id'];
+      const userId = req.headers['x-client-id'];
       const collectionHistories = await this.collectionService.getCollectionHistory(userId as string);
       res.status(HTTP_STATUS.OK).json({ success: true, data: collectionHistories });
     } catch (error: any) {
@@ -52,7 +69,7 @@ export class CollectionController implements ICollectionController {
       // console.log("queryOptions :", queryOptions);
 
       const { collections, totalItems } = await this.collectionService.getCollectionHistories(queryOptions);
-      
+
       res.status(HTTP_STATUS.OK).json({ success: true, collections, totalItems });
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -76,7 +93,7 @@ export class CollectionController implements ICollectionController {
 
   async getAssignedCollections(req: Request, res: Response): Promise<void> {
     try {
-      const collectorId = req.headers['x-user-id'];
+      const collectorId = req.headers['x-client-id'];
 
       const assignedCollections = await this.collectionService.getAssignedCollections(collectorId as string);
 
@@ -94,21 +111,25 @@ export class CollectionController implements ICollectionController {
     try {
       const { collectionId } = req.params;
       const { paymentData, collectionData } = req.body;
+      const collectionProofs = req.files as Express.Multer.File[];
+      const parsedPaymentData = JSON.parse(paymentData);
+      const parsedCollectionData = JSON.parse(collectionData);
+      console.log("Uploaded files:", collectionProofs);
 
       console.log("collectionId :", collectionId);
       console.log("paymentData in controller :", paymentData);
       console.log("collectionData in controller:", collectionData);
 
-      if (!collectionId || !paymentData || !collectionData) {
+      if (!collectionId || !paymentData || !collectionData || !collectionProofs) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid input data" });
         return;
       }
 
 
-      if (paymentData.method === 'cash') {
-        await this.collectionService.processCashPayment(collectionId, collectionData, paymentData);
-      } else if (paymentData.method === 'digital') {
-        await this.collectionService.processDigitalPayment(collectionId, collectionData, paymentData);
+      if (parsedPaymentData.method === 'cash') {
+        await this.collectionService.processCashPayment(collectionId, parsedCollectionData, collectionProofs, parsedPaymentData);
+      } else if (parsedPaymentData.method === 'digital') {
+        await this.collectionService.processDigitalPayment(collectionId, parsedCollectionData, collectionProofs, parsedPaymentData);
       }
 
       res.status(HTTP_STATUS.OK).json({
@@ -133,6 +154,7 @@ export class CollectionController implements ICollectionController {
       console.log("reason :", reason);
 
       await this.collectionService.cancelCollection(collectionId, reason);
+      
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection cancelled successfully" });
 
     } catch (error: any) {
@@ -144,6 +166,29 @@ export class CollectionController implements ICollectionController {
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
       }
 
+    }
+  }
+
+
+  async requestCollectionPayment(req: Request, res: Response): Promise<void> {
+    try {
+      const { collectionData } = req.body;
+      const collectionProofs = req.files as Express.Multer.File[];
+
+      console.log("collectionData :", collectionData);
+      console.log("collectionProofs :", collectionProofs);
+
+      if (!collectionData || !collectionProofs) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: "Invalid input data" });
+        return;
+      }
+      const parsedCollectionData = JSON.parse(collectionData);
+
+      await this.collectionService.requestCollectionPayment(parsedCollectionData, collectionProofs);
+      res.status(HTTP_STATUS.OK).json({ success: true, message: "Payment requested successfully" });
+
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
   }
 

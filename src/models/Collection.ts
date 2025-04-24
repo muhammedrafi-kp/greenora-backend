@@ -30,6 +30,7 @@ export interface ICollection extends Document {
     };
     paymentId: string;
     status: "pending" | "scheduled" | "in progress" | "cancelled" | "completed";
+    isPaymentRequested: boolean;
     scheduledAt: Date;
     collectionProof: string;
     userFeedback: {
@@ -79,6 +80,7 @@ const collectionSchema = new Schema<ICollection>(
         paymentId: { type: String },
         // paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
         status: { type: String, enum: ["pending", "scheduled", "in progress", "cancelled", "completed"], default: "pending" },
+        isPaymentRequested: { type: Boolean, default: false },
         scheduledAt: { type: Date },
         collectionProof: { type: String },
         userFeedback: {

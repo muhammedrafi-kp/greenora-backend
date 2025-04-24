@@ -9,10 +9,10 @@ import { MESSAGES } from "../constants/messages";
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { userClient, collectorClient } from "../gRPC/client/userClient";
-import mongoose from "mongoose";
 import RabbitMQ from "../utils/rabbitmq";
 import { IUser, ICollector, INotification } from "../interfaces/external/external";
-
+import s3 from "../config/s3Config";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 
 export class CollectionService implements ICollectionservice {
@@ -92,13 +92,49 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
+    async scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void> {
+        try {
+            await this.assignCollectionToCollector(collectionId, collectorId, preferredDate);
+
+            console.log("collector assigned to collection :", collectorId);
+
+            await this.collectionRepository.updateOne(
+                { collectionId },
+                {
+                    collectorId: collectorId,
+                    status: "scheduled",
+                    preferredDate,
+                    assignedCollector: collectorId
+                }
+            );
+
+            // Step 4: Publish a notification message to RabbitMQ
+            const queue = "notification";
+
+            const notification: INotification = {
+                userId: userId,
+                title: "Pickup Scheduled",
+                message: `Your waste pickup has been successfully scheduled. You can track the status and view details in your collection history.`,
+                url: "/account/waste-collection-history",
+                createdAt: new Date()
+            };
+
+
+            await RabbitMQ.publish(queue, notification);
+
+
+        } catch (error) {
+            console.error('Error while scheduling collection manually:', error);
+            throw error;
+        }
+    }
+
     async scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void> {
         try {
             const collector = await this.findAvailableCollector(serviceAreaId, preferredDate);
             console.log("collector :", collector);
 
             if (!collector) {
-            
                 throw new Error("No available collector found");
             }
 
@@ -106,9 +142,9 @@ export class CollectionService implements ICollectionservice {
 
             await this.collectionRepository.updateOne(
                 { collectionId },
-                { 
-                    collectorId: collector.id, 
-                    status: "scheduled", 
+                {
+                    collectorId: collector.id,
+                    status: "scheduled",
                     preferredDate,
                     assignedCollector: collector.id
                 }
@@ -126,7 +162,7 @@ export class CollectionService implements ICollectionservice {
             };
 
 
-            RabbitMQ.publish(queue, notification);
+            await RabbitMQ.publish(queue, notification);
 
         } catch (error) {
             console.error('Error while scheduling collection:', error);
@@ -185,9 +221,6 @@ export class CollectionService implements ICollectionservice {
             throw error;
         }
     }
-
-    
-
 
     async getCollectionHistory(userId: string): Promise<ICollection[]> {
         try {
@@ -341,7 +374,7 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async processCashPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void> {
+    async processCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
         try {
             const collection = await this.collectionRepository.findById(collectionId);
             console.log("collection :", collection);
@@ -352,20 +385,43 @@ export class CollectionService implements ICollectionservice {
                 throw error;
             }
 
-            await this.collectionRepository.updateById(collectionId, collectionData);
+            const proofUrls = await Promise.all(
+                collectionProofs.map(async (proof, index) => {
+                    const s3Params = {
+                        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                        Key: `collection-proofs/${collectionId}/${Date.now()}_${index}_${proof.originalname}`,
+                        Body: proof.buffer,
+                        ContentType: proof.mimetype,
+                    };
 
-            RabbitMQ.publish("finalPayment-payment", paymentData);
-            RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+                    const command = new PutObjectCommand(s3Params);
+                    await s3.send(command);
 
-            const notification: INotification = {
-                userId: collection.userId,
-                title: "Pickup Completed",
-                message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-                url: "/account/waste-collection-history",
-                createdAt: new Date()
-            };
+                    // Return the public URL (adjust based on your S3 configuration)
+                    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+                })
+            );
 
-            RabbitMQ.publish('notification', notification);
+            console.log("proofUrls :", proofUrls);
+
+            Object.assign(collectionData, { proofs: proofUrls });
+
+            console.log("collectionData :", collectionData);
+
+            // await this.collectionRepository.updateById(collectionId, collectionData);
+
+            // await RabbitMQ.publish("finalPayment-payment", paymentData);
+            // await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+
+            // const notification: INotification = {
+            //     userId: collection.userId,
+            //     title: "Pickup Completed",
+            //     message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
+            //     url: "/account/waste-collection-history",
+            //     createdAt: new Date()
+            // };
+
+            // await RabbitMQ.publish('notification', notification);
 
         } catch (error) {
             console.error('Error while updating collection:', error);
@@ -373,7 +429,7 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void> {
+    async processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
         try {
 
             const collection = await this.collectionRepository.findById(collectionId);
@@ -391,19 +447,40 @@ export class CollectionService implements ICollectionservice {
             const payment: IPayment = response.data.data;
 
             if (payment.status === "success") {
+
+                const proofUrls = await Promise.all(
+                    collectionProofs.map(async (proof, index) => {
+                        const s3Params = {
+                            Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                            Key: `collection-proofs/${collectionId}/${Date.now()}_${index}_${proof.originalname}`,
+                            Body: proof.buffer,
+                            ContentType: proof.mimetype,
+                        };
+
+                        const command = new PutObjectCommand(s3Params);
+                        await s3.send(command);
+
+                        return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+                    })
+                );
+
+                Object.assign(collectionData, { proofs: proofUrls });
+
+                console.log("collectionData :", collectionData);
+
                 await this.collectionRepository.updateById(collectionId, collectionData);
 
-                RabbitMQ.publish("finalPayment-payment", paymentData);
-                RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+                await RabbitMQ.publish("finalPayment-payment", paymentData);
+                await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
                 const notification: INotification = {
                     userId: collection.userId,
                     title: "Pickup Completed",
                     message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-                    url: "/account/waste-collection-history",
+                    url: "/account/collections",
                     createdAt: new Date()
                 };
 
-                RabbitMQ.publish('notification', notification);
+                await RabbitMQ.publish('notification', notification);
 
             } else {
                 const error: any = new Error(MESSAGES.PAYMENT_NOT_COMPLETED);
@@ -429,7 +506,9 @@ export class CollectionService implements ICollectionservice {
             }
 
             await RabbitMQ.publish("collection-cancelled-collector", {
+                collectionId: collection.collectionId,
                 collectorId: collection.collectorId,
+                preferredDate: collection.preferredDate,
                 userId: collection.userId,
             });
 
@@ -445,4 +524,57 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
+    async requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void> {
+        try {
+
+            const collection = await this.collectionRepository.findOne({ collectionId: collectionData.collectionId });
+
+            if (!collection) {
+                const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            if (!collectionData.items) {
+                throw new Error(MESSAGES.INVALID_ITEM_DATA);
+            }
+
+            let totalCost = 0;
+
+            for (const item of collectionData.items) {
+                if (!item.categoryId || !item.qty) {
+                    throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
+                }
+
+                const categoryData = await this.categoryRepository.findById(item.categoryId);
+
+                if (!categoryData) {
+                    throw new Error(`Category with ID ${item.categoryId} not found.`);
+                }
+
+                totalCost += categoryData.rate * Number(item.qty);
+            }
+
+            console.log("totalCost :", totalCost);
+
+            const response = await axios.post<{ success: boolean, message: string }>(`http://localhost:3004/collection-payment/payment-request`, {
+                userId: collection.userId,
+                paymentId: collection.paymentId,
+                amount: totalCost
+            });
+            console.log("response from payment:", response.data);
+
+            if (response.data.success) {
+                console.log("successs!!!")
+                await this.collectionRepository.updateOne(
+                    { collectionId: collection.collectionId },
+                    { isPaymentRequested: true }
+                )
+            }
+
+        } catch (error) {
+            console.error('Error while requesting collection payment:', error);
+            throw error;
+        }
+    }
 }

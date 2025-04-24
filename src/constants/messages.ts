@@ -10,6 +10,7 @@ export const MESSAGES = {
     PAYMENT_NOT_COMPLETED: "Collection payment is not completed.",
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
-    UNKNOWN_ERROR: "An unknown error occurred."
+    UNKNOWN_ERROR: "An unknown error occurred.",
+    INVALID_ITEM_DATA: "Invalid item data provided."
 };
 

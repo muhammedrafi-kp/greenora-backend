@@ -19,6 +19,7 @@ export interface ICollectionservice {
 
     scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void>;
 
+    scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void>;
     getCollectionHistory(userId: string): Promise<ICollection[]>;
 
     getCollectionHistories(options: {
@@ -37,7 +38,8 @@ export interface ICollectionservice {
     assignCollectionToCollector(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
     
     getAssignedCollections(collectorId: string): Promise<Partial<ICollection>[]>;
-    processCashPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void>;
-    processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>, paymentData: IPayment): Promise<void>;
+    processCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void>;
+    processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>,collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void>;
     cancelCollection(collectionId: string, reason: string): Promise<void>;
+    requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void>;
 }

@@ -31,7 +31,7 @@ interface FinalPaymentEvent {
     status: "success" | "failed";
     method: "online" | "cash";
     amount: number;
-    paymentDate: Date;
+    paidAt: Date;
 }
 
 const collectionPaymentService: ICollectionPaymentService = new CollectionPaymentService(collectionPaymentRepository, walletRepository)
@@ -48,7 +48,7 @@ export default class PaymentConsumer {
             try {
                 const event: FinalPaymentEvent = JSON.parse(msg.content.toString());
 
-                if (!event.paymentId || !event.status || !event.method || !event.amount || !event.paymentDate) {
+                if (!event.paymentId || !event.status || !event.method || !event.amount || !event.paidAt) {
                     console.error("Invalid message format:", event);
                     RabbitMQ.nack(msg, false, false);
                     return;
@@ -60,7 +60,7 @@ export default class PaymentConsumer {
                     status: event.status,
                     method: event.method,
                     amount: event.amount,
-                    paidAt: event.paymentDate,
+                    paidAt: event.paidAt,
                 });
                 console.log("Updated Payment Data:", updatedPaymentData);
 

@@ -9,10 +9,9 @@ const collectionPaymentController = new CollectionPaymentController(collectionPa
 
 const router = Router();
 
-router.post("/initiate-advance-payment",collectionPaymentController.initiatePayment.bind(collectionPaymentController));
-router.post("/advance-verification",collectionPaymentController.verifyAdvancePayment.bind(collectionPaymentController));
-router.get("/:paymentId",collectionPaymentController.getPaymentData.bind(collectionPaymentController));
-router.post("/payment-request",collectionPaymentController.requestPayment.bind(collectionPaymentController));
+router.post("/order",collectionPaymentController.createOrder.bind(collectionPaymentController));
 router.post("/verification",collectionPaymentController.verifyPayment.bind(collectionPaymentController));
+
+router.get("/:paymentId",collectionPaymentController.getPaymentData.bind(collectionPaymentController));
 
 export default router;

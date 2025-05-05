@@ -21,9 +21,9 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    async findOne(filter: FilterQuery<T>): Promise<T | null> {
+    async findOne(filter: FilterQuery<T>, options?: QueryOptions, sort?: Record<string, number>): Promise<T | null> {
         try {
-            return await this.model.findOne(filter);
+            return await this.model.findOne(filter, {}, { ...options, sort });
         } catch (error) {
             throw new Error(`findOne is failed: ${error instanceof Error ? error.message : String(error)}`);
         }

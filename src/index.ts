@@ -3,34 +3,36 @@ import { configDotenv } from 'dotenv';
 import morgan from 'morgan';
 import cors from 'cors'
 import { createProxyMiddleware } from 'http-proxy-middleware'
-import { IncomingMessage } from 'http';
 import { validateJwt } from "./middleware/validateJwt";
+import { connectToRedis } from './config/redisConfig';
+import { AuthConsumer } from './consumer/authConsumer';
 
 configDotenv();
 
 const app = express();
 
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
 
-
 app.use(morgan('dev'));
-
-const port = process.env.PORT || 3000;
-
 
 app.use(validateJwt as express.RequestHandler);
 
-app.use("/user-service", createProxyMiddleware({ target: 'http://localhost:3001', changeOrigin: true }));
-app.use("/request-service", createProxyMiddleware({ target: 'http://localhost:3002', changeOrigin: true }));
-app.use("/location-service", createProxyMiddleware({ target: 'http://localhost:3003', changeOrigin: true }));
-app.use("/payment-service", createProxyMiddleware({ target: 'http://localhost:3004', changeOrigin: true }));
-app.use("/subscription-service", createProxyMiddleware({ target: 'http://localhost:3005', changeOrigin: true }));
+app.use("/user-service", createProxyMiddleware({ target: process.env.USER_SERVICE_URL, changeOrigin: true }));
+app.use("/request-service", createProxyMiddleware({ target: process.env.REQUEST_SERVICE_URL, changeOrigin: true }));
+app.use("/location-service", createProxyMiddleware({ target: process.env.LOCATION_SERVICE_URL, changeOrigin: true }));
+app.use("/payment-service", createProxyMiddleware({ target: process.env.PAYMENT_SERVICE_URL, changeOrigin: true }));
+app.use("/subscription-service", createProxyMiddleware({ target: process.env.SUBSCRIPTION_SERVICE_URL, changeOrigin: true }));
+app.use("/notification-service", createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL, changeOrigin: true }));
+app.use("/chat-service", createProxyMiddleware({ target: process.env.CHAT_SERVICE_URL, changeOrigin: true }));
 
-app.listen(port, () => {
-    console.log(`api-gateway is running on port ${port}`);
+connectToRedis();
+AuthConsumer.initialize();
+
+app.listen(process.env.PORT, () => {
+    console.log(`api-gateway is running on port ${process.env.PORT} ✅`);
 });

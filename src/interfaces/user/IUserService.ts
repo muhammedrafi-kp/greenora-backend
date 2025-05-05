@@ -18,4 +18,5 @@ export interface IUserService {
     getCollector(collectorId: string): Promise<ICollector>;
     getAdmin(): Promise<IAdmin | null>;
     getUsers(userIds: string[]): Promise<IUser[]>;
+    getUserBlockedStatus(userId: string): Promise<boolean>;
 }

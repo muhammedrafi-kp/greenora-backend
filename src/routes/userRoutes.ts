@@ -7,6 +7,7 @@ import adminRepository from "../repositories/adminRepository";
 import redisRepository from "../repositories/redisRepository";
 import { validateUser } from "../middlewares/auth";
 import multer from 'multer';
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -23,11 +24,7 @@ router.post('/resend-otp', userController.resendOtp.bind(userController));
 router.post('/forget-password', userController.sendResetPasswordLink.bind(userController));
 router.patch('/reset-password', userController.resetPassword.bind(userController));
 router.post('/refresh-token', userController.validateRefreshToken.bind(userController));
-
-// router.get('/google', userController.googleAuth.bind(userController));
-// router.get('/google/callback', userController.googleAuthCallback.bind(userController));
-// router.get('/google/success', userController.googleAuthSuccess.bind(userController));
-// router.get('/google/failure', userController.googleAuthFailure.bind(userController));
+router.get('/is-blocked/:clientId', userController.getUserBlockedStatus.bind(userController));
 
 router.post('/google/callback', userController.googleAuthCallback.bind(userController));
 router.get('/', validateUser, userController.getUser.bind(userController));
@@ -37,4 +34,5 @@ router.patch('/upload-profile-image', validateUser, upload.single('profileImage'
 router.patch('/password', validateUser, userController.changePassword.bind(userController));
 router.get('/collector/:collectorId', userController.getCollector.bind(userController));
 router.get('/admin', userController.getAdmin.bind(userController));
+
 export default router;

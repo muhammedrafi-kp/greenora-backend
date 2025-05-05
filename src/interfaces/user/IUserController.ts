@@ -17,4 +17,5 @@ export interface IUserController {
     changePassword(req: Request, res: Response): Promise<void>;
     getCollector(req: Request, res: Response): Promise<void>;
     getAdmin(req: Request, res: Response): Promise<void>;
+    getUserBlockedStatus(req: Request, res: Response): Promise<void>;
 }

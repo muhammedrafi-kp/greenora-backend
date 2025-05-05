@@ -9,11 +9,14 @@ import s3 from "../config/s3Config";
 
 export class CollcetorController implements ICollcetorController {
 
-    constructor(private collectorService: ICollectorService) { };
+    constructor(private _collectorService: ICollectorService) { };
+
+    
 
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
+
 
             if (!email || !password) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -22,7 +25,7 @@ export class CollcetorController implements ICollcetorController {
                 return;
             }
 
-            const { accessToken, refreshToken, collector } = await this.collectorService.login(email, password);
+            const { accessToken, refreshToken, collector } = await this._collectorService.login(email, password);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -43,7 +46,7 @@ export class CollcetorController implements ICollcetorController {
             });
 
         } catch (error: any) {
-            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED) {
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED || error.status === HTTP_STATUS.FORBIDDEN) {
                 res.status(error.status).json({ message: error.message });
                 return;
             }
@@ -56,7 +59,7 @@ export class CollcetorController implements ICollcetorController {
     async signUp(req: Request, res: Response): Promise<void> {
         try {
             const collectorData = req.body;
-            await this.collectorService.signUp(collectorData);
+            await this._collectorService.signUp(collectorData);
 
             res.status(HTTP_STATUS.OK).json({ success: true });
 
@@ -83,7 +86,7 @@ export class CollcetorController implements ICollcetorController {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "Email and OTP are required!" });
             }
 
-            const { accessToken, refreshToken, collector } = await this.collectorService.verifyOtp(email, otp);
+            const { accessToken, refreshToken, collector } = await this._collectorService.verifyOtp(email, otp);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -115,10 +118,65 @@ export class CollcetorController implements ICollcetorController {
     async resendOtp(req: Request, res: Response): Promise<void> {
         try {
             const { email } = req.body;
-            await this.collectorService.resendOtp(email);
+            await this._collectorService.resendOtp(email);
             res.status(HTTP_STATUS.OK).json({ success: true });
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async sendResetPasswordLink(req: Request, res: Response): Promise<void> {
+        try {
+            const { email } = req.body;
+
+            console.log("email:", email);
+
+            await this._collectorService.sendResetPasswordLink(email);
+
+            res.status(HTTP_STATUS.OK).json({ success: true });
+
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+
+                return;
+            }
+            console.error("Error sending reset link : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+
+    async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+
+            const { token, password } = req.body;
+            console.log("reset token : ", token);
+            console.log("password : ", password);
+
+            await this._collectorService.resetPassword(token, password);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.PASSWORD_UPDATED
+            });
+
+        } catch (error: any) {
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED) {
+                res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            console.error("Error while resetting password: ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
@@ -136,7 +194,7 @@ export class CollcetorController implements ICollcetorController {
                 return;
             }
 
-            const { accessToken, refreshToken } = await this.collectorService.validateRefreshToken(req.cookies.refreshToken);
+            const { accessToken, refreshToken } = await this._collectorService.validateRefreshToken(req.cookies.refreshToken);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -171,7 +229,7 @@ export class CollcetorController implements ICollcetorController {
     async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
             const { credential } = req.body;
-            const { accessToken, refreshToken, collector: { name, email } } = await this.collectorService.handleGoogleAuth(credential);
+            const { accessToken, refreshToken, collector: { name, email } } = await this._collectorService.handleGoogleAuth(credential);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -200,13 +258,12 @@ export class CollcetorController implements ICollcetorController {
 
     async getCollector(req: Request, res: Response): Promise<void> {
         try {
-            // console.log("req.headers[x-user-id] :", req.headers['x-user-id']);
-            const collectorId = req.headers['x-user-id']
+            const collectorId = req.headers['x-client-id']
             if (!collectorId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "invalid user id" });
                 return
             }
-            const collector = await this.collectorService.getCollector(collectorId as string);
+            const collector = await this._collectorService.getCollector(collectorId as string);
 
             console.log("collector:", collector);
 
@@ -235,8 +292,8 @@ export class CollcetorController implements ICollcetorController {
             const collectorIds: string[] = req.body;
             console.log("collectorIds:", collectorIds);
 
-            const collectors = await this.collectorService.getCollectors(collectorIds);
-            
+            const collectors = await this._collectorService.getCollectors(collectorIds);
+
             res.status(HTTP_STATUS.OK).json({ success: true, data: collectors });
 
         } catch (error: any) {
@@ -247,7 +304,7 @@ export class CollcetorController implements ICollcetorController {
 
     async updateCollector(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
             const { name, phone, gender, district, serviceArea, idProofType } = req.body;
             console.log("req.body :", req.body);
             const files = req.files as {
@@ -327,7 +384,7 @@ export class CollcetorController implements ICollcetorController {
                 verificationStatus: 'requested'
             };
 
-            const updatedUser = await this.collectorService.updateCollector(userId as string, updatedData);
+            const updatedUser = await this._collectorService.updateCollector(userId as string, updatedData);
 
             if (!updatedUser) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -363,12 +420,12 @@ export class CollcetorController implements ICollcetorController {
 
     async changePassword(req: Request, res: Response): Promise<void> {
         try {
-            const collectorId = req.headers['x-user-id'];
+            const collectorId = req.headers['x-client-id'];
             const { currentPassword, newPassword } = req.body;
             console.log("currentPassword:", currentPassword);
             console.log("newPassword:", newPassword);
 
-            await this.collectorService.changePassword(collectorId as string, currentPassword, newPassword);
+            await this._collectorService.changePassword(collectorId as string, currentPassword, newPassword);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -402,7 +459,7 @@ export class CollcetorController implements ICollcetorController {
         try {
             const { serviceAreaId, preferredDate } = req.body;
 
-            const collector = await this.collectorService.getAvailableCollector(serviceAreaId, preferredDate);
+            const collector = await this._collectorService.getAvailableCollector(serviceAreaId, preferredDate);
 
             res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
 
@@ -410,6 +467,21 @@ export class CollcetorController implements ICollcetorController {
         } catch (error: any) {
 
             console.error("Error while getting available collectors : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getCollectorBlockedStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const collectorId = req.params.clientId;
+            const isBlocked = await this._collectorService.getCollectorBlockedStatus(collectorId as string);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: isBlocked ? "Collector is blocked" : "Collector is not blocked",
+                isBlocked
+            });
+        } catch (error: any) {
+            console.error("Error while getting collector blocked status : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }

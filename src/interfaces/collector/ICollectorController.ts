@@ -5,6 +5,8 @@ export interface ICollcetorController {
     signUp(req: Request, res: Response): Promise<void>;
     verifyOtp(req: Request, res: Response): Promise<void>;
     resendOtp(req: Request, res: Response): Promise<void>;
+    sendResetPasswordLink(req: Request, res: Response): Promise<void>;
+    resetPassword(req: Request, res: Response): Promise<void>;
     validateRefreshToken(req: Request, res: Response): Promise<void>;
     googleAuthCallback(req: Request, res: Response): Promise<void>;
 
@@ -13,5 +15,5 @@ export interface ICollcetorController {
     getAvailableCollector(req: Request, res: Response): Promise<void>;
     updateCollector(req: Request, res: Response): Promise<void>;
     changePassword(req: Request, res: Response): Promise<void>;
-
+    getCollectorBlockedStatus(req: Request, res: Response): Promise<void>;
 }

@@ -18,6 +18,8 @@ export interface IAdminService {
         limit?: number;
     }): Promise<{ users: IUser[], totalItems: number, totalPages: number }>;
 
+    getCollector(collectorId: string): Promise<ICollector>;
+
     getCollectors(queryOptions: {
         search?: string;
         status?: string;

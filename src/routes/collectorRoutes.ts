@@ -17,7 +17,10 @@ router.post('/login', collectorController.login.bind(collectorController));
 router.post('/signup', collectorController.signUp.bind(collectorController));
 router.post('/verify-otp', collectorController.verifyOtp.bind(collectorController));
 router.post('/resend-otp', collectorController.resendOtp.bind(collectorController));
+router.post('/forget-password', collectorController.sendResetPasswordLink.bind(collectorController));
+router.patch('/reset-password', collectorController.resetPassword.bind(collectorController));
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
+router.get('/is-blocked/:clientId', collectorController.getCollectorBlockedStatus.bind(collectorController));
 
 router.get('/', validateCollector, collectorController.getCollector.bind(collectorController));
 router.post('/collectors/batch', collectorController.getCollectors.bind(collectorController));

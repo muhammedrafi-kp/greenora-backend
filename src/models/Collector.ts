@@ -21,7 +21,7 @@ export interface ICollector extends Document {
     availabilityStatus: "available" | "unavailable" | "on_break";
     currentTasks: number;
     maxCapacity: number;
-    assignedTasks: string; 
+    assignedTasks: string[]; 
     dailyTaskCounts: Map<string, number>;
     performanceMetrics: {
         totalCollections: number;

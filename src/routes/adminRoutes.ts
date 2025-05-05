@@ -17,11 +17,12 @@ router.post('/signup', adminController.createAdmin.bind(adminController));
 router.post('/refresh-token', adminController.validateRefreshToken.bind(adminController));
 
 router.get('/users', validateAdmin, adminController.getUsers.bind(adminController));
+router.get('/collector/:collectorId', adminController.getCollector.bind(adminController));
 router.get('/collectors', validateAdmin, adminController.getCollectors.bind(adminController));
 router.get('/available-collectors', adminController.getAvailableCollectors.bind(adminController));
 router.get('/verification-requests', validateAdmin, adminController.getVerificationRequests.bind(adminController));
-router.patch('/update-verification-status/:id', validateAdmin, adminController.updateVerificationStatus.bind(adminController));
-router.patch('/update-user-status/:id', validateAdmin, adminController.updateUserStatus.bind(adminController));
-router.patch('/update-collector-status/:id', validateAdmin, adminController.updateCollectorStatus.bind(adminController));
+router.patch('/verification-status/:id', validateAdmin, adminController.updateVerificationStatus.bind(adminController));
+router.patch('/user-status/:id', validateAdmin, adminController.updateUserStatus.bind(adminController));
+router.patch('/collector-status/:id', validateAdmin, adminController.updateCollectorStatus.bind(adminController));
 
 export default router;

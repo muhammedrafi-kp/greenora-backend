@@ -11,18 +11,19 @@ configDotenv();
 
 export class UserController implements IUserController {
 
-    constructor(private userService: IUserService) { };
+    constructor(private _userService: IUserService) { };
 
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
+            
 
             if (!email || !password) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email and password are required.' });
                 return;
             }
 
-            const { accessToken, refreshToken, user } = await this.userService.login(email, password);
+            const { accessToken, refreshToken, user } = await this._userService.login(email, password);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -44,7 +45,7 @@ export class UserController implements IUserController {
 
         } catch (error: any) {
 
-            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED) {
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED || error.status === HTTP_STATUS.FORBIDDEN) {
                 res.status(error.status).json({ message: error.message });
                 return;
             }
@@ -57,7 +58,7 @@ export class UserController implements IUserController {
     async signUp(req: Request, res: Response): Promise<void> {
         try {
             const userData = req.body;
-            await this.userService.signUp(userData);
+            await this._userService.signUp(userData);
 
             res.status(HTTP_STATUS.OK).json({ success: true });
 
@@ -84,7 +85,7 @@ export class UserController implements IUserController {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: "Email and OTP are required!" });
             }
 
-            const { accessToken, refreshToken, user } = await this.userService.verifyOtp(email, otp);
+            const { accessToken, refreshToken, user } = await this._userService.verifyOtp(email, otp);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -120,7 +121,7 @@ export class UserController implements IUserController {
     async resendOtp(req: Request, res: Response): Promise<void> {
         try {
             const { email } = req.body;
-            await this.userService.resendOtp(email);
+            await this._userService.resendOtp(email);
             res.status(HTTP_STATUS.OK).json({ success: true });
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
@@ -134,7 +135,7 @@ export class UserController implements IUserController {
 
             console.log("email:", email);
 
-            await this.userService.sendResetPasswordLink(email);
+            await this._userService.sendResetPasswordLink(email);
 
             res.status(HTTP_STATUS.OK).json({ success: true });
 
@@ -161,7 +162,7 @@ export class UserController implements IUserController {
             console.log("reset token : ", token);
             console.log("password : ", password);
 
-            await this.userService.resetPassword(token, password);
+            await this._userService.resetPassword(token, password);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -185,7 +186,7 @@ export class UserController implements IUserController {
     async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
             const { credential } = req.body;
-            const { accessToken, refreshToken, user: { name, email } } = await this.userService.handleGoogleAuth(credential);
+            const { accessToken, refreshToken, user: { name, email } } = await this._userService.handleGoogleAuth(credential);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -212,6 +213,22 @@ export class UserController implements IUserController {
         }
     }
 
+    async getUserBlockedStatus(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.params.clientId;
+            const isBlocked = await this._userService.getUserBlockedStatus(userId);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: isBlocked ? "User is blocked" : "User is not blocked",
+                isBlocked
+            });
+        } catch (error: any) {
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
     async validateRefreshToken(req: Request, res: Response): Promise<void> {
         try {
 
@@ -225,7 +242,7 @@ export class UserController implements IUserController {
                 return;
             }
 
-            const { accessToken, refreshToken } = await this.userService.validateRefreshToken(req.cookies.refreshToken);
+            const { accessToken, refreshToken } = await this._userService.validateRefreshToken(req.cookies.refreshToken);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -259,9 +276,9 @@ export class UserController implements IUserController {
 
     async getUser(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
 
-            const user = await this.userService.getUser(userId as string);
+            const user = await this._userService.getUser(userId as string);
 
             const userData = {
                 id: user._id,
@@ -295,7 +312,7 @@ export class UserController implements IUserController {
 
     async updateUser(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
             const { name, phone } = req.body;
             const profileImage = req.file;
 
@@ -309,7 +326,7 @@ export class UserController implements IUserController {
 
             const updatedData: Partial<IUser> = { name, phone };
 
-            const updatedUser = await this.userService.updateUser(userId as string, updatedData, profileImage);
+            const updatedUser = await this._userService.updateUser(userId as string, updatedData, profileImage);
 
             if (!updatedUser) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -340,7 +357,7 @@ export class UserController implements IUserController {
 
     async uploadProfileImage(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
             const profileImage = req.file;
             if (!userId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -359,7 +376,7 @@ export class UserController implements IUserController {
                 return;
             }
 
-            const profileUrl = await this.userService.uploadProfileImage(userId as string, profileImage);
+            const profileUrl = await this._userService.uploadProfileImage(userId as string, profileImage);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -378,12 +395,12 @@ export class UserController implements IUserController {
 
     async changePassword(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'];
+            const userId = req.headers['x-client-id'];
             const { currentPassword, newPassword } = req.body;
             console.log("currentPassword:", currentPassword);
             console.log("newPassword:", newPassword);
 
-            await this.userService.changePassword(userId as string, currentPassword, newPassword);
+            await this._userService.changePassword(userId as string, currentPassword, newPassword);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -416,7 +433,7 @@ export class UserController implements IUserController {
     async getCollector(req: Request, res: Response): Promise<void> {
         try {
             const collectorId = req.params.collectorId;
-            const collector = await this.userService.getCollector(collectorId);
+            const collector = await this._userService.getCollector(collectorId);
             res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
         } catch (error: any) {
             if (error.status === HTTP_STATUS.NOT_FOUND) {
@@ -433,7 +450,7 @@ export class UserController implements IUserController {
 
     async getAdmin(req: Request, res: Response): Promise<void> {
         try {
-            const admin = await this.userService.getAdmin();
+            const admin = await this._userService.getAdmin();
             res.status(HTTP_STATUS.OK).json({ success: true, data: admin });
         } catch (error: any) {
             console.error("Error while fetching admin data in controller : ", error.message);
@@ -447,7 +464,7 @@ export class UserController implements IUserController {
 
             console.log("userids:", userIds);
 
-            const users = await this.userService.getUsers(userIds);
+            const users = await this._userService.getUsers(userIds);
 
             res.status(HTTP_STATUS.OK).json({ success: true, data: users });
 

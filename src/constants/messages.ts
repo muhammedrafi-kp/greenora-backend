@@ -21,6 +21,7 @@ export const MESSAGES = {
     ACCESS_DENIED: "Access Denied.",
     RESET_TOKEN_EXPIRED: "Reset password token has expired.",
     PASSWORD_UPDATED: "Password has updated successfully",
+    USER_BLOCKED: "User is blocked.",
 
     GOOGLE_AUTH_SUCCESS: "Google authentication successful.",
     GOOGLE_AUTH_FAILED: "Google authentication failed. Please try again.",

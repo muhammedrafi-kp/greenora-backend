@@ -9,8 +9,6 @@ import { generateAccessToken, generateRefreshToken, generateResetPasswordToken, 
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
-// import jwt, { JwtPayload } from "jsonwebtoken";
 import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
@@ -18,7 +16,6 @@ import { TokenPayload } from "google-auth-library";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IAdminRepository } from "../interfaces/admin/IAdminRepository";
 import { IAdmin } from "../models/Admin";
-import amqp from "amqplib";
 import RabbitMQ from "../utils/rabbitmq";
 
 configDotenv();
@@ -43,6 +40,13 @@ export class UserService implements IUserService {
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+
+            if (user.isBlocked) {
+                const error: any = new Error(MESSAGES.USER_BLOCKED);
+                error.status = HTTP_STATUS.FORBIDDEN;
                 throw error;
             }
 
@@ -390,7 +394,11 @@ export class UserService implements IUserService {
 
     async getCollector(collectorId: string): Promise<ICollector> {
         try {
-            const collector = await this.collectorRepository.getCollectorById(collectorId);
+            const projection = {
+                password: 0,
+                __v: 0
+            }
+            const collector = await this.collectorRepository.findById(collectorId, projection);
             if (!collector) {
                 const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
@@ -420,6 +428,16 @@ export class UserService implements IUserService {
             return users;
         } catch (error) {
             console.error('Error while fetching users:', error);
+            throw error;
+        }
+    }
+
+    async getUserBlockedStatus(userId: string): Promise<boolean> {
+        try {
+            const user = await this.userRepository.getUserById(userId);
+            return user?.isBlocked || false;
+        } catch (error) {
+            console.error('Error while fetching user blocked status:', error);
             throw error;
         }
     }

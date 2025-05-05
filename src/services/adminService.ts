@@ -12,6 +12,7 @@ import { ICollector } from '../models/Collector';
 import { IDistrict } from '../interfaces/external/locationService';
 import { IServiceArea } from '../interfaces/external/locationService';
 import axios from 'axios';
+import RabbitMQ from '../utils/rabbitmq';
 
 export class AdminService implements IAdminService {
 
@@ -159,6 +160,25 @@ export class AdminService implements IAdminService {
         }
     }
 
+    async getCollector(collectorId: string): Promise<ICollector> {
+        try {
+            const projection = {
+                password: 0,
+                __v: 0
+            }
+            const collector = await this.collectorRepository.findById(collectorId, projection);
+            if (!collector) {
+                const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+            return collector;
+        } catch (error: any) {
+            console.log("Error while fetching collector data!!!!!!!!!!!1 :", error.message);
+            throw error;
+        }
+    }
+
     async getCollectors(queryOptions: {
         search?: string;
         status?: string;
@@ -188,11 +208,11 @@ export class AdminService implements IAdminService {
                     { name: { $regex: search, $options: 'i' } },
                     { email: { $regex: search, $options: 'i' } }
                 ];
-            } 
+            }
             if (district !== 'all') filter.district = district;
             if (serviceArea !== 'all') filter.serviceArea = serviceArea;
             if (status && status !== 'all') filter.isBlocked = status === 'blocked';
-            
+
             const projection = {
                 password: 0,
             }
@@ -229,7 +249,7 @@ export class AdminService implements IAdminService {
 
             // return collectors;
 
-          
+
 
             const enrichedCollectors = collectors.map(collector => {
                 const plainCollector = collector.toObject();
@@ -296,11 +316,15 @@ export class AdminService implements IAdminService {
                 throw error;
             }
 
-            const updatedUser = await this.userRepository.updateStatusById(id, !user.isBlocked as boolean);
+            await Promise.all([
+                this.userRepository.updateStatusById(id, !user.isBlocked as boolean),
+                RabbitMQ.publish('blocked-status', { clientId: id, isBlocked: !user.isBlocked })
+            ]);
 
-            return updatedUser?.isBlocked
+            return user?.isBlocked
                 ? 'Blocked successfully.'
                 : 'Unblocked successfully.';
+
         } catch (error: any) {
             console.log("Error while updating user status :", error.message);
             throw error;
@@ -309,21 +333,25 @@ export class AdminService implements IAdminService {
 
     async updateCollectorStatus(id: string): Promise<string> {
         try {
-            const user = await this.collectorRepository.getCollectorById(id);
+            const collector = await this.collectorRepository.getCollectorById(id);
 
-            if (!user) {
+            if (!collector) {
                 const error: any = new Error(MESSAGES.UNKNOWN_ERROR);
                 error.status = HTTP_STATUS.GONE;
                 throw error;
             }
 
-            const updatedUser = await this.collectorRepository.updateStatusById(id, !user.isBlocked as boolean);
+            await Promise.all([
+                this.collectorRepository.updateStatusById(id, !collector.isBlocked as boolean),
+                RabbitMQ.publish('blocked-status', { clientId: id, isBlocked: !collector.isBlocked })
+            ]);
 
-            return updatedUser?.isBlocked
+            return collector?.isBlocked
                 ? 'Blocked successfully.'
                 : 'Unblocked successfully.';
+
         } catch (error: any) {
-            console.log("Error while updating user status :", error.message);
+            console.log("Error while updating collector status :", error.message);
             throw error;
         }
     }

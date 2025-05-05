@@ -8,7 +8,7 @@ import session from 'express-session';
 import passportConfig from "./config/passportConfig"
 import connectDB from './config/dbConfig';
 import startGrpcServer from './gRPC/grpcServer';
-import { connectToRedis, logRedisData } from './config/redisConfig';
+import { connectToRedis } from './config/redisConfig';
 import UserConsumer from './consumers/userConsumer';
 
 import userRoutes from './routes/userRoutes';
@@ -47,7 +47,6 @@ UserConsumer.initialize();
 // app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
-app.use(logRedisData);
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your_secret_key',

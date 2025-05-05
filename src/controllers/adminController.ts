@@ -6,14 +6,14 @@ import { MESSAGES } from '../constants/messages';
 
 export class AdminController implements IAdminController {
 
-    constructor(private adminService: IAdminService) { }
+    constructor(private _adminService: IAdminService) { }
 
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
             console.log("Admin data: ", email, password);
 
-            const { accessToken, refreshToken } = await this.adminService.login(email, password);
+            const { accessToken, refreshToken } = await this._adminService.login(email, password);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -45,7 +45,7 @@ export class AdminController implements IAdminController {
             }
             console.log("userdata: ", email, password);
 
-            const admin = await this.adminService.createAdmin(email, password);
+            const admin = await this._adminService.createAdmin(email, password);
             console.log(admin);
             res.status(HTTP_STATUS.CREATED).json(admin);
         } catch (error: any) {
@@ -67,7 +67,7 @@ export class AdminController implements IAdminController {
                 return;
             }
 
-            const { accessToken, refreshToken } = await this.adminService.validateRefreshToken(req.cookies.refreshToken);
+            const { accessToken, refreshToken } = await this._adminService.validateRefreshToken(req.cookies.refreshToken);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -99,7 +99,6 @@ export class AdminController implements IAdminController {
         }
     }
 
-
     async getUsers(req: Request, res: Response): Promise<void> {
         try {
             const { 
@@ -121,7 +120,7 @@ export class AdminController implements IAdminController {
             }
 
             console.log("queryOptions :", queryOptions);
-            const { users, totalItems,totalPages } = await this.adminService.getUsers(queryOptions);
+            const { users, totalItems,totalPages } = await this._adminService.getUsers(queryOptions);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -133,6 +132,24 @@ export class AdminController implements IAdminController {
 
         } catch (error: any) {
             console.error("Error while fetching users data : ", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getCollector(req: Request, res: Response): Promise<void> {
+        try {
+            const collectorId = req.params.collectorId;
+            const collector = await this._adminService.getCollector(collectorId);
+            res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
+        } catch (error: any) {
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+            console.error("Error while fetching collector data in controller !!!!!!!!!!1: ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
@@ -163,7 +180,7 @@ export class AdminController implements IAdminController {
 
             console.log("queryOptions :", queryOptions);
 
-            const { collectors, totalItems, totalPages } = await this.adminService.getCollectors(queryOptions);
+            const { collectors, totalItems, totalPages } = await this._adminService.getCollectors(queryOptions);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -183,7 +200,7 @@ export class AdminController implements IAdminController {
 
             console.log("serviceArea :", serviceArea, "preferredDate :", preferredDate);
             console.log(typeof serviceArea, typeof preferredDate);
-            const collectors = await this.adminService.getAvailableCollectors(serviceArea as string, preferredDate as string);
+            const collectors = await this._adminService.getAvailableCollectors(serviceArea as string, preferredDate as string);
             console.log("collectors :", collectors);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -197,7 +214,7 @@ export class AdminController implements IAdminController {
 
     async getVerificationRequests(req: Request, res: Response): Promise<void> {
         try {
-            const verificationRequests = await this.adminService.getVerificationRequests();
+            const verificationRequests = await this._adminService.getVerificationRequests();
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: verificationRequests
@@ -213,7 +230,7 @@ export class AdminController implements IAdminController {
             const { id } = req.params;
             const { status } = req.body;
             console.log("id :", id, "status :", status);
-            const collector = await this.adminService.updateVerificationStatus(id, status);
+            const collector = await this._adminService.updateVerificationStatus(id, status);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: collector
@@ -228,7 +245,7 @@ export class AdminController implements IAdminController {
         try {
             const { id } = req.params;
             console.log("Id :", id);
-            const message = await this.adminService.updateUserStatus(id);
+            const message = await this._adminService.updateUserStatus(id);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message
@@ -243,7 +260,7 @@ export class AdminController implements IAdminController {
         try {
             const { id } = req.params;
             console.log("Id :", id);
-            const message = await this.adminService.updateCollectorStatus(id);
+            const message = await this._adminService.updateCollectorStatus(id);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message

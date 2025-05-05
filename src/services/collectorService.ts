@@ -5,10 +5,10 @@ import Collector, { ICollector } from "../models/Collector";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken } from "../utils/token";
+import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken, generateResetPasswordToken } from "../utils/token";
 import { TokenPayload } from "google-auth-library";
 import OTP from "otp-generator";
-import { sendOtp } from "../utils/mail";
+import { sendOtp,sendResetPasswordLink } from "../utils/mail";
 
 export class CollectorService implements ICollectorService {
     constructor(
@@ -23,6 +23,12 @@ export class CollectorService implements ICollectorService {
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            if (collector.isBlocked) {
+                const error: any = new Error(MESSAGES.USER_BLOCKED);
+                error.status = HTTP_STATUS.FORBIDDEN;
                 throw error;
             }
 
@@ -122,6 +128,57 @@ export class CollectorService implements ICollectorService {
         }
     }
 
+    async sendResetPasswordLink(email: string): Promise<void> {
+        try {
+            const collector = await this.collectorRepository.getCollectorByEmail(email);
+
+            if (!collector) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("collector in sendResetPasswordLink :", collector);
+
+            const resetToken = generateResetPasswordToken(collector._id as string)
+
+            const resetURL = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+            console.log("resetURL :", resetURL);
+
+            await sendResetPasswordLink(email, resetURL);
+
+            console.log(`Password reset link sent to ${email}`);
+
+        } catch (error: any) {
+            console.log("Error while sending reset link user data :", error.message);
+            throw error;
+        }
+    }
+
+    async resetPassword(token: string, password: string): Promise<void> {
+        try {
+            const decoded = verifyToken(token, process.env.JWT_RESET_PASSOWORD_SECRET as string);
+
+            console.log("decode :", decoded)
+            const collector = await this.collectorRepository.getCollectorById(decoded.userId);
+
+            if (!collector) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            console.log("password :", password);
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await this.collectorRepository.updateById(collector._id as string, { password: hashedPassword, authProvider: "local" });
+
+        } catch (error: any) {
+            console.log("Error while sending reset link user data :", error.message);
+            throw error;
+        }
+    }
+
     async validateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string; }> {
         try {
 
@@ -196,6 +253,7 @@ export class CollectorService implements ICollectorService {
                 password: 0,
                 __v: 0
             }
+            
             const collector = await this.collectorRepository.findById(id, projection);
 
             if (!collector) {
@@ -270,7 +328,7 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-    async getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector>|null }> {
+    async getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector> | null }> {
         try {
             const collectionDate = new Date(preferredDate);
             const dateKey = collectionDate.toISOString().split('T')[0];
@@ -278,7 +336,7 @@ export class CollectorService implements ICollectorService {
             console.log("serviceAreaId :", serviceAreaId);
             console.log("dateKey :", dateKey);
 
-        
+
             const filter = {
                 serviceArea: serviceAreaId,
                 isBlocked: false,
@@ -292,12 +350,12 @@ export class CollectorService implements ICollectorService {
 
             const projection = {
                 _id: 1,
-                collectorId: 1, 
+                collectorId: 1,
                 name: 1,
                 email: 1,
                 phone: 1,
                 dailyTaskCounts: 1
-            }  
+            }
 
             const collectors = await this.collectorRepository.find(filter, projection);
 
@@ -310,20 +368,20 @@ export class CollectorService implements ICollectorService {
 
             console.log("collectors:", collectors);
 
-                const scoredCollectors = await Promise.all(collectors.map(async collector => ({
-                    ...collector.toObject(),
-                    score: await this.calculateCollectorScore(collector, dateKey)
-                })));
+            const scoredCollectors = await Promise.all(collectors.map(async collector => ({
+                ...collector.toObject(),
+                score: await this.calculateCollectorScore(collector, dateKey)
+            })));
 
-                console.log("scoredCollectors :", scoredCollectors);
-        
-                scoredCollectors.sort((a: any, b: any) => b.score - a.score);
-        
-                return {
-                    success: true,
-                    collector: scoredCollectors[0]
-                };
-            
+            console.log("scoredCollectors :", scoredCollectors);
+
+            scoredCollectors.sort((a: any, b: any) => b.score - a.score);
+
+            return {
+                success: true,
+                collector: scoredCollectors[0]
+            };
+
         } catch (error: any) {
             console.log("Error while fetching available collector :", error.message);
             throw error;
@@ -359,15 +417,29 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-    async deductTaskCount(collectorId: string): Promise<void> {
+    async cancelCollection(collectionId: string, collectorId: string, preferredDate: string): Promise<void> {
         try {
             await this.collectorRepository.updateById(
                 collectorId,
-                { $inc: { currentTasks: -1 } }
+                { $pull: { assignedTasks: collectionId } }
             );
+
+            const taskDateKey = new Date(preferredDate).toISOString().split('T')[0];
+            await this.collectorRepository.updateById(collectorId, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: -1 } });
+            console.log(`Successfully processed cancellation for collection ${collectionId}`);
 
         } catch (error: any) {
             console.error("Error while updating payment details :", error.message);
+            throw error;
+        }
+    }
+
+    async getCollectorBlockedStatus(collectorId: string): Promise<boolean> {
+        try {
+            const collector = await this.collectorRepository.getCollectorById(collectorId);
+            return collector?.isBlocked || false;
+        } catch (error: any) {
+            console.log("Error while getting collector blocked status :", error.message);
             throw error;
         }
     }

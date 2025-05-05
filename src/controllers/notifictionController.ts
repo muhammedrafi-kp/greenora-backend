@@ -10,7 +10,7 @@ export class NotificationController implements INotificationController {
 
     async getNotifications(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const page = parseInt(req.query.page as string) || 1;
             const limit = 10; // Number of notifications per page
             const skip = (page - 1) * limit;
@@ -40,7 +40,7 @@ export class NotificationController implements INotificationController {
 
     async getUnreadNotificationsCount(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
+            const userId = req.headers['x-client-id'] as string;
             const count = await this.notificationService.getUnreadNotificationsCount(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,

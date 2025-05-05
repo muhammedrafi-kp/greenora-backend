@@ -7,7 +7,7 @@ export interface IServiceAreaController {
     updateDistrict(req: Request, res: Response): Promise<void>;
     deleteDistrict(req: Request, res: Response): Promise<void>;
     createServiceArea(req: Request, res: Response): Promise<void>;
-    getServiceAreas(req: Request, res: Response): Promise<void>;
+    getServiceAreasByDistrict(req: Request, res: Response): Promise<void>;
     updateServiceArea(req: Request, res: Response): Promise<void>;
     isServiceAvailable(req: Request, res: Response): Promise<void>;
     getDistrictWithServiceArea(req: Request, res: Response): Promise<void>;

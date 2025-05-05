@@ -14,24 +14,6 @@ export class AddressService implements IAddressService {
         }
     }
 
-    // async getAddresses(query: object): Promise<IAddress[] | null> {
-    //     try {
-    //         return await this.addressRepository.find(query);
-    //     } catch (error) {
-    //         console.error('Error while finding addresses:', error);
-    //         throw error;
-    //     }
-    // }
-
-    // async getAddresses(userId: object): Promise<IAddress[] | null> {
-    //     try {
-    //         return await this.addressRepository.getAddressesByUserId();
-    //     } catch (error) {
-    //         console.error('Error while finding addresses:', error);
-    //         throw error;
-    //     }
-    // }
-
     async getAddresses(userId: string): Promise<IAddress[] | null> {
         try {
             return await this.addressRepository.find({ userId });

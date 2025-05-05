@@ -144,7 +144,7 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
-    async getServiceAreas(req: Request, res: Response): Promise<void> {
+    async getServiceAreasByDistrict(req: Request, res: Response): Promise<void> {
         try {
             const { districtId } = req.params;
             const serviceAreas = await this.serviceAreaService.getServiceAreas(districtId as string);
@@ -212,7 +212,8 @@ export class ServiceAreaController implements IServiceAreaController {
             console.log(districtId,serviceAreaId);
 
             const { district, serviceArea } = await this.serviceAreaService.getDistrictWithServiceArea(districtId, serviceAreaId);
-
+            console.log("district:", district);
+            console.log("serviceArea:", serviceArea);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 district,

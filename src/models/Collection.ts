@@ -14,6 +14,17 @@ export interface ICollection extends Document {
         qty: number;
     }[];
     estimatedCost: number;
+    payment: {
+        paymentId?: string;
+        advanceAmount?: number;
+        advancePaymentStatus?: "success" | "pending" | "failed" | "refunded";
+        advancePaymentMethod?: "online" | "wallet";
+        amount?: number;
+        method?: "online" | "wallet" | "cash";
+        status?: "pending" | "success" | "failed";
+        orderId?: string;
+        paidAt?: Date;
+    }
     preferredDate?: Date;
     instructions?: string;
     address: {
@@ -28,9 +39,7 @@ export interface ICollection extends Document {
         long: number;
         updatedAt: Date;
     };
-    paymentId: string;
-    status: "pending" | "scheduled" | "in progress" | "cancelled" | "completed";
-    isPaymentRequested: boolean;
+    status: "pending" | "scheduled" | "in_progress" | "cancelled" | "completed";
     scheduledAt: Date;
     collectionProof: string;
     userFeedback: {
@@ -75,12 +84,18 @@ const collectionSchema = new Schema<ICollection>(
             long: { type: Number },
             updatedAt: { type: Date }
         },
-        // advancePaymentAmount: { type: Number, default: 50 },
-        // advancePaymentStatus: { type: String, enum: ["success", "failed"] },
-        paymentId: { type: String },
-        // paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
+        payment: {
+            paymentId: { type: String },
+            advanceAmount: { type: Number },
+            advancePaymentStatus: { type: String, enum: ["success", "pending", "failed", "refunded"] },
+            advancePaymentMethod: { type: String, enum: ["online", "wallet"] },
+            amount: { type: Number },
+            method: { type: String, enum: ["online", "wallet", "cash"] },
+            status: { type: String, enum: ["pending", "success", "failed","requested"] },
+            orderId: { type: String },
+            paidAt: { type: Date }
+        },
         status: { type: String, enum: ["pending", "scheduled", "in progress", "cancelled", "completed"], default: "pending" },
-        isPaymentRequested: { type: Boolean, default: false },
         scheduledAt: { type: Date },
         collectionProof: { type: String },
         userFeedback: {

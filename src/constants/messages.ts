@@ -3,6 +3,7 @@ export const MESSAGES = {
     CATEGORY_NOT_FOUND: "Category not found.",
     CATEGORIES_NOT_FOUND: "Categories not found in collection data.",
     COLLECTION_NOT_FOUND: "Collection not found.",
+    COLLECTION_DATA_REQUIRED: "Collection data is required.",
     COLLECTION_CREATED: "Collection successfully created.",
     COLLECTION_VALIDATED: "Collection data validated successfully.",
     COLLECTION_UPDATED: "Collection information updated.",
@@ -11,6 +12,8 @@ export const MESSAGES = {
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
     UNKNOWN_ERROR: "An unknown error occurred.",
-    INVALID_ITEM_DATA: "Invalid item data provided."
+    INVALID_ITEM_DATA: "Invalid item data provided.",
+    PAYMENT_FAILED: "Payment failed. Please try again.",
+    PAYMENT_SUCCESSFULL: "Payment successfull."
 };
 

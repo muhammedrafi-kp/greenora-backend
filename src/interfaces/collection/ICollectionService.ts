@@ -13,15 +13,30 @@ export interface IPayment {
 }
 
 export interface ICollectionservice {
-    validateCollection(userId: String, collectionData: ICollection): Promise<string>;
+    initiatePayment(userId: string,paymentMethod: string, collectionData: Partial<ICollection>): Promise<{ orderId?: string, amount?: number}>;
+    processRazorpayPayment(amount: number): Promise<string>;
+    processWalletPayment(userId: string, collectionData: Partial<ICollection>): Promise<void>;
+    verifyAdvancePayment(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
+    validateCollection(collectionData: Partial<ICollection>): Promise<number>;
+    verifyCollectionPayment(collectionId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
+
+    validateCollection1(userId: String, collectionData: ICollection): Promise<string>;
 
     createCollection(userId: string, paymentId: string): Promise<ICollection>;
 
     scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void>;
 
     scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void>;
-    getCollectionHistory(userId: string): Promise<ICollection[]>;
+    getCollectionHistory(userId: string, options: {
+        status?: string;
+        type?: string;
+        startDate?: string;
+        endDate?: string;
+        page: number;
+        limit: number;
+    }): Promise<ICollection[]>;
 
+    updateCollection(collectionId:string,collectionData: Partial<ICollection>): Promise<ICollection | null>
     getCollectionHistories(options: {
         status?: string;
         districtId?: string;
@@ -37,9 +52,30 @@ export interface ICollectionservice {
     findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector>;
     assignCollectionToCollector(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
     
-    getAssignedCollections(collectorId: string): Promise<Partial<ICollection>[]>;
-    processCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void>;
-    processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>,collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void>;
+    getAssignedCollections(collectorId: string,options: {
+        status?: string;
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<Partial<ICollection>[]>;
+    completeCollection(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentMethod:string): Promise<void>;
+    // processWithDigitalPayment(collectionId: string,  paymentId: string): Promise<void>;
     cancelCollection(collectionId: string, reason: string): Promise<void>;
     requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void>;
+    getRevenueData( options: {
+        districtId?: string;
+        serviceAreaId?: string;
+        dateFilter?: string;
+        startDate?: Date;
+        endDate?: Date;  
+    }): Promise<{
+        date: string;
+        waste: number;
+        scrap: number;
+        total: number;
+        wasteCollections: number;
+        scrapCollections: number;
+    }[]>
+    
 }

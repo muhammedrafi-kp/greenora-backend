@@ -14,14 +14,24 @@ const collectionController = new CollectionController(collectionService);
 
 const router = Router();
 
+router.post("/initiate-payment/advance",collectionController.initiateAdvancePayment.bind(collectionController));
+router.post("/verify-payment/advance",collectionController.verifyAdvancePayment.bind(collectionController));
+
+
+
+
+
 router.get('/', collectionController.getCollectionHistory.bind(collectionController));
 router.get('/collections', collectionController.getCollectionHistories.bind(collectionController));
 router.post('/schedule/:collectionId', collectionController.scheduleCollectionManually.bind(collectionController));
 router.get('/available-collectors/:serviceAreaId', collectionController.getAvailableCollectors.bind(collectionController));
 router.get('/collector/assigned-collections',collectionController.getAssignedCollections.bind(collectionController));
 router.patch('/:collectionId',upload.array('collectionProofs'), collectionController.completeCollection.bind(collectionController));
-router.patch('/cancel',collectionController.cancelCollection.bind(collectionController));
+router.put('/cancel',collectionController.cancelCollection.bind(collectionController));
+
 
 router.post('/payment-request',upload.array('collectionProofs'), collectionController.requestCollectionPayment.bind(collectionController));
+router.post('/verify-payment', collectionController.verifyCollectionPayment.bind(collectionController));
 
+router.get('/revenue',collectionController.getRevenueData.bind(collectionController));
 export default router;

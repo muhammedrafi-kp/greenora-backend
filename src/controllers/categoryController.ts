@@ -167,51 +167,5 @@ export class CategoryController implements ICategoryController {
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }
-
-    // async initiatePayment(req: Request, res: Response): Promise<void> {
-    //     try {
-    //         const { amount, customer_id, customer_name, email, phone, payment_method } = req.body;
-    //         console.log("req.body:", req.body);
-    //         console.log("CASHFREE_BASE_URL:", CASHFREE_BASE_URL);
-    //         console.log("APP_ID:", APP_ID);
-    //         console.log("SECRET_KEY:", SECRET_KEY);
-
-    //         const response = await axios.post(
-    //             CASHFREE_BASE_URL,
-    //             {
-    //                 order_amount: amount,
-    //                 order_currency: "INR",
-    //                 customer_details: {
-    //                     customer_id,
-    //                     customer_name,
-    //                     customer_email: email,
-    //                     customer_phone: phone,
-    //                 },
-    //                 order_meta: {
-    //                     return_url: "http://localhost:80/payment-status?order_id={order_id}",
-    //                 },
-    //                 payment_method: payment_method || "upi",
-    //             },
-    //             {
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                     "x-client-id": APP_ID,
-    //                     "x-client-secret": SECRET_KEY,
-    //                     "x-api-version": "2023-08-01",
-    //                 },
-    //             }
-    //         );
-
-    //         console.log("response:", response.data);
-
-    //         res.status(HTTP_STATUS.OK).json({
-    //             success: true,
-    //             data: response.data
-    //         });
-
-    //     } catch (error) {
-    //         console.error("Error during initiate payment:", error.message);
-    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
-    //     }
-    // }
+    
 }

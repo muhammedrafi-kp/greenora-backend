@@ -17,74 +17,174 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export class CollectionService implements ICollectionservice {
     constructor(
-        private collectionRepository: ICollectionRepository,
-        private categoryRepository: ICategoryRepository,
-        private redisRepository: IRedisRepository
+        private _collectionRepository: ICollectionRepository,
+        private _categoryRepository: ICategoryRepository,
+        private _redisRepository: IRedisRepository
 
     ) { };
 
-    async validateCollection(userId: string, collectionData: ICollection): Promise<string> {
+    async initiatePayment(userId: string, paymentMethod: string, collectionData: Partial<ICollection>): Promise<{ orderId?: string, amount?: number }> {
         try {
-            console.log("they used us-1-validateCollection")
-            if (!collectionData.items || collectionData.items.length === 0) {
-                throw new Error("Items data is missing in the collection request.");
-            }
-            let totalCost = 0;
+            const totalAmout = await this.validateCollection(collectionData);
 
-            for (const item of collectionData.items) {
-                if (!item.categoryId || !item.qty) {
-                    throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
-                }
-
-                const categoryData = await this.categoryRepository.findById(item.categoryId);
-
-                if (!categoryData) {
-                    throw new Error(`Category with ID ${item.categoryId} not found.`);
-                }
-
-                totalCost += categoryData.rate * Number(item.qty);
-            }
+            console.log("totalCost :", totalAmout);
 
             const collectionId = uuidv4().replace(/-/g, '').substring(0, 16);
 
-            Object.assign(collectionData, { collectionId, estimatedCost: totalCost, });
+            Object.assign(collectionData, {
+                collectionId,
+                userId,
+                estimatedCost: totalAmout,
+                payment: {
+                    advancePaymentStatus: "pending",
+                    advancePaymentMethod: "online",
+                    advanceAmount: 50,
+                    amount: totalAmout,
+                    status: "pending",
+                }
+            });
 
-            const redisKey = `collection:${userId}`
-            await this.redisRepository.set(redisKey, collectionData, 600);
+            const collection = await this._collectionRepository.create(collectionData);
 
+            const redisKey = `collectionId:${userId}`
+            await this._redisRepository.set(redisKey, collection.collectionId, 600);
 
-            return collectionId;
-
-        } catch (error) {
-            console.error('Error while creating pickup request:', error);
-            throw error;
-        }
-    }
-
-    async createCollection(userId: string, paymentId: string): Promise<ICollection> {
-        try {
-            console.log("they used us-1-createCollection")
-
-            console.log("userId in collection service!!:", userId);
-            const redisKey = `collection:${userId}`
-            let collectionData: ICollection | null = await this.redisRepository.get(redisKey);
-
-            if (!collectionData) {
-                throw new Error(`No collection data found in Redis for userId: ${userId}`);
+            if (paymentMethod === "razorpay") {
+                const orderId = await this.processRazorpayPayment(50);
+                return { orderId, amount: 50 };
             }
 
-            // Object.assign(collectionData, { userId, advancePaymentStatus: "paid" });
+            if (paymentMethod === "wallet") {
+                return { amount: totalAmout };
+            }
 
-            Object.assign(collectionData, { userId, paymentId });
+            throw new Error("Invalid payment method");
+        } catch (error) {
+            console.error('Error while initiating payment:', error);
+            throw error;
+        }
+    }
+
+    async processRazorpayPayment(amount: number): Promise<string> {
+        try {
+
+            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/order`, {
+                amount
+            });
+
+            if (!response.data.success) {
+                const error: any = new Error(MESSAGES.PAYMENT_FAILED);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
+            return response.data.orderId;
+
+        } catch (error) {
+            console.error('Error while processing Razorpay payment:', error);
+            throw error;
+        }
+    }
+
+    async processWalletPayment(userId: string, collectionData: Partial<ICollection>): Promise<void> {
+        try {
+            // Implement wallet payment logic here
+        } catch (error) {
+            console.error('Error while processing wallet payment:', error);
+            throw error;
+        }
+    }
+
+    // async processWalletPayment(userId: string, collectionData: Partial<ICollection>): Promise<void> {
+    //     try {
+
+    //         const walletBalance = await this.walletRepository.getBalance(userId);
+
+    //         if (!collectionData.estimatedCost) {
+    //             const error: any = new Error(MESSAGES.COLLECTION_DATA_REQUIRED);
+    //             error.status = HTTP_STATUS.BAD_REQUEST;
+    //             throw error;
+    //         }
+
+    //         if (walletBalance < 50) {
+    //             const error: any = new Error(MESSAGES.INSUFFICIENT_WALLET_BALANCE);
+    //             error.status = HTTP_STATUS.BAD_REQUEST;
+    //             throw error;
+    //         }
+
+    //         // Publish PaymentInitiatedEvent
+    //         const paymentInitiatedEvent: PaymentInitiatedEvent = {
+    //             userId,
+    //             collectionData
+    //         };
+
+    //         await RabbitMQ.publish("paymentInitiatedQueue", paymentInitiatedEvent);
+
+    //         const transaction: ITransaction = {
+    //             type: "debit",
+    //             amount: 50,
+    //             timestamp: new Date(),
+    //             status: "completed",
+    //             serviceType: "collection advance"
+    //         }
+
+    //         await this.walletRepository.updateWallet(userId, 50 * (-1), transaction);
 
 
-            console.log("Final collection data before saving:", collectionData);
+    //         const paymentId = uuidv4();
 
-            // Store collection data in the main repository (DB)
-            const collection = await this.collectionRepository.create(collectionData);
-            await this.redisRepository.delete(redisKey);
+    //         await this.collectionPaymentRepository.create({
+    //             paymentId,
+    //             userId,
+    //             advanceAmount: 50,
+    //             advancePaymentStatus: "success",
+    //             advancePaymentMethod: "wallet",
+    //             status: "pending",
+    //         });
 
-            return collection;
+
+    //         const paymentCompletedEvent: PaymentCompletedEvent = {
+    //             userId,
+    //             paymentId,
+    //             // status: "success"
+    //         };
+
+    //         await RabbitMQ.publish("paymentCompletedQueue", paymentCompletedEvent)
+
+    //     } catch (error: any) {
+    //         console.error('Error while initiating payment:', error.message);
+    //         throw error;
+    //     }
+    // }
+
+    async validateCollection(collectionData: Partial<ICollection>): Promise<number> {
+        try {
+
+            if (!collectionData.items || collectionData.items.length === 0) {
+                throw new Error("Items data is missing in the collection request.");
+            }
+
+            let totalAmout = 0;
+
+            for (const item of collectionData.items) {
+                if (!item.categoryId || !item.qty) {
+                    const error: any = new Error(MESSAGES.INVALID_ITEM_DATA);
+                    error.status = HTTP_STATUS.BAD_REQUEST;
+                    throw error;
+                }
+
+                const categoryData = await this._categoryRepository.findById(item.categoryId);
+
+                if (!categoryData) {
+                    const error: any = new Error(MESSAGES.CATEGORY_NOT_FOUND);
+                    error.status = HTTP_STATUS.NOT_FOUND;
+                    throw error;
+                }
+
+                totalAmout += categoryData.rate * Number(item.qty);
+            }
+
+            return totalAmout;
 
         } catch (error) {
             console.error('Error while creating pickup request:', error);
@@ -92,42 +192,83 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void> {
+    async verifyAdvancePayment(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void> {
         try {
-            await this.assignCollectionToCollector(collectionId, collectorId, preferredDate);
+            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/verification`, razorpayVerificationData);
 
-            console.log("collector assigned to collection :", collectorId);
+            if (!response.data.success) {
+                const error: any = new Error(MESSAGES.PAYMENT_FAILED);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
 
-            await this.collectionRepository.updateOne(
-                { collectionId },
-                {
-                    collectorId: collectorId,
-                    status: "scheduled",
-                    preferredDate,
-                    assignedCollector: collectorId
+            const redisKey = `collectionId:${userId}`;
+
+            let collectionId: string | null = await this._redisRepository.get(redisKey);
+
+            if (!collectionId) {
+                const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            const collection = await this._collectionRepository.updateOne({ collectionId }, {
+                payment: {
+                    paymentId: response.data.paymentId,
+                    advancePaymentStatus: "success",
+                    advancePaymentMethod: "online",
+                    advanceAmount: 50
                 }
-            );
+            });
 
-            // Step 4: Publish a notification message to RabbitMQ
-            const queue = "notification";
+            await this._redisRepository.delete(redisKey);
 
-            const notification: INotification = {
-                userId: userId,
-                title: "Pickup Scheduled",
-                message: `Your waste pickup has been successfully scheduled. You can track the status and view details in your collection history.`,
-                url: "/account/waste-collection-history",
-                createdAt: new Date()
-            };
-
-
-            await RabbitMQ.publish(queue, notification);
-
+            if (collection && collection.preferredDate) {
+                const preferredDate = collection.preferredDate.toISOString();
+                setImmediate(() => {
+                    this.scheduleCollection(collectionId, userId, collection.serviceAreaId, preferredDate);
+                });
+            }
 
         } catch (error) {
-            console.error('Error while scheduling collection manually:', error);
+            console.error('Error while verifying advance payment:', error);
             throw error;
         }
     }
+
+
+    async verifyCollectionPayment(collectionId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void> {
+        try {
+            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/verification`, razorpayVerificationData);
+
+            if (!response.data.success) {
+                const error: any = new Error(MESSAGES.PAYMENT_FAILED);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
+            const collection = await this._collectionRepository.findOne({ collectionId });
+
+            if (!collection) {
+                const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            await this._collectionRepository.updateOne({ collectionId }, {
+                payment: {
+                    ...collection.payment,
+                    paymentId: response.data.paymentId,
+                    status: "success"
+                }
+            });
+
+        } catch (error) {
+            console.error('Error while verifying collection payment:', error);
+            throw error;
+        }
+    }
+
 
     async scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void> {
         try {
@@ -140,7 +281,7 @@ export class CollectionService implements ICollectionservice {
 
             await this.assignCollectionToCollector(collectionId, collector.id, preferredDate);
 
-            await this.collectionRepository.updateOne(
+            await this._collectionRepository.updateOne(
                 { collectionId },
                 {
                     collectorId: collector.id,
@@ -157,15 +298,154 @@ export class CollectionService implements ICollectionservice {
                 userId: userId,
                 title: "Pickup Scheduled",
                 message: `Your waste pickup has been successfully scheduled with collector ${collector.name}. You can track the status and view details in your collection history.`,
-                url: "/account/waste-collection-history",
+                url: "/account/collections",
+                createdAt: new Date()
+            };
+
+            RabbitMQ.publish(queue, notification);
+
+        } catch (error) {
+            console.error('Error while scheduling collection:', error);
+            throw error;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    async validateCollection1(userId: string, collectionData: ICollection): Promise<string> {
+        try {
+
+            if (!collectionData.items || collectionData.items.length === 0) {
+                throw new Error("Items data is missing in the collection request.");
+            }
+
+            let totalCost = 0;
+
+            for (const item of collectionData.items) {
+                if (!item.categoryId || !item.qty) {
+                    throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
+                }
+
+                const categoryData = await this._categoryRepository.findById(item.categoryId);
+
+                if (!categoryData) {
+                    throw new Error(`Category with ID ${item.categoryId} not found.`);
+                }
+
+                totalCost += categoryData.rate * Number(item.qty);
+            }
+
+            const collectionId = uuidv4().replace(/-/g, '').substring(0, 16);
+
+            Object.assign(collectionData, { collectionId, estimatedCost: totalCost, });
+
+            const redisKey = `collection:${userId}`
+            await this._redisRepository.set(redisKey, collectionData, 600);
+
+
+            return collectionId;
+
+        } catch (error) {
+            console.error('Error while creating pickup request:', error);
+            throw error;
+        }
+    }
+
+    async createCollection(userId: string, paymentId: string): Promise<ICollection> {
+        try {
+            console.log("they used us-1-createCollection")
+
+            console.log("userId in collection service!!:", userId);
+            const redisKey = `collection:${userId}`
+            let collectionData: ICollection | null = await this._redisRepository.get(redisKey);
+
+            if (!collectionData) {
+                throw new Error(`No collection data found in Redis for userId: ${userId}`);
+            }
+
+            // Object.assign(collectionData, { userId, advancePaymentStatus: "paid" });
+
+            Object.assign(collectionData, { userId, paymentId });
+
+
+            console.log("Final collection data before saving:", collectionData);
+
+            // Store collection data in the main repository (DB)
+            const collection = await this._collectionRepository.create(collectionData);
+            await this._redisRepository.delete(redisKey);
+
+            return collection;
+
+        } catch (error) {
+            console.error('Error while creating pickup request:', error);
+            throw error;
+        }
+    }
+
+    async scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void> {
+        try {
+            await this.assignCollectionToCollector(collectionId, collectorId, preferredDate);
+
+            console.log("collector assigned to collection :", collectorId);
+
+            await this._collectionRepository.updateOne(
+                { collectionId },
+                {
+                    collectorId: collectorId,
+                    status: "scheduled",
+                    preferredDate,
+                    assignedCollector: collectorId
+                }
+            );
+
+            // Step 4: Publish a notification message to RabbitMQ
+            const queue = "notification";
+
+            const notification: INotification = {
+                userId: userId,
+                title: "Pickup Scheduled",
+                message: `Your waste pickup has been successfully scheduled. You can track the status and view details in your collection history.`,
+                url: "/account/collections",
                 createdAt: new Date()
             };
 
 
             await RabbitMQ.publish(queue, notification);
 
+
         } catch (error) {
-            console.error('Error while scheduling collection:', error);
+            console.error('Error while scheduling collection manually:', error);
             throw error;
         }
     }
@@ -222,10 +502,57 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async getCollectionHistory(userId: string): Promise<ICollection[]> {
+    async getCollectionHistory(userId: string, options: {
+        status?: string;
+        type?: string;
+        startDate?: string;
+        endDate?: string;
+        page: number;
+        limit: number;
+    }): Promise<ICollection[]> {
         try {
-            // return await this.collectionRepository.findAll({ userId })
-            return await this.collectionRepository.getCollections(userId)
+
+            const {
+                status,
+                type,
+                startDate,
+                endDate,
+                page,
+                limit,
+            } = options;
+
+            const filter: any = {};
+            filter.userId = userId;
+            if (status) filter.status = status;
+            if (type) filter.type = type;
+
+            const sort: Record<string, 1 | -1> = {};
+            sort.createdAt = -1;
+
+            if (startDate || endDate) {
+                filter.createdAt = {};
+                if (startDate) filter.createdAt.$gte = new Date(startDate);
+                if (endDate) filter.createdAt.$lte = new Date(endDate);
+            }
+
+
+            const skip = (page - 1) * limit;
+
+            return await this._collectionRepository.findAll(filter, {}, sort, skip, limit)
+
+        } catch (error) {
+            console.error('Error while fetching collection histories:', error);
+            throw error;
+        }
+    }
+
+    async updateCollection(collectionId: string, collectionData: Partial<ICollection>): Promise<ICollection | null> {
+        try {
+            console.log("collectionData :", collectionData)
+            const updatedCollection = await this._collectionRepository.updateOne({ collectionId: collectionId }, collectionData)
+            console.log("updatedCollection :", updatedCollection);
+
+            return updatedCollection;
 
         } catch (error) {
             console.error('Error while fetching collection histories:', error);
@@ -284,13 +611,13 @@ export class CollectionService implements ICollectionservice {
                 sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
             }
 
-            const totalItems = await this.collectionRepository.countDocuments(filter);
+            const totalItems = await this._collectionRepository.countDocuments(filter);
             console.log("totalItems :", totalItems);
 
             const skip = (page - 1) * limit;
 
 
-            const collections = await this.collectionRepository.findAll(filter, {}, sort, skip, limit);
+            const collections = await this._collectionRepository.findAll(filter, {}, sort, skip, limit);
 
 
             const userIds = [...new Set(collections.map(c => c.userId))];
@@ -334,13 +661,32 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async getAssignedCollections(collectorId: string): Promise<Partial<ICollection>[]> {
+    async getAssignedCollections(collectorId: string, options: {
+        status?: string;
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<Partial<ICollection>[]> {
         try {
-            const filter = { collectorId };
+            const { page = 1, limit = 3, status, startDate, endDate } = options;
+            const filter: any = { collectorId };
 
-            const collections = await this.collectionRepository.findAll(filter, {}, { preferredDate: 1 });
+            if (status) filter.status = status;
+            if (startDate || endDate) {
+                filter.preferredDate = {};
+                if (startDate) filter.preferredDate.$gte = new Date(startDate);
+                if (endDate) filter.preferredDate.$lte = new Date(endDate);
+            }
+
+            const sort: Record<string, 1 | -1> = {};
+            sort.preferredDate = -1;
+            const skip = (page - 1) * limit;
+
+
+            const collections = await this._collectionRepository.findAll(filter, {}, sort, skip, limit);
+
             const userIds = [...new Set(collections.map(c => c.userId))];
-            console.log("userIds :", userIds);
             const response: { success: boolean; users: IUser[] } = await new Promise((resolve, reject) => {
                 userClient.GetUsers({ userIds }, (error: any, response: any) => {
                     if (error) {
@@ -350,10 +696,7 @@ export class CollectionService implements ICollectionservice {
                 });
             });
 
-            console.log("response from grpc:", response);
-
             const userMap = new Map<string, any>();
-
             response.users.forEach((user: any) => {
                 userMap.set(user.userId, user);
             });
@@ -374,9 +717,10 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async processCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
+    async completeCollection(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentMethod: string): Promise<void> {
         try {
-            const collection = await this.collectionRepository.findById(collectionId);
+            const collection = await this._collectionRepository.findOne({ collectionId });
+
             console.log("collection :", collection);
 
             if (!collection) {
@@ -385,68 +729,40 @@ export class CollectionService implements ICollectionservice {
                 throw error;
             }
 
-            const proofUrls = await Promise.all(
-                collectionProofs.map(async (proof, index) => {
-                    const s3Params = {
-                        Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                        Key: `collection-proofs/${collectionId}/${Date.now()}_${index}_${proof.originalname}`,
-                        Body: proof.buffer,
-                        ContentType: proof.mimetype,
-                    };
+            if (paymentMethod === "digital") {
 
-                    const command = new PutObjectCommand(s3Params);
-                    await s3.send(command);
+                console.log("yessssssssss!!!");
 
-                    // Return the public URL (adjust based on your S3 configuration)
-                    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-                })
-            );
+                if (collection.payment?.status === "success") {
+                    await this._collectionRepository.updateOne({ collectionId }, { status: "completed" });
+                } else {
+                    const error: any = new Error(MESSAGES.PAYMENT_NOT_COMPLETED);
+                    error.status = HTTP_STATUS.BAD_REQUEST;
+                    throw error;
+                }
 
-            console.log("proofUrls :", proofUrls);
+            } else if (paymentMethod === "cash") {
+                console.log("nooooooooo!!!");
+                if (!collectionData.items) {
+                    throw new Error(MESSAGES.INVALID_ITEM_DATA);
+                }
 
-            Object.assign(collectionData, { proofs: proofUrls });
+                let totalAmount = 0;
 
-            console.log("collectionData :", collectionData);
+                for (const item of collectionData.items) {
+                    if (!item.categoryId || !item.qty) {
+                        throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
+                    }
 
-            // await this.collectionRepository.updateById(collectionId, collectionData);
+                    const categoryData = await this._categoryRepository.findById(item.categoryId);
 
-            // await RabbitMQ.publish("finalPayment-payment", paymentData);
-            // await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+                    if (!categoryData) {
+                        throw new Error(`Category with ID ${item.categoryId} not found.`);
+                    }
 
-            // const notification: INotification = {
-            //     userId: collection.userId,
-            //     title: "Pickup Completed",
-            //     message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-            //     url: "/account/waste-collection-history",
-            //     createdAt: new Date()
-            // };
+                    totalAmount += categoryData.rate * Number(item.qty);
+                }
 
-            // await RabbitMQ.publish('notification', notification);
-
-        } catch (error) {
-            console.error('Error while updating collection:', error);
-            throw error;
-        }
-    }
-
-    async processDigitalPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
-        try {
-
-            const collection = await this.collectionRepository.findById(collectionId);
-            console.log("collection :", collection);
-
-            if (!collection) {
-                const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
-                error.status = HTTP_STATUS.NOT_FOUND;
-                throw error;
-            }
-
-            const response = await axios.get(`http://localhost:3004/collection-payment/${paymentData.paymentId}`);
-
-            console.log("response from payment:", response.data);
-            const payment: IPayment = response.data.data;
-
-            if (payment.status === "success") {
 
                 const proofUrls = await Promise.all(
                     collectionProofs.map(async (proof, index) => {
@@ -464,40 +780,170 @@ export class CollectionService implements ICollectionservice {
                     })
                 );
 
-                Object.assign(collectionData, { proofs: proofUrls });
+                console.log("proofUrls :", proofUrls);
+
+                Object.assign(collectionData, {
+                    estimatedCost: totalAmount,
+                    status: "completed",
+                    proofs: proofUrls,
+                    payment: {
+                        ...collection.payment,
+                        amount: totalAmount,
+                        method: "cash",
+                        status: "success",
+                        paidAt: new Date().toISOString(),
+                    }
+                });
 
                 console.log("collectionData :", collectionData);
 
-                await this.collectionRepository.updateById(collectionId, collectionData);
-
-                await RabbitMQ.publish("finalPayment-payment", paymentData);
-                await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
-                const notification: INotification = {
-                    userId: collection.userId,
-                    title: "Pickup Completed",
-                    message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-                    url: "/account/collections",
-                    createdAt: new Date()
-                };
-
-                await RabbitMQ.publish('notification', notification);
-
-            } else {
-                const error: any = new Error(MESSAGES.PAYMENT_NOT_COMPLETED);
-                error.status = HTTP_STATUS.BAD_REQUEST;
-                throw error;
+                await this._collectionRepository.updateOne({ collectionId }, collectionData);
             }
 
+            const notification: INotification = {
+                userId: collection.userId,
+                title: "Pickup Completed",
+                message: `Your waste pickup #${collection.collectionId.toUpperCase()} has been successfully completed. You can view the details in your collection history.`,
+                url: "/account/collections",
+                createdAt: new Date()
+            };
+
+            await RabbitMQ.publish('notification', notification);
+
         } catch (error) {
-            console.error('Error while completing collection:', error);
+            console.error('Error while updating collection:', error);
             throw error;
         }
     }
 
+    // async processWithCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
+    //     try {
+    //         const collection = await this._collectionRepository.findOne({ collectionId });
+    //         console.log("collection :", collection);
+
+    //         if (!collection) {
+    //             const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+    //             error.status = HTTP_STATUS.NOT_FOUND;
+    //             throw error;
+    //         }
+
+    //         if (!collectionData.items) {
+    //             throw new Error(MESSAGES.INVALID_ITEM_DATA);
+    //         }
+
+    //         let totalCost = 0;
+
+    //         for (const item of collectionData.items) {
+    //             if (!item.categoryId || !item.qty) {
+    //                 throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
+    //             }
+
+    //             const categoryData = await this._categoryRepository.findById(item.categoryId);
+
+    //             if (!categoryData) {
+    //                 throw new Error(`Category with ID ${item.categoryId} not found.`);
+    //             }
+
+    //             totalCost += categoryData.rate * Number(item.qty);
+    //         }
+
+
+    //         const proofUrls = await Promise.all(
+    //             collectionProofs.map(async (proof, index) => {
+    //                 const s3Params = {
+    //                     Bucket: process.env.AWS_S3_BUCKET_NAME!,
+    //                     Key: `collection-proofs/${collectionId}/${Date.now()}_${index}_${proof.originalname}`,
+    //                     Body: proof.buffer,
+    //                     ContentType: proof.mimetype,
+    //                 };
+
+    //                 const command = new PutObjectCommand(s3Params);
+    //                 await s3.send(command);
+
+    //                 // Return the public URL (adjust based on your S3 configuration)
+    //                 return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+    //             })
+    //         );
+
+    //         console.log("proofUrls :", proofUrls);
+
+    //         Object.assign(collectionData, { estimatedCost: totalCost, status: "completed", proofs: proofUrls });
+
+    //         Object.assign(paymentData, { status: "completed", paidAt: new Date().toISOString(), amount: totalCost });
+
+    //         console.log("collectionData :", collectionData);
+    //         console.log("paymentData :", paymentData);
+
+    //         await this._collectionRepository.updateOne({ collectionId }, collectionData);
+
+    //         await RabbitMQ.publish("finalPayment-payment", paymentData);
+
+    //         await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+
+    //         const notification: INotification = {
+    //             userId: collection.userId,
+    //             title: "Pickup Completed",
+    //             message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
+    //             url: "/account/collections",
+    //             createdAt: new Date()
+    //         };
+
+    //         await RabbitMQ.publish('notification', notification);
+
+    //     } catch (error) {
+    //         console.error('Error while updating collection:', error);
+    //         throw error;
+    //     }
+    // }
+
+    // async processWithDigitalPayment(collectionId: string, paymentId: string): Promise<void> {
+    //     try {
+
+    //         const collection = await this._collectionRepository.findOne({ collectionId });
+    //         console.log("collection :", collection);
+
+    //         if (!collection) {
+    //             const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+    //             error.status = HTTP_STATUS.NOT_FOUND;
+    //             throw error;
+    //         }
+
+    //         const response = await axios.get(`http://localhost:3004/collection-payment/${paymentId}`);
+
+    //         console.log("response from payment:", response.data);
+    //         const payment: IPayment = response.data.data;
+
+    //         if (payment.status === "success") {
+
+    //             await this._collectionRepository.updateOne({ collectionId }, { status: "completed", isPaymentRequested: false });
+
+    //             // await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
+
+    //             const notification: INotification = {
+    //                 userId: collection.userId,
+    //                 title: "Pickup Completed",
+    //                 message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
+    //                 url: "/account/collections",
+    //                 createdAt: new Date()
+    //             };
+
+    //             await RabbitMQ.publish('notification', notification);
+
+    //         } else {
+    //             const error: any = new Error(MESSAGES.PAYMENT_NOT_COMPLETED);
+    //             error.status = HTTP_STATUS.BAD_REQUEST;
+    //             throw error;
+    //         }
+
+    //     } catch (error) {
+    //         console.error('Error while completing collection:', error);
+    //         throw error;
+    //     }
+    // }
 
     async cancelCollection(collectionId: string, reason: string): Promise<void> {
         try {
-            const collection = await this.collectionRepository.updateOne({ collectionId }, { status: "cancelled", cancellationReason: reason });
+            const collection = await this._collectionRepository.updateOne({ collectionId }, { status: "cancelled", cancellationReason: reason });
 
             if (!collection) {
                 const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
@@ -514,7 +960,7 @@ export class CollectionService implements ICollectionservice {
 
             await RabbitMQ.publish("collection-cancelled-payment", {
                 userId: collection.userId,
-                paymentId: collection.paymentId
+                paymentId: collection.payment.paymentId
             });
 
 
@@ -527,7 +973,7 @@ export class CollectionService implements ICollectionservice {
     async requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void> {
         try {
 
-            const collection = await this.collectionRepository.findOne({ collectionId: collectionData.collectionId });
+            const collection = await this._collectionRepository.findOne({ collectionId: collectionData.collectionId });
 
             if (!collection) {
                 const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
@@ -539,42 +985,174 @@ export class CollectionService implements ICollectionservice {
                 throw new Error(MESSAGES.INVALID_ITEM_DATA);
             }
 
-            let totalCost = 0;
+            let totalAmount = 0;
 
             for (const item of collectionData.items) {
                 if (!item.categoryId || !item.qty) {
                     throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
                 }
 
-                const categoryData = await this.categoryRepository.findById(item.categoryId);
+                const categoryData = await this._categoryRepository.findById(item.categoryId);
 
                 if (!categoryData) {
                     throw new Error(`Category with ID ${item.categoryId} not found.`);
                 }
 
-                totalCost += categoryData.rate * Number(item.qty);
+                totalAmount += categoryData.rate * Number(item.qty);
             }
 
-            console.log("totalCost :", totalCost);
+            console.log("totalAmount :", totalAmount);
 
-            const response = await axios.post<{ success: boolean, message: string }>(`http://localhost:3004/collection-payment/payment-request`, {
-                userId: collection.userId,
-                paymentId: collection.paymentId,
-                amount: totalCost
+            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/order`, {
+                amount: totalAmount - (collection.payment?.advanceAmount ?? 0)
             });
-            console.log("response from payment:", response.data);
 
-            if (response.data.success) {
-                console.log("successs!!!")
-                await this.collectionRepository.updateOne(
-                    { collectionId: collection.collectionId },
-                    { isPaymentRequested: true }
-                )
+            if (!response.data.success) {
+                const error: any = new Error(MESSAGES.PAYMENT_FAILED);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
             }
+
+            console.log("response from payment service:", response.data);
+
+            const proofUrls = await Promise.all(
+                collectionProofs.map(async (proof, index) => {
+                    const s3Params = {
+                        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                        Key: `collection-proofs/${collection.collectionId}/${Date.now()}_${index}_${proof.originalname}`,
+                        Body: proof.buffer,
+                        ContentType: proof.mimetype,
+                    };
+
+                    const command = new PutObjectCommand(s3Params);
+                    await s3.send(command);
+
+                    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+                })
+            );
+
+            Object.assign(collectionData, {
+                proofs: proofUrls,
+                payment: {
+                    ...collection.payment,
+                    amount: totalAmount,
+                    orderId: response.data.orderId,
+                    status: "requested"
+                }
+            });
+
+            console.log("collectionData :", collectionData);
+
+            await this._collectionRepository.updateOne(
+                { collectionId: collection.collectionId },
+                collectionData
+            );
+
+            const queue = "notification";
+
+            const notification: INotification = {
+                userId: collection.userId,
+                title: "Payment Request for Waste Pickup",
+                message: `The waste pickup is ready and a payment request has been generated. Please complete the payment to proceed.`,
+                url: `/account/collections`,
+                createdAt: new Date()
+            };
+
+            await RabbitMQ.publish(queue, notification);
+
 
         } catch (error) {
             console.error('Error while requesting collection payment:', error);
             throw error;
         }
     }
+
+
+
+
+    async getRevenueData(
+        options: {
+            districtId?: string;
+            serviceAreaId?: string;
+            dateFilter?: string;
+            startDate?: Date;
+            endDate?: Date;
+        }
+    ): Promise<{
+        date: string;
+        waste: number;
+        scrap: number;
+        total: number;
+        wasteCollections: number;
+        scrapCollections: number;
+    }[]> {
+        try {
+
+            let startDate: Date | undefined;
+            let endDate: Date | undefined = new Date();
+
+            switch (options.dateFilter) {
+                case 'today':
+                    startDate = new Date();
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'yesterday':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 1);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(startDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'last7days':
+                    startDate = new Date();
+                    startDate.setDate(startDate.getDate() - 7);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'thismonth':
+                    startDate = new Date();
+                    startDate.setDate(1);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'lastmonth':
+                    startDate = new Date();
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    startDate.setDate(1);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(startDate);
+                    endDate.setMonth(endDate.getMonth() + 1);
+                    endDate.setDate(0);
+                    endDate.setHours(23, 59, 59, 999);
+                    break;
+                case 'thisyear':
+                    startDate = new Date();
+                    startDate.setMonth(0);
+                    startDate.setDate(1);
+                    startDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'custom':
+                    // Use the provided start and end dates
+                    startDate = options.startDate;
+                    endDate = options.endDate;
+                    break;
+                default:
+                    // Default to today if no filter is provided
+                    startDate = new Date();
+                    startDate.setHours(0, 0, 0, 0);
+            }
+
+            const data = await this._collectionRepository.getRevenueData({
+                districtId: options.districtId,
+                serviceAreaId: options.serviceAreaId,
+                startDate,
+                endDate
+            });
+
+            return data;
+
+        } catch (error) {
+            console.error('Error while fetching revenue data:', error);
+            throw error;
+        }
+    }
+
 }

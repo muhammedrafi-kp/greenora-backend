@@ -30,7 +30,6 @@ export class ChatController implements IChatController {
             const chatData = req.body;
             console.log("chatData :",chatData);
             const chat = await this.chatService.startChat(chatData);
-            // console.log("chat :",chat);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: chat
@@ -43,9 +42,18 @@ export class ChatController implements IChatController {
 
     async getChats(req: Request, res: Response): Promise<void> {
         try {
-            const userId = req.headers['x-user-id'] as string;
 
-            const chats = await this.chatService.getChats(userId);
+            const chats = await this.chatService.getChats();
+
+            // console.log("chats :",chats);
+
+            if (!chats) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    message: MESSAGES.CHATS_NOT_FOUND
+                });
+                return;
+            }
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: chats
@@ -92,16 +100,26 @@ export class ChatController implements IChatController {
     async chatbotHandler(req: Request, res: Response): Promise<void> {
         try {
             const { prompt } = req.body;
+
             if (!prompt) {
-                res.status(400).json({ error: 'Message is required' });
+                res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Message is required' });
                 return;
             }
 
             const response = await getGeminiResponse(prompt);
 
-            res.status(200).json({ response });
+            res.status(HTTP_STATUS.OK).json({ success: true, data: response });
 
-        } catch (error) {
+        } catch (error:any) {
+
+            if (error.status === HTTP_STATUS.BAD_GATEWAY) {
+                res.status(HTTP_STATUS.BAD_GATEWAY).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
             console.error("Error during calculate cost:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }

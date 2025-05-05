@@ -4,20 +4,23 @@ import mongoose, { Schema, model, Document, Types } from "mongoose";
 export interface IChat extends Document {
     participant1: string;
     participant2: string;
+    participant2Name: string;
+    participant2ProfileUrl: string;
     lastMessage: string;
-    participant1Role: 'admin' | 'user' | 'collector';
-    participant2Role: 'admin' | 'user' | 'collector';
+    participant1Role: 'admin' ;
+    participant2Role: 'user' | 'collector';
 }
 
 const chatSchema = new Schema<IChat>({
     participant1: { type: String, required: true },
     participant2: { type: String, required: true },
     lastMessage: { type: String, default: null },
-    participant1Role: { type: String, enum: ["admin", "user", "collector"], required: true, },
-    participant2Role: { type: String, enum: ["admin", "user", "collector"], required: true, },
+    participant1Role: { type: String, enum: ["admin"], default: "admin", required: true, },
+    participant2Role: { type: String, enum: ["user", "collector"], required: true, },
+    participant2Name: { type: String, default: null },
+    participant2ProfileUrl: { type: String, default: null },
 }, { timestamps: true });
 
-// chatSchema.index({ participant1: 1, participant2: 1 }, { unique: true });
 
 export const Chat = model("Chat", chatSchema);
 

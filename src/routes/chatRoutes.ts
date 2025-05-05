@@ -14,6 +14,6 @@ router.post("/chat",chatController.createChat.bind(chatController));
 router.get("/chats", chatController.getChats.bind(chatController));
 router.get("/messages/:chatId", chatController.getMessages.bind(chatController));
 router.put("/mark-read/:senderId/:receiverId", chatController.markMessagesAsRead.bind(chatController));
-router.post('/ask-chatbot',chatController.chatbotHandler.bind(chatController));
+router.post('/chatbot',chatController.chatbotHandler.bind(chatController));
 
 export default router;

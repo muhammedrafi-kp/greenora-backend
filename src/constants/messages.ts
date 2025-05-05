@@ -7,6 +7,7 @@ export const MESSAGES = {
     COLLECTION_UPDATED: "Collection information updated.",
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
-    UNKNOWN_ERROR: "An unknown error occurred."
+    UNKNOWN_ERROR: "An unknown error occurred.",
+    CHATS_NOT_FOUND: "No chats found."
 };
 

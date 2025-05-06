@@ -13,19 +13,17 @@ export interface IPayment {
 }
 
 export interface ICollectionservice {
-    initiatePayment(userId: string,paymentMethod: string, collectionData: Partial<ICollection>): Promise<{ orderId?: string, amount?: number}>;
-    processRazorpayPayment(amount: number): Promise<string>;
-    processWalletPayment(userId: string, collectionData: Partial<ICollection>): Promise<void>;
-    verifyAdvancePayment(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
+    initiateRazorpayAdvance(userId: string, collectionData: Partial<ICollection>): Promise<{ orderId: string, amount: number}>;
+    payAdvanceWithWallet(userId: string, collectionData: Partial<ICollection>): Promise<void>;
+    verifyRazorpayAdvance(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
     validateCollection(collectionData: Partial<ICollection>): Promise<number>;
-    verifyCollectionPayment(collectionId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
-
-    validateCollection1(userId: String, collectionData: ICollection): Promise<string>;
+    requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void>;
+    verifyRazorpayPayment(collectionId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void>;
+    payWithWallet(userId: string, collectionId: string): Promise<void>;
 
     createCollection(userId: string, paymentId: string): Promise<ICollection>;
 
     scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void>;
-
     scheduleCollectionManually(collectionId: string, collectorId: string, userId: string, preferredDate: string): Promise<void>;
     getCollectionHistory(userId: string, options: {
         status?: string;
@@ -62,7 +60,6 @@ export interface ICollectionservice {
     completeCollection(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentMethod:string): Promise<void>;
     // processWithDigitalPayment(collectionId: string,  paymentId: string): Promise<void>;
     cancelCollection(collectionId: string, reason: string): Promise<void>;
-    requestCollectionPayment(collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[]): Promise<void>;
     getRevenueData( options: {
         districtId?: string;
         serviceAreaId?: string;

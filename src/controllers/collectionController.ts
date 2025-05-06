@@ -9,19 +9,17 @@ const upload = multer({ dest: 'uploads/' });
 
 export class CollectionController implements ICollectionController {
 
-  constructor(private collectionService: ICollectionservice) { };
+  constructor(private _collectionService: ICollectionservice) { };
 
 
-  async initiateAdvancePayment(req: Request, res: Response): Promise<void> {
+  async initiateRazorpayAdvance(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.headers['x-client-id'] as string;
-      const { paymentMethod, collectionData } = req.body;
+      const collectionData = req.body;
 
       console.log("collectionData :", collectionData);
-      console.log("Payment Method:", paymentMethod);
-      console.log("UserId:", userId);
 
-      if (!collectionData || Object.keys(collectionData).length === 0 || !paymentMethod) {
+      if (!collectionData || Object.keys(collectionData).length === 0) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: MESSAGES.COLLECTION_DATA_REQUIRED,
@@ -29,7 +27,8 @@ export class CollectionController implements ICollectionController {
         return;
       }
 
-      const response = await this.collectionService.initiatePayment(userId, paymentMethod, collectionData);
+      const response = await this._collectionService.initiateRazorpayAdvance(userId, collectionData);
+
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Payment initiated successfully", data: response });
 
     } catch (error: any) {
@@ -39,11 +38,12 @@ export class CollectionController implements ICollectionController {
       } else {
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
       }
+
     }
   }
 
 
-  async verifyAdvancePayment(req: Request, res: Response): Promise<void> {
+  async verifyRazorpayAdvance(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.headers['x-client-id'] as string;
       const razorpayVerificationData = req.body;
@@ -51,7 +51,28 @@ export class CollectionController implements ICollectionController {
       console.log("userId :", userId);
       console.log("razorpayVerificationData :", razorpayVerificationData)
 
-      await this.collectionService.verifyAdvancePayment(userId, razorpayVerificationData);
+      await this._collectionService.verifyRazorpayAdvance(userId, razorpayVerificationData);
+
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PAYMENT_SUCCESSFULL });
+
+    } catch (error: any) {
+      if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+      }
+    }
+  }
+  
+
+  async payAdvanceWithWallet(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.headers['x-client-id'] as string;
+      const collectionData = req.body;
+
+      console.log("collectionData :", collectionData);
+
+      await this._collectionService.payAdvanceWithWallet(userId, collectionData);
 
       res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PAYMENT_SUCCESSFULL });
 
@@ -73,7 +94,7 @@ export class CollectionController implements ICollectionController {
       console.log("collectorId :", collectorId);
       console.log("userId :", userId);
       console.log("preferredDate :", preferredDate);
-      const response = await this.collectionService.scheduleCollectionManually(collectionId, collectorId, userId, preferredDate);
+      const response = await this._collectionService.scheduleCollectionManually(collectionId, collectorId, userId, preferredDate);
       console.log("response :", response);
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection scheduled successfully" });
     } catch (error: any) {
@@ -104,7 +125,7 @@ export class CollectionController implements ICollectionController {
         limit: Number(limit),
       };
 
-      const collectionHistories = await this.collectionService.getCollectionHistory(userId, queryOptions);
+      const collectionHistories = await this._collectionService.getCollectionHistory(userId, queryOptions);
       res.status(HTTP_STATUS.OK).json({ success: true, data: collectionHistories });
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -142,7 +163,7 @@ export class CollectionController implements ICollectionController {
       };
       console.log("queryOptions :", queryOptions);
 
-      const { collections, totalItems } = await this.collectionService.getCollectionHistories(queryOptions);
+      const { collections, totalItems } = await this._collectionService.getCollectionHistories(queryOptions);
 
       res.status(HTTP_STATUS.OK).json({ success: true, collections, totalItems });
     } catch (error: any) {
@@ -153,7 +174,7 @@ export class CollectionController implements ICollectionController {
   async getAvailableCollectors(req: Request, res: Response): Promise<void> {
     try {
       const { serviceAreaId, preferredDate } = req.body;
-      const collector = await this.collectionService.findAvailableCollector(serviceAreaId, preferredDate);
+      const collector = await this._collectionService.findAvailableCollector(serviceAreaId, preferredDate);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -177,7 +198,7 @@ export class CollectionController implements ICollectionController {
       } = req.query;
       console.log("req.query :", req.query);
 
-      const collections = await this.collectionService.getAssignedCollections(
+      const collections = await this._collectionService.getAssignedCollections(
         collectorId as string,
         {
           status: status as string,
@@ -209,7 +230,7 @@ export class CollectionController implements ICollectionController {
 
       console.log("Uploaded files:", collectionProofs);
       console.log("collectionId :", collectionId);
-      console.log("paymentMethod :",  paymentMethod);
+      console.log("paymentMethod :", paymentMethod);
       console.log("collectionData in controller:", parsedCollectionData);
 
       if (!collectionId || !paymentMethod || !collectionData || !collectionProofs) {
@@ -217,7 +238,7 @@ export class CollectionController implements ICollectionController {
         return;
       }
 
-      await this.collectionService.completeCollection(collectionId, parsedCollectionData, collectionProofs, paymentMethod);
+      await this._collectionService.completeCollection(collectionId, parsedCollectionData, collectionProofs, paymentMethod);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
@@ -242,7 +263,7 @@ export class CollectionController implements ICollectionController {
       console.log("collectionId :", collectionId);
       console.log("reason :", reason);
 
-      await this.collectionService.cancelCollection(collectionId, reason);
+      await this._collectionService.cancelCollection(collectionId, reason);
 
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection cancelled successfully" });
 
@@ -257,7 +278,6 @@ export class CollectionController implements ICollectionController {
 
     }
   }
-
 
   async requestCollectionPayment(req: Request, res: Response): Promise<void> {
     try {
@@ -274,7 +294,7 @@ export class CollectionController implements ICollectionController {
 
       const parsedCollectionData = JSON.parse(collectionData);
 
-      await this.collectionService.requestCollectionPayment(parsedCollectionData, collectionProofs);
+      await this._collectionService.requestCollectionPayment(parsedCollectionData, collectionProofs);
 
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Payment requested successfully" });
 
@@ -283,13 +303,13 @@ export class CollectionController implements ICollectionController {
     }
   }
 
-  async verifyCollectionPayment(req: Request, res: Response): Promise<void> {
+  async verifyRazorpayPayment(req: Request, res: Response): Promise<void> {
     try {
       const { collectionId, razorpayVerificationData } = req.body;
       console.log("collectionId :", collectionId);
       console.log("razorpayVerificationData :", razorpayVerificationData);
 
-      await this.collectionService.verifyCollectionPayment(collectionId, razorpayVerificationData);
+      await this._collectionService.verifyRazorpayPayment(collectionId, razorpayVerificationData);
 
       res.status(HTTP_STATUS.OK).json({ success: true, message: "Payment verified successfully" });
 
@@ -298,6 +318,26 @@ export class CollectionController implements ICollectionController {
     }
   }
 
+  async payWithWallet(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.headers['x-client-id'] as string;
+      const { collectionId } = req.body;
+
+      console.log("collectionId :", collectionId);
+
+      await this._collectionService.payWithWallet(userId, collectionId);
+
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PAYMENT_SUCCESSFULL });
+
+    } catch (error: any) {
+
+      if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.BAD_REQUEST) {
+        res.status(error.status).json({ success: false, message: error.message });
+      } else {
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+      }
+    }
+  }
 
   async getRevenueData(req: Request, res: Response): Promise<void> {
     try {
@@ -313,7 +353,7 @@ export class CollectionController implements ICollectionController {
 
       console.log("queryOptions :", queryOptions);
 
-      const data = await this.collectionService.getRevenueData(queryOptions);
+      const data = await this._collectionService.getRevenueData(queryOptions);
 
       console.log("revenue data :", data);
 

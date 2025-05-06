@@ -14,6 +14,7 @@ export const MESSAGES = {
     UNKNOWN_ERROR: "An unknown error occurred.",
     INVALID_ITEM_DATA: "Invalid item data provided.",
     PAYMENT_FAILED: "Payment failed. Please try again.",
-    PAYMENT_SUCCESSFULL: "Payment successfull."
+    PAYMENT_SUCCESSFULL: "Payment successfull.",
+    INVALID_PAYMENT_METHOD: "Invalid payment method."
 };
 

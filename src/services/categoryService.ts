@@ -5,11 +5,11 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 
 export class CategoryService implements ICategoryService {
-    constructor(private categoryRepository: ICategoryRepository) { };
+    constructor(private _categoryRepository: ICategoryRepository) { };
 
     async createCategory(categoryData: Partial<ICategory>): Promise<ICategory> {
         try {
-            return await this.categoryRepository.create(categoryData);
+            return await this._categoryRepository.create(categoryData);
         } catch (error) {
             console.error('Error while creating category:', error);
             throw error;
@@ -18,7 +18,7 @@ export class CategoryService implements ICategoryService {
 
     async getCategoryById(categoryId: string): Promise<ICategory | null> {
         try {
-            return await this.categoryRepository.findById(categoryId)
+            return await this._categoryRepository.findById(categoryId)
         } catch (error) {
             console.error('Error while finding category:', error);
             throw error;
@@ -27,7 +27,7 @@ export class CategoryService implements ICategoryService {
 
     async findCategoryByName(categoryName: string): Promise<ICategory | null> {
         try {
-            return await this.categoryRepository.findByName(categoryName);
+            return await this._categoryRepository.findByName(categoryName);
         } catch (error) {
             console.error('Error while finding category:', error);
             throw error;
@@ -36,7 +36,7 @@ export class CategoryService implements ICategoryService {
 
     async getCategories(query: object): Promise<ICategory[]> {
         try {
-            return await this.categoryRepository.findAll(query);
+            return await this._categoryRepository.findAll(query);
         } catch (error) {
             console.error('Error while finding categories:', error);
             throw error;
@@ -45,7 +45,7 @@ export class CategoryService implements ICategoryService {
 
     async updateCategory(categoryId: string, categoryData: Partial<ICategory>): Promise<ICategory | null> {
         try {
-            return await this.categoryRepository.updateById(categoryId, categoryData);
+            return await this._categoryRepository.updateById(categoryId, categoryData);
         } catch (error) {
             console.error('Error while updating category:', error);
             throw error;
@@ -54,14 +54,14 @@ export class CategoryService implements ICategoryService {
 
     async deleteCategory(categoryId: string): Promise<ICategory | null> {
         try {
-            const category = await this.categoryRepository.findById(categoryId);
+            const category = await this._categoryRepository.findById(categoryId);
             if (!category) {
                 const error: any = new Error(MESSAGES.UNKNOWN_ERROR);
                 error.status = HTTP_STATUS.GONE;
                 throw error;
             }
             category.isActive = false;
-            return await this.categoryRepository.updateById(categoryId, category);
+            return await this._categoryRepository.updateById(categoryId, category);
         } catch (error) {
             console.error('Error while deleting category:', error);
             throw error;
@@ -73,7 +73,7 @@ export class CategoryService implements ICategoryService {
             let totalCost = 0;
 
             for (const category of categoryData) {
-                const categoryData = await this.categoryRepository.findById(category.categoryId);
+                const categoryData = await this._categoryRepository.findById(category.categoryId);
 
                 if (categoryData) {
                     totalCost += categoryData.rate * Number(category.qty);

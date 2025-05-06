@@ -14,8 +14,13 @@ const collectionController = new CollectionController(collectionService);
 
 const router = Router();
 
-router.post("/initiate-payment/advance",collectionController.initiateAdvancePayment.bind(collectionController));
-router.post("/verify-payment/advance",collectionController.verifyAdvancePayment.bind(collectionController));
+
+router.post("/payment/advance/razorpay/initiate",collectionController.initiateRazorpayAdvance.bind(collectionController));
+router.post("/payment/advance/razorpay/verify",collectionController.verifyRazorpayAdvance.bind(collectionController));
+router.post("/payment/advance/wallet",collectionController.payAdvanceWithWallet.bind(collectionController));
+
+// router.post("/initiate-payment/advance",collectionController.initiateAdvancePayment.bind(collectionController));
+// router.post("/verify-payment/advance",collectionController.verifyAdvancePayment.bind(collectionController));
 
 
 
@@ -31,7 +36,8 @@ router.put('/cancel',collectionController.cancelCollection.bind(collectionContro
 
 
 router.post('/payment-request',upload.array('collectionProofs'), collectionController.requestCollectionPayment.bind(collectionController));
-router.post('/verify-payment', collectionController.verifyCollectionPayment.bind(collectionController));
+router.post('/payment/razorpay/verify', collectionController.verifyRazorpayPayment.bind(collectionController));
+router.post('/payment/wallet',collectionController.payWithWallet.bind(collectionController));
 
 router.get('/revenue',collectionController.getRevenueData.bind(collectionController));
 export default router;

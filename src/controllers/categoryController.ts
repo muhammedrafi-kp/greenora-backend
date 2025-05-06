@@ -10,14 +10,14 @@ configDotenv();
 
 export class CategoryController implements ICategoryController {
 
-    constructor(private categoryService: ICategoryService) { };
+    constructor(private _categoryService: ICategoryService) { };
 
     async createCategory(req: Request, res: Response): Promise<void> {
         try {
             const categoryData = req.body;
             console.log("category data:", categoryData);
 
-            const category = await this.categoryService.createCategory(categoryData);
+            const category = await this._categoryService.createCategory(categoryData);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
@@ -35,7 +35,7 @@ export class CategoryController implements ICategoryController {
         try {
             const { categoryId } = req.params;
 
-            const category = await this.categoryService.getCategoryById(categoryId);
+            const category = await this._categoryService.getCategoryById(categoryId);
 
             if (category) {
                 res.status(HTTP_STATUS.OK).json({
@@ -64,7 +64,7 @@ export class CategoryController implements ICategoryController {
                 query.type = categoryType;
             }
 
-            const categories = await this.categoryService.getCategories(query);
+            const categories = await this._categoryService.getCategories(query);
 
             if (!categories) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -91,7 +91,7 @@ export class CategoryController implements ICategoryController {
             const { categoryId } = req.params;
             const categoryData = req.body;
             console.log("Data:", req.body);
-            const updatedCategory = await this.categoryService.updateCategory(categoryId, categoryData);
+            const updatedCategory = await this._categoryService.updateCategory(categoryId, categoryData);
             console.log("updatedCategory:", updatedCategory);
 
             if (!updatedCategory) {
@@ -117,7 +117,7 @@ export class CategoryController implements ICategoryController {
         try {
             const { categoryId } = req.params;
 
-            const updatedCategory = await this.categoryService.deleteCategory(categoryId);
+            const updatedCategory = await this._categoryService.deleteCategory(categoryId);
 
             if (updatedCategory) {
                 res.status(HTTP_STATUS.OK).json({
@@ -157,7 +157,7 @@ export class CategoryController implements ICategoryController {
                 return;
             }
             console.log("items:", items);
-            const estimatedCost = await this.categoryService.calculateCost(items);
+            const estimatedCost = await this._categoryService.calculateCost(items);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: estimatedCost

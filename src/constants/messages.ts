@@ -8,6 +8,8 @@ export const MESSAGES = {
     INVALID_SIGNATURE: "Invalid payment signature. Verification failed.",
     INVALID_INPUT: "Invalid input provided.",
     SERVER_ERROR: "Internal server error. Please try again later.",
-    UNKNOWN_ERROR: "An unknown error occurred."
+    UNKNOWN_ERROR: "An unknown error occurred.",
+    WALLET_UPDATE_FAILED: "Wallet update failed.",
+    INVALID_DATA: "Invalid data provided."
 };
 

@@ -48,7 +48,47 @@ export class CollectionPaymentController implements ICollectionPaymentController
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
-    
+
+
+    async payWithWallet(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId, amount, serviceType } = req.body;
+
+            if (!userId || !amount || !serviceType) {
+                const error: any = new Error(MESSAGES.INVALID_DATA);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
+            console.log("userId :", userId);
+            console.log("amount :", amount);
+            console.log("serviceType :", serviceType);
+
+            const { transactionId, paymentId } = await this.collectionPaymentService.payWithWallet(userId, amount, serviceType);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.PAYMENT_SUCCESSFULL,
+                transactionId,
+                paymentId
+            });
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+
+
 
     async getPaymentData(req: Request, res: Response): Promise<void> {
         try {
@@ -73,7 +113,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
         }
     }
 
-    
+
 
 
 }

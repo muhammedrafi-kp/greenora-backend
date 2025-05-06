@@ -11,6 +11,7 @@ const router = Router();
 
 router.post("/order",collectionPaymentController.createOrder.bind(collectionPaymentController));
 router.post("/verification",collectionPaymentController.verifyPayment.bind(collectionPaymentController));
+router.post("/wallet",collectionPaymentController.payWithWallet.bind(collectionPaymentController));
 
 router.get("/:paymentId",collectionPaymentController.getPaymentData.bind(collectionPaymentController));
 

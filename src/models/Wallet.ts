@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Double } from "mongoose";
 
 export interface ITransaction {
+    _id?: string;
     type: "debit" | "credit" | "refund";
     amount: number;
     timestamp: Date;

@@ -6,4 +6,5 @@ export interface ICollectionPaymentController{
     verifyPayment(req:Request,res:Response):Promise<void>;
 
     getPaymentData(req:Request,res:Response):Promise<void>;
+    payWithWallet(req:Request,res:Response):Promise<void>;
 }

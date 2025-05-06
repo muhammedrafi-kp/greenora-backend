@@ -81,83 +81,40 @@ export class CollectionPaymentService implements ICollectionPaymentService {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    async processWalletPayment(userId: string, collectionData: Partial<ICollection>): Promise<void> {
+    async payWithWallet(userId: string, amount: number, serviceType: string): Promise<{ transactionId: string, paymentId: string }> {
         try {
 
             const walletBalance = await this.walletRepository.getBalance(userId);
 
-            if (!collectionData.estimatedCost) {
-                const error: any = new Error(MESSAGES.COLLECTION_DATA_REQUIRED);
-                error.status = HTTP_STATUS.BAD_REQUEST;
-                throw error;
-            }
+            console.log("walletBalance :", walletBalance);  
 
-            if (walletBalance < 50) {
+            if (walletBalance < amount) {
                 const error: any = new Error(MESSAGES.INSUFFICIENT_WALLET_BALANCE);
                 error.status = HTTP_STATUS.BAD_REQUEST;
                 throw error;
             }
 
-            // Publish PaymentInitiatedEvent
-            const paymentInitiatedEvent: PaymentInitiatedEvent = {
-                userId,
-                collectionData
-            };
-
-            await RabbitMQ.publish("paymentInitiatedQueue", paymentInitiatedEvent);
-
             const transaction: ITransaction = {
                 type: "debit",
-                amount: 50,
+                amount: amount,
                 timestamp: new Date(),
                 status: "completed",
-                serviceType: "collection advance"
+                serviceType: serviceType
             }
 
-            await this.walletRepository.updateWallet(userId, 50 * (-1), transaction);
+            const updatedWallet = await this.walletRepository.updateWallet(userId, amount * (-1), transaction);
 
+            const transactionId = updatedWallet?.transactions[updatedWallet?.transactions.length - 1]._id;
 
-            const paymentId = uuidv4();
+            const paymentId = uuidv4().replace(/-/g, '').substring(0, 16);
 
-            await this.collectionPaymentRepository.create({
-                paymentId,
-                userId,
-                advanceAmount: 50,
-                advancePaymentStatus: "success",
-                advancePaymentMethod: "wallet",
-                status: "pending",
-            });
+            if (!updatedWallet || !transactionId) {
+                const error: any = new Error(MESSAGES.WALLET_UPDATE_FAILED);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
 
-
-            const paymentCompletedEvent: PaymentCompletedEvent = {
-                userId,
-                paymentId,
-                // status: "success"
-            };
-
-            await RabbitMQ.publish("paymentCompletedQueue", paymentCompletedEvent)
+            return { transactionId, paymentId };
 
         } catch (error: any) {
             console.error('Error while initiating payment:', error.message);

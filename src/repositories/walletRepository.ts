@@ -19,9 +19,9 @@ class WalletRepository extends BaseRepository<IWallet> implements IWalletReposit
     // );
     // }
 
-    async updateWallet(userId: string, amount: number, transaction: ITransaction, session?: ClientSession): Promise<void> {
+    async updateWallet(userId: string, amount: number, transaction: ITransaction, session?: ClientSession): Promise<IWallet | null> {
         const options = session ? { session } : {};
-        await this.updateOne(
+        const updatedWallet = await this.updateOne(
             { userId },
             {
                 $inc: { balance: amount },
@@ -29,6 +29,7 @@ class WalletRepository extends BaseRepository<IWallet> implements IWalletReposit
             },
             options
         );
+        return updatedWallet;
     }
 
     async getBalance(userId: string): Promise<number> {

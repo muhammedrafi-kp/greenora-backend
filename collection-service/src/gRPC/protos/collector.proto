@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package collector;
+
+service collectorService {
+  rpc GetAvailableCollector (collectorRequest) returns (collectorResponse);
+  rpc AssignCollectionToCollector (AssignCollectionRequest) returns (AssignCollectionResponse);
+}
+
+message collectorRequest {
+  string serviceAreaId = 1;
+  string preferredDate = 2;
+}
+
+message collectorResponse {
+  bool success = 1;
+  Collector collector = 2;
+}
+
+message Collector {
+  string id = 1;
+  string collectorId = 2;
+  string name = 3;
+  string email = 4;
+  string phone = 5;
+}
+
+message AssignCollectionRequest {
+  string id = 1;
+  string collectionId = 2;
+  string preferredDate = 3;
+}
+
+message AssignCollectionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+

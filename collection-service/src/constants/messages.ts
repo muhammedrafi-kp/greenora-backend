@@ -1,0 +1,28 @@
+export const MESSAGES = {
+    CATEGORY_CREATED: "Category created successfully.",
+    CATEGORY_NOT_FOUND: "Category not found.",
+    CATEGORY_UPDATED: "Category updated successfully.",
+    CATEGORY_DELETED: "Category deleted successfully.",
+    CATEGORIES_NOT_FOUND: "Categories not found in collection data.",
+    COLLECTION_NOT_FOUND: "Collection not found.",
+    COLLECTION_DATA_REQUIRED: "Collection data is required.",
+    COLLECTION_CREATED: "Collection successfully created.",
+    COLLECTION_VALIDATED: "Collection data validated successfully.",
+    COLLECTION_UPDATED: "Collection information updated.",
+    COLLECTION_COMPLETED: "Collection completed successfully",
+    PAYMENT_NOT_COMPLETED: "Collection payment is not completed.",
+    INVALID_INPUT: "Invalid input provided.",
+    SERVER_ERROR: "Internal server error. Please try again later.",
+    UNKNOWN_ERROR: "An unknown error occurred.",
+    INVALID_ITEM_DATA: "Invalid item data provided.",
+    PAYMENT_FAILED: "Payment failed. Please try again.",
+    PAYMENT_SUCCESSFULL: "Payment successfull.",
+    INVALID_PAYMENT_METHOD: "Invalid payment method.",
+    CATEGORIES_FETCHED: "Categories fetched successfully.",
+    COST_CALCULATED: "Cost calculated successfully.",
+    COLLECTION_SCHEDULED: "Collection scheduled successfully.",
+    COLLECTION_CANCELLED: "Collection cancelled successfully.",
+    COLLECTIONS_FETCHED: "Collections fetched successfully.",
+    PAYMENT_REQUESTED: "Payment requested successfully."
+};
+

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
-import { HTTP_STATUS } from "../constants/httpStatus";
 import { IWalletController } from "../interfaces/wallet/IWalletController";
 import { IWalletService } from "../interfaces/wallet/IWalletService";
+import {HTTP_STATUS} from "../constants/httpStatus";
+import { MESSAGES } from "../constants/messages";
+
 
 export class WalletController implements IWalletController {
     constructor(private readonly walletService: IWalletService) { }
@@ -12,6 +14,7 @@ export class WalletController implements IWalletController {
             const wallet = await this.walletService.getWalletData(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.WALLET_FETCHED,
                 data: wallet
             });
         } catch (error: any) {
@@ -32,8 +35,11 @@ export class WalletController implements IWalletController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                amount: orderAmount,
-                orderId
+                message: MESSAGES.PAYMENT_INITIATED,
+                data: {
+                    amount: orderAmount,
+                    orderId
+                }
             });
 
         } catch (error: any) {
@@ -47,10 +53,12 @@ export class WalletController implements IWalletController {
             const userId = req.headers['x-client-id'] as string;
             const razorpayVerificationData = req.body;
             console.log("razorpayVerificationData:", razorpayVerificationData);
+
             await this.walletService.verifyDeposit(userId, razorpayVerificationData);
+
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Money deposited successfully"
+                message: MESSAGES.PAYMENT_SUCCESSFULL,
             });
         } catch (error: any) {
 
@@ -70,7 +78,7 @@ export class WalletController implements IWalletController {
             await this.walletService.withdrawMoney(userId, amount);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Money withdrawn successfully"
+                message: MESSAGES.MONEY_WITHDRAWN,
             });
         } catch (error: any) {
             console.error("Error during withdrawing money:", error.message);

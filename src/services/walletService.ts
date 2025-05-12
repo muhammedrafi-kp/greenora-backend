@@ -54,6 +54,7 @@ export class WalletService implements IWalletService {
             console.log("userId:", userId);
 
             const wallet = await this.walletRepository.findOne({ userId });
+            
             if (!wallet) {
                 const error: any = new Error(MESSAGES.WALLET_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;

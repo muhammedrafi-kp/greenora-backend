@@ -10,6 +10,9 @@ export const MESSAGES = {
     SERVER_ERROR: "Internal server error. Please try again later.",
     UNKNOWN_ERROR: "An unknown error occurred.",
     WALLET_UPDATE_FAILED: "Wallet update failed.",
-    INVALID_DATA: "Invalid data provided."
+    INVALID_DATA: "Invalid data provided.",
+    WALLET_FETCHED: "Wallet fetched successfully.",
+    PAYMENT_INITIATED: "Payment initiated successfully.",
+    MONEY_WITHDRAWN: "Money withdrawn successfully."
 };
 

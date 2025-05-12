@@ -75,16 +75,16 @@ export class CollectionService implements ICollectionservice {
 
             console.log("totalCost :", totalAmout);
 
-            const resonse = await axios.post<{ success: boolean, message: string, transactionId: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/wallet`, {
+            const response = await axios.post<{ success: boolean, message: string, transactionId: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/wallet`, {
                 userId,
                 amount: 50,
                 serviceType: "collection advance"
             });
 
-            console.log("resonse from wallet payment:", resonse.data);
+            console.log("resonse from wallet payment:", response.data);
 
-            if (!resonse.data.success) {
-                const error: any = new Error(resonse.data.message);
+            if (!response.data.success) {
+                const error: any = new Error(response.data.message);
                 error.status = HTTP_STATUS.BAD_REQUEST;
                 throw error;
             }
@@ -96,7 +96,7 @@ export class CollectionService implements ICollectionservice {
                 userId,
                 estimatedCost: totalAmout,
                 payment: {
-                    paymentId: resonse.data.paymentId,
+                    paymentId: response.data.paymentId,
                     advanceAmount: 50,
                     advancePaymentMethod: "wallet",
                     advancePaymentStatus: "success",
@@ -144,8 +144,26 @@ export class CollectionService implements ICollectionservice {
                 serviceType: "collection payment"
             });
 
+            if (!response.data.success) {
+                const error: any = new Error(response.data.message);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
             console.log("response from wallet payment:", response.data);
+
             
+            const c = await this._collectionRepository.updateOne({ collectionId }, {
+                payment: {
+                    ...collection.payment,
+                    method: "wallet",
+                    status: "success",
+                    paidAt: new Date()
+                }
+            });
+
+            console.log("updated :", c)
+
         } catch (error) {
             console.error('Error while paying with wallet:', error);
             throw error;
@@ -249,13 +267,17 @@ export class CollectionService implements ICollectionservice {
                 throw error;
             }
 
-            await this._collectionRepository.updateOne({ collectionId }, {
+            const c = await this._collectionRepository.updateOne({ collectionId }, {
                 payment: {
                     ...collection.payment,
                     paymentId: response.data.paymentId,
-                    status: "success"
+                    method: "online",
+                    status: "success",
+                    paidAt: new Date()
                 }
             });
+
+            console.log("updated :", c)
 
         } catch (error) {
             console.error('Error while verifying collection payment:', error);
@@ -263,14 +285,14 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    
+
     async scheduleCollection(collectionId: string, userId: string, serviceAreaId: string, preferredDate: string): Promise<void> {
         try {
             const collector = await this.findAvailableCollector(serviceAreaId, preferredDate);
             console.log("collector :", collector);
 
             if (!collector) {
-                throw new Error("No available collector found");
+                return;
             }
 
             await this.assignCollectionToCollector(collectionId, collector.id, preferredDate);
@@ -337,7 +359,7 @@ export class CollectionService implements ICollectionservice {
 
 
 
-   
+
 
     async createCollection(userId: string, paymentId: string): Promise<ICollection> {
         try {
@@ -407,7 +429,7 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
-    async findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector> {
+    async findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector | null> {
         try {
             const response: { success: boolean; collector: ICollector } = await new Promise((resolve, reject) => {
                 collectorClient.GetAvailableCollector({ serviceAreaId, preferredDate }, (error: any, response: any) => {
@@ -420,7 +442,7 @@ export class CollectionService implements ICollectionservice {
 
             console.log("response in collection service :", response);
             if (!response.success) {
-                throw new Error("getting collectors failed!");
+                return null;
             }
 
             return response.collector;
@@ -765,7 +787,7 @@ export class CollectionService implements ICollectionservice {
                 createdAt: new Date()
             };
 
-            await RabbitMQ.publish('notification', notification);
+            RabbitMQ.publish('notification', notification);
 
         } catch (error) {
             console.error('Error while updating collection:', error);

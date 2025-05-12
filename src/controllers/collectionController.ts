@@ -96,7 +96,7 @@ export class CollectionController implements ICollectionController {
       console.log("preferredDate :", preferredDate);
       const response = await this._collectionService.scheduleCollectionManually(collectionId, collectorId, userId, preferredDate);
       console.log("response :", response);
-      res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection scheduled successfully" });
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.COLLECTION_SCHEDULED });
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
@@ -125,8 +125,13 @@ export class CollectionController implements ICollectionController {
         limit: Number(limit),
       };
 
-      const collectionHistories = await this._collectionService.getCollectionHistory(userId, queryOptions);
-      res.status(HTTP_STATUS.OK).json({ success: true, data: collectionHistories });
+      const collections = await this._collectionService.getCollectionHistory(userId, queryOptions);
+
+      res.status(HTTP_STATUS.OK).json({ 
+        success: true,
+        message: MESSAGES.COLLECTIONS_FETCHED,
+         data: collections });
+
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
@@ -165,7 +170,11 @@ export class CollectionController implements ICollectionController {
 
       const { collections, totalItems } = await this._collectionService.getCollectionHistories(queryOptions);
 
-      res.status(HTTP_STATUS.OK).json({ success: true, collections, totalItems });
+      res.status(HTTP_STATUS.OK).json({ 
+        success: true, 
+        message: MESSAGES.COLLECTIONS_FETCHED,
+        data: { collections, totalItems } });
+
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
@@ -174,6 +183,7 @@ export class CollectionController implements ICollectionController {
   async getAvailableCollectors(req: Request, res: Response): Promise<void> {
     try {
       const { serviceAreaId, preferredDate } = req.body;
+
       const collector = await this._collectionService.findAvailableCollector(serviceAreaId, preferredDate);
 
       res.status(HTTP_STATUS.OK).json({
@@ -211,7 +221,8 @@ export class CollectionController implements ICollectionController {
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
-        collections
+        message: MESSAGES.COLLECTIONS_FETCHED,
+        data: collections
       });
 
     } catch (error: any) {
@@ -265,7 +276,7 @@ export class CollectionController implements ICollectionController {
 
       await this._collectionService.cancelCollection(collectionId, reason);
 
-      res.status(HTTP_STATUS.OK).json({ success: true, message: "Collection cancelled successfully" });
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.COLLECTION_CANCELLED });
 
     } catch (error: any) {
 
@@ -296,7 +307,7 @@ export class CollectionController implements ICollectionController {
 
       await this._collectionService.requestCollectionPayment(parsedCollectionData, collectionProofs);
 
-      res.status(HTTP_STATUS.OK).json({ success: true, message: "Payment requested successfully" });
+      res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PAYMENT_REQUESTED });
 
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });

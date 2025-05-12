@@ -47,7 +47,7 @@ export interface ICollectionservice {
         page: number;
         limit: number;
     }): Promise<{collections: Partial<ICollection>[], totalItems: number}>;
-    findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector>;
+    findAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<ICollector | null>;
     assignCollectionToCollector(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
     
     getAssignedCollections(collectorId: string,options: {

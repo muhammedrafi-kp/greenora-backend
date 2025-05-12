@@ -19,10 +19,6 @@ router.post("/payment/advance/razorpay/initiate",collectionController.initiateRa
 router.post("/payment/advance/razorpay/verify",collectionController.verifyRazorpayAdvance.bind(collectionController));
 router.post("/payment/advance/wallet",collectionController.payAdvanceWithWallet.bind(collectionController));
 
-// router.post("/initiate-payment/advance",collectionController.initiateAdvancePayment.bind(collectionController));
-// router.post("/verify-payment/advance",collectionController.verifyAdvancePayment.bind(collectionController));
-
-
 
 
 

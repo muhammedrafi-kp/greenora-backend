@@ -3,7 +3,6 @@ import { ICategoryController } from "../interfaces/category/ICategoryController"
 import { ICategoryService } from "../interfaces/category/ICategoryService";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
-import axios from "axios";
 import { configDotenv } from "dotenv";
 
 configDotenv();
@@ -60,6 +59,7 @@ export class CategoryController implements ICategoryController {
             const categoryType = req.query.type;
 
             const query: any = { isActive: true };
+            
             if (categoryType) {
                 query.type = categoryType;
             }
@@ -76,6 +76,7 @@ export class CategoryController implements ICategoryController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.CATEGORIES_FETCHED,
                 data: categories
             });
 
@@ -104,6 +105,7 @@ export class CategoryController implements ICategoryController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.CATEGORY_UPDATED,
                 data: updatedCategory
             });
 
@@ -122,6 +124,7 @@ export class CategoryController implements ICategoryController {
             if (updatedCategory) {
                 res.status(HTTP_STATUS.OK).json({
                     success: true,
+                    message: MESSAGES.CATEGORY_DELETED,
                 });
             } else {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -160,6 +163,7 @@ export class CategoryController implements ICategoryController {
             const estimatedCost = await this._categoryService.calculateCost(items);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.COST_CALCULATED,
                 data: estimatedCost
             });
         } catch (error) {

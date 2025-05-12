@@ -21,7 +21,7 @@ export interface ICollection extends Document {
         advancePaymentMethod?: "online" | "wallet";
         amount?: number;
         method?: "online" | "wallet" | "cash";
-        status?: "pending" | "success" | "failed";
+        status?: "pending" | "success" | "failed"|"requested";
         orderId?: string;
         paidAt?: Date;
     }

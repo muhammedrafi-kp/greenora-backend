@@ -18,7 +18,7 @@ const userRouter = Router();
 router.use('/admin', adminRouter);
 router.use('/user', userRouter);
 
-adminRouter.get('/districts/servic-areas', serviceAreaController.getDistrictsWithServiceAreas.bind(serviceAreaController));
+adminRouter.get('/districts/service-areas', serviceAreaController.getDistrictsWithServiceAreas.bind(serviceAreaController));
 adminRouter.post('/district', serviceAreaController.createDistrict.bind(serviceAreaController));
 adminRouter.put('/district/:districtId', serviceAreaController.updateDistrict.bind(serviceAreaController));
 adminRouter.delete('/district/:districtId', serviceAreaController.deleteDistrict.bind(serviceAreaController))

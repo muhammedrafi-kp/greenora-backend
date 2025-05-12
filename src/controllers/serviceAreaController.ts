@@ -39,6 +39,7 @@ export class ServiceAreaController implements IServiceAreaController {
             if (updatedDistrict) {
                 res.status(HTTP_STATUS.OK).json({
                     success: true,
+                    message: MESSAGES.DISTRICT_UPDATED,
                     data: updatedDistrict
                 });
             } else {
@@ -61,7 +62,8 @@ export class ServiceAreaController implements IServiceAreaController {
 
             if (updatedDistrict) {
                 res.status(HTTP_STATUS.OK).json({
-                    success: true
+                    success: true,
+                    message: MESSAGES.DISTRICT_DELETED,
                 });
             } else {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -83,8 +85,6 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
-
-
     async getDistricts(req: Request, res: Response): Promise<void> {
         try {
 
@@ -101,6 +101,7 @@ export class ServiceAreaController implements IServiceAreaController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.DISTRICTS_FETCHED,
                 data: districts
             });
 
@@ -110,8 +111,6 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
-
-
     async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
         try {
             const districtsAndServiceAreas = await this.serviceAreaService.getDistrictsWithServiceAreas();
@@ -119,6 +118,7 @@ export class ServiceAreaController implements IServiceAreaController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.DISTRICTS_WITH_SERVICE_AREAS_FETCHED,
                 data: districtsAndServiceAreas
             });
 
@@ -159,6 +159,7 @@ export class ServiceAreaController implements IServiceAreaController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.SERVICE_AREAS_FETCHED,
                 data: serviceAreas
             });
 

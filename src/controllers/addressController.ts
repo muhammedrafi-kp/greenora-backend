@@ -21,7 +21,7 @@ export class AddressController implements IAddressController {
             if (!addressData) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'Incomplete address details. Please provide all required fields.',
+                    message: MESSAGES.INVALID_INPUT,
                 });
                 return;
             }
@@ -58,6 +58,7 @@ export class AddressController implements IAddressController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.ADDRESSES_FETCHED,
                 data: addresses
             });
 
@@ -104,6 +105,7 @@ export class AddressController implements IAddressController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.ADDRESS_UPDATED,
                 data: updatedAddress
             });
 

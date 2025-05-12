@@ -8,30 +8,14 @@ import getGeminiResponse from "../config/chatbotConfig";
 export class ChatController implements IChatController {
     constructor(private chatService: IChatService) { };
 
-    // async sendMessage(req: Request, res: Response): Promise<void> {
-    //     try {
-    //         const { senderId, receiverId, message } = req.body;
-    //         const newMessage = await this.chatService.sendMessage(senderId, receiverId, message);
-
-    //         res.status(HTTP_STATUS.CREATED).json({
-    //             success: true,
-    //             message: MESSAGES.MESSAGE_CREATED,
-    //             data: newMessage
-    //         });
-
-    //     } catch (error) {
-    //         console.error("Error during calculate cost:", error);
-    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
-    //     }
-    // }
-
     async createChat(req: Request, res: Response): Promise<void> {
         try {
             const chatData = req.body;
-            console.log("chatData :",chatData);
+            // console.log("chatData :", chatData);
             const chat = await this.chatService.startChat(chatData);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.CHAT_CREATED,
                 data: chat
             });
         } catch (error) {
@@ -45,8 +29,6 @@ export class ChatController implements IChatController {
 
             const chats = await this.chatService.getChats();
 
-            // console.log("chats :",chats);
-
             if (!chats) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
@@ -56,6 +38,7 @@ export class ChatController implements IChatController {
             }
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.CHATS_FETCHED,
                 data: chats
             });
         } catch (error) {
@@ -70,7 +53,7 @@ export class ChatController implements IChatController {
             const messages = await this.chatService.getMessages(chatId);
 
             // console.log("messages :",messages);
-            
+
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: messages
@@ -108,9 +91,13 @@ export class ChatController implements IChatController {
 
             const response = await getGeminiResponse(prompt);
 
-            res.status(HTTP_STATUS.OK).json({ success: true, data: response });
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.CHATBOT_RESPONSE_GENERATED,
+                data: response
+            });
 
-        } catch (error:any) {
+        } catch (error: any) {
 
             if (error.status === HTTP_STATUS.BAD_GATEWAY) {
                 res.status(HTTP_STATUS.BAD_GATEWAY).json({

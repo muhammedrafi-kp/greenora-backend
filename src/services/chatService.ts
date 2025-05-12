@@ -16,6 +16,7 @@ export class ChatService implements IChatService {
         try {
             const { participant1, participant2 } = chatData;
             let chat = await this.chatRepository.findOne({ participant1, participant2 });
+            
             if (!chat) {
                 chat = await this.chatRepository.createChat(chatData);
             }

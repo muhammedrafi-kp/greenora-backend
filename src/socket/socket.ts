@@ -91,6 +91,8 @@ export const initializeSocket = (io: Server) => {
 
                 console.log("newMessage :", newMessage);
 
+                console.log("newMessage.chatId :", newMessage.chatId);
+
                 // Emit the message to the room with all necessary data
                 io.to(newMessage.chatId).emit("receive_message", {
                     chatId,

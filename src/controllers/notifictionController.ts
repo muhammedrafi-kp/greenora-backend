@@ -18,6 +18,7 @@ export class NotificationController implements INotificationController {
             const notifications = await this.notificationService.getNotifications(userId, limit, skip);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.NOTIFICATIONS_FETCHED,
                 data: notifications,
             });
         } catch (error) {
@@ -44,6 +45,7 @@ export class NotificationController implements INotificationController {
             const count = await this.notificationService.getUnreadNotificationsCount(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.UNREAD_NOTIFICATIONS_COUNT_FETCHED,
                 data: count,
             });
         } catch (error) {
@@ -59,7 +61,7 @@ export class NotificationController implements INotificationController {
             if (!notificationId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'Notification ID is required.',
+                    message: MESSAGES.INVALID_INPUT,
                 });
                 return;
             }

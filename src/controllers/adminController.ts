@@ -24,8 +24,10 @@ export class AdminController implements IAdminController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                token: accessToken,
-                role:"admin"
+                data: {
+                    token: accessToken,
+                    role:"admin"
+                }
             });
 
         } catch (error: any) {
@@ -124,10 +126,13 @@ export class AdminController implements IAdminController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                users,
-                totalItems,
-                currentPage: Number(page),
-                totalPages
+                message: MESSAGES.USERS_FETCHED,
+                data: {
+                    users,
+                    totalItems,
+                    currentPage: Number(page),
+                    totalPages
+                }
             });
 
         } catch (error: any) {
@@ -184,9 +189,12 @@ export class AdminController implements IAdminController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                collectors,
-                totalItems,
-                totalPages
+                message: MESSAGES.COLLECTORS_FETCHED,
+                data: {
+                    collectors,
+                    totalItems,
+                    totalPages
+                }
             });
         } catch (error: any) {
             console.error("Error while fetching collectors data", error);
@@ -204,7 +212,8 @@ export class AdminController implements IAdminController {
             console.log("collectors :", collectors);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                collectors
+                message: MESSAGES.AVAILABLE_COLLECTORS_FETCHED,
+                data: collectors
             });
         }catch (error: any) {
             console.error("Error while fetching available collectors data", error);
@@ -217,6 +226,7 @@ export class AdminController implements IAdminController {
             const verificationRequests = await this._adminService.getVerificationRequests();
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.VERIFICATION_REQUESTS_FETCHED,
                 data: verificationRequests
             });
         } catch (error: any) {
@@ -233,6 +243,7 @@ export class AdminController implements IAdminController {
             const collector = await this._adminService.updateVerificationStatus(id, status);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.VERIFICATION_STATUS_UPDATED,
                 data: collector
             });
         } catch (error: any) {

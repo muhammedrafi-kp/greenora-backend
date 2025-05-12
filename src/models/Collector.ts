@@ -21,12 +21,17 @@ export interface ICollector extends Document {
     availabilityStatus: "available" | "unavailable" | "on_break";
     currentTasks: number;
     maxCapacity: number;
-    assignedTasks: string[]; 
+    assignedTasks: string[];
     dailyTaskCounts: Map<string, number>;
+    ratings?: {
+        taskId: string;
+        rating: number;
+        comment?: string;
+        ratedAt: Date;
+    }[];
     performanceMetrics: {
         totalCollections: number;
-        averageRating: number;
-        onTimeRate: number;
+        avgRating: number;
     };
     location: {
         lat: number;
@@ -56,12 +61,19 @@ const collectorSchema = new Schema<ICollector>({
     availabilityStatus: { type: String, enum: ["available", "unavailable", "on_break"], default: "available" },
     currentTasks: { type: Number, default: 0 },
     maxCapacity: { type: Number, default: 5 },
-    assignedTasks: [{ type: String }], 
+    assignedTasks: [{ type: String }],
     dailyTaskCounts: { type: Map, of: Number, default: {} },
+    ratings: [
+        {
+            taskId: { type: String, required: true },
+            rating: { type: Number, required: true, min: 1, max: 5 },
+            comment: { type: String },
+            ratedAt: { type: Date, default: Date.now }
+        }
+    ],
     performanceMetrics: {
         totalCollections: { type: Number, default: 0 },
-        averageRating: { type: Number, default: 0 },
-        onTimeRate: { type: Number, default: 0 }
+        avgRating: { type: Number, default: 0 },
     },
     location: {
         lat: { type: Number },

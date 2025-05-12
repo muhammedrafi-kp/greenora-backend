@@ -11,8 +11,6 @@ export class CollcetorController implements ICollcetorController {
 
     constructor(private _collectorService: ICollectorService) { };
 
-    
-
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
@@ -40,9 +38,11 @@ export class CollcetorController implements ICollcetorController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: "Login successful",
-                token: accessToken,
-                role: "collector",
-                data: collectorData
+                data: {
+                    token: accessToken,
+                    role: "collector",
+                    collector: collectorData
+                }
             });
 
         } catch (error: any) {
@@ -61,7 +61,7 @@ export class CollcetorController implements ICollcetorController {
             const collectorData = req.body;
             await this._collectorService.signUp(collectorData);
 
-            res.status(HTTP_STATUS.OK).json({ success: true });
+            res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OTP_SENT });
 
         } catch (error: any) {
 
@@ -100,8 +100,11 @@ export class CollcetorController implements ICollcetorController {
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: "OTP verification successful, user created!",
-                token: accessToken,
-                data: collectorData
+                data: {
+                    token: accessToken,
+                    role: "collector",
+                    collector: collectorData
+                }
             });
 
         } catch (error: any) {
@@ -119,7 +122,7 @@ export class CollcetorController implements ICollcetorController {
         try {
             const { email } = req.body;
             await this._collectorService.resendOtp(email);
-            res.status(HTTP_STATUS.OK).json({ success: true });
+            res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OTP_RESENT });
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
@@ -134,7 +137,7 @@ export class CollcetorController implements ICollcetorController {
 
             await this._collectorService.sendResetPasswordLink(email);
 
-            res.status(HTTP_STATUS.OK).json({ success: true });
+            res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.RESET_PASSWORD_LINK_SENT });
 
 
         } catch (error: any) {
@@ -243,9 +246,11 @@ export class CollcetorController implements ICollcetorController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                token: accessToken,
-                role: "collector",
-                data: userData
+                data: {
+                    token: accessToken,
+                    role: "collector",
+                    collector: userData
+                }
             });
 
         } catch (error: any) {
@@ -269,6 +274,7 @@ export class CollcetorController implements ICollcetorController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.COLLECTOR_FETCHED,
                 data: collector
             });
 
@@ -294,7 +300,11 @@ export class CollcetorController implements ICollcetorController {
 
             const collectors = await this._collectorService.getCollectors(collectorIds);
 
-            res.status(HTTP_STATUS.OK).json({ success: true, data: collectors });
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.COLLECTORS_FETCHED,
+                data: collectors
+            });
 
         } catch (error: any) {
             console.error("Error while getting available collectors : ", error.message);
@@ -384,33 +394,34 @@ export class CollcetorController implements ICollcetorController {
                 verificationStatus: 'requested'
             };
 
-            const updatedUser = await this._collectorService.updateCollector(userId as string, updatedData);
+            const updatedCollector = await this._collectorService.updateCollector(userId as string, updatedData);
 
-            if (!updatedUser) {
+            if (!updatedCollector) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
-                    message: 'User not found.',
+                    message: MESSAGES.COLLECTOR_NOT_FOUND,
                 });
                 return;
             }
 
             const collectorData = {
-                name: updatedUser.name,
-                email: updatedUser.email,
-                phone: updatedUser.phone,
-                district: updatedUser.district,
-                serviceArea: updatedUser.serviceArea,
-                profileUrl: updatedUser.profileUrl,
-                idProofType: updatedUser.idProofType,
-                verificationStatus: updatedUser.verificationStatus
+                name: updatedCollector.name,
+                email: updatedCollector.email,
+                phone: updatedCollector.phone,
+                district: updatedCollector.district,
+                serviceArea: updatedCollector.serviceArea,
+                profileUrl: updatedCollector.profileUrl,
+                idProofType: updatedCollector.idProofType,
+                verificationStatus: updatedCollector.verificationStatus
             };
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
+                message: MESSAGES.COLLECTOR_UPDATED,
                 data: collectorData,
             });
         } catch (error: any) {
-            console.error('Error in updateUser controller:', error.message);
+            console.error('Error in updateCollector controller:', error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message || 'An internal server error occurred.',
@@ -429,7 +440,7 @@ export class CollcetorController implements ICollcetorController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Password changed successfully",
+                message: MESSAGES.PASSWORD_UPDATED,
             });
 
         } catch (error: any) {

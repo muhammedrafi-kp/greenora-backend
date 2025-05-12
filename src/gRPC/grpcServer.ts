@@ -42,21 +42,23 @@ server.addService(collectorProto.collectorService.service, {
         try {
             console.log("data in grpc server: ", call.request);
 
-            const {serviceAreaId, preferredDate} = call.request;
+            const { serviceAreaId, preferredDate } = call.request;
 
-            const response = await collectorService.getAvailableCollector(serviceAreaId, preferredDate) as {success: boolean, collector: ICollector & {_id: {toString: () => string}}};
+            const response = await collectorService.getAvailableCollector(serviceAreaId, preferredDate) as { success: boolean, collector: ICollector & { _id: { toString: () => string } } };
 
+            console.log("response in grpc server:", response);
             if (!response.success) {
-                throw new Error("getting collectors failed!");
+                callback(null, { success: false });
+                return;
             }
 
             const collector = {
                 id: response.collector._id.toString(),
                 ...response.collector
-            } 
+            }
 
             console.log("response in grpc server:", collector);
-            callback(null, {success: true, collector});
+            callback(null, { success: true, collector });
         } catch (error: any) {
             console.error("Error in getAvailableCollector:", error.message);
             callback({
@@ -70,9 +72,9 @@ server.addService(collectorProto.collectorService.service, {
         try {
             console.log("call.request in grpc server:", call.request);
 
-            const { id, collectionId, preferredDate } = call.request;  
+            const { id, collectionId, preferredDate } = call.request;
 
-             await collectorService.assignCollectionToCollector(id, collectionId, preferredDate);
+            await collectorService.assignCollectionToCollector(id, collectionId, preferredDate);
 
             console.log("Collector updated successfully");
 

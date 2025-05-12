@@ -35,4 +35,5 @@ router.patch('/password', validateUser, userController.changePassword.bind(userC
 router.get('/collector/:collectorId', userController.getCollector.bind(userController));
 router.get('/admin', userController.getAdmin.bind(userController));
 
+
 export default router;

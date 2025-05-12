@@ -287,7 +287,39 @@ export class AdminService implements IAdminService {
     async getVerificationRequests(): Promise<ICollector[]> {
         try {
             const query = { verificationStatus: 'requested' };
-            return this.collectorRepository.find(query);
+
+            const collectors = await this.collectorRepository.find(query);
+
+            const districtIds = [...new Set(collectors.map(c => c.district).filter(Boolean))] as string[];
+            const serviceAreaIds = [...new Set(collectors.map(c => c.serviceArea).filter(Boolean))] as string[];
+
+            const [districts, serviceAreas] = await Promise.all([
+                districtIds.length ? this.getDistrictsByIds(districtIds) : Promise.resolve([]),
+                serviceAreaIds.length ? this.getServiceAreasByIds(serviceAreaIds) : Promise.resolve([])
+            ]);
+            // console.log("districts:", districts);
+            // console.log("serviceAreas:", serviceAreas);
+
+            const districtMap = new Map(districts.map(d => [d._id.toString(), d]));
+            const serviceAreaMap = new Map(serviceAreas.map(s => [s._id.toString(), s]));
+
+            // console.log("districtMap:", districtMap);
+            // console.log("serviceAreaMap:", serviceAreaMap);
+
+            // return collectors;
+
+
+
+            const enrichedCollectors = collectors.map(collector => {
+                const plainCollector = collector.toObject();
+                return {
+                    ...plainCollector,
+                    district: collector.district ? districtMap.get(collector.district) : null,
+                    serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+                };
+            });
+            
+            return enrichedCollectors;
         } catch (error) {
             console.error('Error while fetching verification requests:', error);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);

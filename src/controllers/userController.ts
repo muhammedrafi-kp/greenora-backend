@@ -16,7 +16,7 @@ export class UserController implements IUserController {
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
-            
+
 
             if (!email || !password) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email and password are required.' });
@@ -38,9 +38,11 @@ export class UserController implements IUserController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.LOGIN_SUCCESS,
-                token: accessToken,
-                role: "user",
-                data: userData
+                data: {
+                    token: accessToken,
+                    role: "user",
+                    user: userData
+                }
             });
 
         } catch (error: any) {
@@ -99,9 +101,11 @@ export class UserController implements IUserController {
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: "OTP verification successful, user created!",
-                token: accessToken,
-                role: "user",
-                data: userData
+                data: {
+                    token: accessToken,
+                    role: "user",
+                    user: userData
+                }
             });
 
         } catch (error: any) {
@@ -122,7 +126,7 @@ export class UserController implements IUserController {
         try {
             const { email } = req.body;
             await this._userService.resendOtp(email);
-            res.status(HTTP_STATUS.OK).json({ success: true });
+            res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.OTP_RESENT });
         } catch (error: any) {
             console.error("Error while resending otp : ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
@@ -137,7 +141,7 @@ export class UserController implements IUserController {
 
             await this._userService.sendResetPasswordLink(email);
 
-            res.status(HTTP_STATUS.OK).json({ success: true });
+            res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.RESET_PASSWORD_LINK_SENT });
 
 
         } catch (error: any) {
@@ -200,9 +204,11 @@ export class UserController implements IUserController {
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                token: accessToken,
-                role: "user",
-                data: userData
+                data: {
+                    token: accessToken,
+                    role: "user",
+                    user: userData
+                }
             });
 
         } catch (error: any) {
@@ -229,6 +235,7 @@ export class UserController implements IUserController {
             });
         }
     }
+
     async validateRefreshToken(req: Request, res: Response): Promise<void> {
         try {
 
@@ -280,19 +287,13 @@ export class UserController implements IUserController {
 
             const user = await this._userService.getUser(userId as string);
 
-            const userData = {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                profileUrl: user.profileUrl
-            }
+            user.password = '';
 
-            console.log("userdata in controller:", userData);
+            console.log("userdata in controller:", user);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: userData
+                data: user
             });
 
         } catch (error: any) {
@@ -319,7 +320,7 @@ export class UserController implements IUserController {
             if (!userId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'User ID is missing in the request headers.',
+                    message: MESSAGES.USER_ID_MISSING,
                 });
                 return;
             }
@@ -331,7 +332,7 @@ export class UserController implements IUserController {
             if (!updatedUser) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
                     success: false,
-                    message: 'User not found.',
+                    message: MESSAGES.USER_NOT_FOUND,
                 });
             } else {
                 const userdata = {
@@ -343,6 +344,7 @@ export class UserController implements IUserController {
 
                 res.status(HTTP_STATUS.OK).json({
                     success: true,
+                    message: MESSAGES.USER_UPDATED,
                     data: userdata,
                 });
             }
@@ -362,7 +364,7 @@ export class UserController implements IUserController {
             if (!userId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: 'User ID is missing in the request headers.',
+                    message: MESSAGES.USER_ID_MISSING,
                 });
                 return;
             }
@@ -371,7 +373,7 @@ export class UserController implements IUserController {
             if (!profileImage) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    message: "Profile image file is missing in the request.",
+                    message: MESSAGES.PROFILE_IMAGE_MISSING,
                 });
                 return;
             }
@@ -380,8 +382,8 @@ export class UserController implements IUserController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Profile image uploaded successfully.",
-                data: { profileUrl },
+                message: MESSAGES.PROFILE_IMAGE_UPLOADED,
+                data: profileUrl,
             });
 
         } catch (error: any) {
@@ -404,7 +406,7 @@ export class UserController implements IUserController {
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "Password changed successfully",
+                message: MESSAGES.PASSWORD_UPDATED,
             });
 
         } catch (error: any) {
@@ -434,7 +436,11 @@ export class UserController implements IUserController {
         try {
             const collectorId = req.params.collectorId;
             const collector = await this._userService.getCollector(collectorId);
-            res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.COLLECTOR_FETCHED,
+                data: collector
+            });
         } catch (error: any) {
             if (error.status === HTTP_STATUS.NOT_FOUND) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({

@@ -361,7 +361,7 @@ export class CollectorService implements ICollectorService {
 
             if (collectors.length === 0) {
                 return {
-                    success: true,
+                    success: false,
                     collector: null
                 }
             }

@@ -79,7 +79,6 @@ export class CategoryService implements ICategoryService {
                     totalCost += categoryData.rate * Number(category.qty);
                 }
             }
-            // return await this.categoryRepository.calculateCost(categoryData);
             return totalCost;
         } catch (error) {
             console.error('Error while calculating cost:', error);

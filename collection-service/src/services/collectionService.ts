@@ -152,7 +152,7 @@ export class CollectionService implements ICollectionservice {
 
             console.log("response from wallet payment:", response.data);
 
-            
+
             const c = await this._collectionRepository.updateOne({ collectionId }, {
                 payment: {
                     ...collection.payment,
@@ -310,11 +310,21 @@ export class CollectionService implements ICollectionservice {
             // Step 4: Publish a notification message to RabbitMQ
             const queue = "notification";
 
-            const notification: INotification = {
+            let notification: INotification = {
                 userId: userId,
                 title: "Pickup Scheduled",
                 message: `Your waste pickup has been successfully scheduled with collector ${collector.name}. You can track the status and view details in your collection history.`,
                 url: "/account/collections",
+                createdAt: new Date()
+            };
+
+            RabbitMQ.publish(queue, notification);
+
+            notification = {
+                userId: collector.id,
+                title: "New Pickup Assigned",
+                message: `A new waste pickup has been scheduled and assigned to you. You can view the pickup details and manage the collection in your assigned tasks.`,
+                url: "/collector/tasks",
                 createdAt: new Date()
             };
 
@@ -779,7 +789,7 @@ export class CollectionService implements ICollectionservice {
                 await this._collectionRepository.updateOne({ collectionId }, collectionData);
             }
 
-            const notification: INotification = {
+            let notification: INotification = {
                 userId: collection.userId,
                 title: "Pickup Completed",
                 message: `Your waste pickup #${collection.collectionId.toUpperCase()} has been successfully completed. You can view the details in your collection history.`,
@@ -789,136 +799,20 @@ export class CollectionService implements ICollectionservice {
 
             RabbitMQ.publish('notification', notification);
 
+            notification = {
+                userId: collection.collectorId?.toString() || "",
+                title: "Pickup Marked as Completed",
+                message: `You have successfully completed waste pickup #${collection.collectionId.toUpperCase()}. You can review the details in your collection records.`,
+                url: "/collector/collections",
+                createdAt: new Date()
+            };
+
+
         } catch (error) {
             console.error('Error while updating collection:', error);
             throw error;
         }
     }
-
-    // async processWithCashPayment(collectionId: string, collectionData: Partial<ICollection>, collectionProofs: Express.Multer.File[], paymentData: IPayment): Promise<void> {
-    //     try {
-    //         const collection = await this._collectionRepository.findOne({ collectionId });
-    //         console.log("collection :", collection);
-
-    //         if (!collection) {
-    //             const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
-    //             error.status = HTTP_STATUS.NOT_FOUND;
-    //             throw error;
-    //         }
-
-    //         if (!collectionData.items) {
-    //             throw new Error(MESSAGES.INVALID_ITEM_DATA);
-    //         }
-
-    //         let totalCost = 0;
-
-    //         for (const item of collectionData.items) {
-    //             if (!item.categoryId || !item.qty) {
-    //                 throw new Error(`Invalid item data: ${JSON.stringify(item)}`);
-    //             }
-
-    //             const categoryData = await this._categoryRepository.findById(item.categoryId);
-
-    //             if (!categoryData) {
-    //                 throw new Error(`Category with ID ${item.categoryId} not found.`);
-    //             }
-
-    //             totalCost += categoryData.rate * Number(item.qty);
-    //         }
-
-
-    //         const proofUrls = await Promise.all(
-    //             collectionProofs.map(async (proof, index) => {
-    //                 const s3Params = {
-    //                     Bucket: process.env.AWS_S3_BUCKET_NAME!,
-    //                     Key: `collection-proofs/${collectionId}/${Date.now()}_${index}_${proof.originalname}`,
-    //                     Body: proof.buffer,
-    //                     ContentType: proof.mimetype,
-    //                 };
-
-    //                 const command = new PutObjectCommand(s3Params);
-    //                 await s3.send(command);
-
-    //                 // Return the public URL (adjust based on your S3 configuration)
-    //                 return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-    //             })
-    //         );
-
-    //         console.log("proofUrls :", proofUrls);
-
-    //         Object.assign(collectionData, { estimatedCost: totalCost, status: "completed", proofs: proofUrls });
-
-    //         Object.assign(paymentData, { status: "completed", paidAt: new Date().toISOString(), amount: totalCost });
-
-    //         console.log("collectionData :", collectionData);
-    //         console.log("paymentData :", paymentData);
-
-    //         await this._collectionRepository.updateOne({ collectionId }, collectionData);
-
-    //         await RabbitMQ.publish("finalPayment-payment", paymentData);
-
-    //         await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
-
-    //         const notification: INotification = {
-    //             userId: collection.userId,
-    //             title: "Pickup Completed",
-    //             message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-    //             url: "/account/collections",
-    //             createdAt: new Date()
-    //         };
-
-    //         await RabbitMQ.publish('notification', notification);
-
-    //     } catch (error) {
-    //         console.error('Error while updating collection:', error);
-    //         throw error;
-    //     }
-    // }
-
-    // async processWithDigitalPayment(collectionId: string, paymentId: string): Promise<void> {
-    //     try {
-
-    //         const collection = await this._collectionRepository.findOne({ collectionId });
-    //         console.log("collection :", collection);
-
-    //         if (!collection) {
-    //             const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
-    //             error.status = HTTP_STATUS.NOT_FOUND;
-    //             throw error;
-    //         }
-
-    //         const response = await axios.get(`http://localhost:3004/collection-payment/${paymentId}`);
-
-    //         console.log("response from payment:", response.data);
-    //         const payment: IPayment = response.data.data;
-
-    //         if (payment.status === "success") {
-
-    //             await this._collectionRepository.updateOne({ collectionId }, { status: "completed", isPaymentRequested: false });
-
-    //             // await RabbitMQ.publish("finalPayment-user", { collectorId: collection.collectorId });
-
-    //             const notification: INotification = {
-    //                 userId: collection.userId,
-    //                 title: "Pickup Completed",
-    //                 message: `Your waste pickup (ID: ${collection.collectionId}) has been successfully completed. You can view the details in your collection history.`,
-    //                 url: "/account/collections",
-    //                 createdAt: new Date()
-    //             };
-
-    //             await RabbitMQ.publish('notification', notification);
-
-    //         } else {
-    //             const error: any = new Error(MESSAGES.PAYMENT_NOT_COMPLETED);
-    //             error.status = HTTP_STATUS.BAD_REQUEST;
-    //             throw error;
-    //         }
-
-    //     } catch (error) {
-    //         console.error('Error while completing collection:', error);
-    //         throw error;
-    //     }
-    // }
 
     async cancelCollection(collectionId: string, reason: string): Promise<void> {
         try {
@@ -1050,15 +944,26 @@ export class CollectionService implements ICollectionservice {
 
 
 
-    async getRevenueData(
-        options: {
-            districtId?: string;
-            serviceAreaId?: string;
-            dateFilter?: string;
-            startDate?: Date;
-            endDate?: Date;
-        }
-    ): Promise<{
+   async getRevenueData(options: { districtId?: string; serviceAreaId?: string; dateFilter: string; startDate?: Date; endDate?: Date; }): Promise<{ date: string; waste: number; scrap: number; total: number; wasteCollections: number; scrapCollections: number; }[]> {
+       try {
+        const {districtId, serviceAreaId, dateFilter, startDate, endDate} = options;
+        console.log("options :", options);
+
+        return await this._collectionRepository.getRevenueData({dateFilter,districtId, serviceAreaId, startDate, endDate});
+
+       } catch (error) {
+            console.error('Error while fetching revenue data:', error);
+            throw error;
+       }
+   }
+
+
+    async getCollectorRevenueData(options: {
+        collectorId: string;
+        dateFilter: string;
+        startDate?: string;
+        endDate?: string;
+    }): Promise<{
         date: string;
         waste: number;
         scrap: number;
@@ -1068,71 +973,45 @@ export class CollectionService implements ICollectionservice {
     }[]> {
         try {
 
-            let startDate: Date | undefined;
-            let endDate: Date | undefined = new Date();
+            console.log("options :", options);
+            const {collectorId, dateFilter, startDate, endDate} = options;
 
-            switch (options.dateFilter) {
-                case 'today':
-                    startDate = new Date();
-                    startDate.setHours(0, 0, 0, 0);
-                    break;
-                case 'yesterday':
-                    startDate = new Date();
-                    startDate.setDate(startDate.getDate() - 1);
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate = new Date(startDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    break;
-                case 'last7days':
-                    startDate = new Date();
-                    startDate.setDate(startDate.getDate() - 7);
-                    startDate.setHours(0, 0, 0, 0);
-                    break;
-                case 'thismonth':
-                    startDate = new Date();
-                    startDate.setDate(1);
-                    startDate.setHours(0, 0, 0, 0);
-                    break;
-                case 'lastmonth':
-                    startDate = new Date();
-                    startDate.setMonth(startDate.getMonth() - 1);
-                    startDate.setDate(1);
-                    startDate.setHours(0, 0, 0, 0);
-                    endDate = new Date(startDate);
-                    endDate.setMonth(endDate.getMonth() + 1);
-                    endDate.setDate(0);
-                    endDate.setHours(23, 59, 59, 999);
-                    break;
-                case 'thisyear':
-                    startDate = new Date();
-                    startDate.setMonth(0);
-                    startDate.setDate(1);
-                    startDate.setHours(0, 0, 0, 0);
-                    break;
-                case 'custom':
-                    // Use the provided start and end dates
-                    startDate = options.startDate;
-                    endDate = options.endDate;
-                    break;
-                default:
-                    // Default to today if no filter is provided
-                    startDate = new Date();
-                    startDate.setHours(0, 0, 0, 0);
-            }
+            return await this._collectionRepository.getCollectorRevenueData(collectorId, dateFilter, startDate, endDate);
 
-            const data = await this._collectionRepository.getRevenueData({
-                districtId: options.districtId,
-                serviceAreaId: options.serviceAreaId,
-                startDate,
-                endDate
-            });
-
-            return data;
 
         } catch (error) {
-            console.error('Error while fetching revenue data:', error);
+            console.error('Error while fetching collector revenue data:', error);
             throw error;
         }
     }
+
+    async getDashboardData(): Promise<{
+        totalCollections: number;
+        totalRevenue: number;
+        totalWasteCollections: number;
+        totalScrapCollections: number;
+    }> {
+        try {
+            return await this._collectionRepository.getDashboardData();
+        } catch (error) {
+            console.error('Error while fetching dashboard data:', error);
+            throw error;
+        }
+    }
+
+    async getCollectorDashboardData(collectorId: string): Promise<{
+        totalCollections: number;
+        totalRevenue: number;
+        totalWasteCollections: number;
+        totalScrapCollections: number;
+    }> {
+        try {
+            return await this._collectionRepository.getCollectorDashboardData(collectorId);
+        } catch (error) {
+            console.error('Error while fetching collector dashboard data:', error);
+            throw error;
+        }
+    }
+    
 
 }

@@ -249,7 +249,6 @@ export class CollectorService implements ICollectorService {
     async getCollector(id: string): Promise<ICollector> {
         try {
             const projection = {
-                _id: 0,
                 password: 0,
                 __v: 0
             }

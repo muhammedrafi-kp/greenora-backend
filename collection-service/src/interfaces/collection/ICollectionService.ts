@@ -63,7 +63,7 @@ export interface ICollectionservice {
     getRevenueData( options: {
         districtId?: string;
         serviceAreaId?: string;
-        dateFilter?: string;
+        dateFilter: string;
         startDate?: Date;
         endDate?: Date;  
     }): Promise<{
@@ -74,5 +74,32 @@ export interface ICollectionservice {
         wasteCollections: number;
         scrapCollections: number;
     }[]>
-    
+
+    getCollectorRevenueData(options: {
+        collectorId: string;
+        dateFilter: string;
+        startDate?: string;
+        endDate?: string;
+    }): Promise<{
+        date: string;
+        waste: number;
+        scrap: number;
+        total: number;
+        wasteCollections: number;
+        scrapCollections: number;
+    }[]>
+
+    getDashboardData(): Promise<{
+        totalCollections: number;
+        totalRevenue: number;
+        totalWasteCollections: number;
+        totalScrapCollections: number;
+    }>
+
+    getCollectorDashboardData(collectorId: string): Promise<{
+        totalCollections: number;
+        totalRevenue: number;
+        totalWasteCollections: number;
+        totalScrapCollections: number;
+    }>
 }

@@ -5,9 +5,8 @@ import { ChatService } from "../services/chatService";
 import chatRepository from "../repositories/chatRepository";
 import messageRepository from "../repositories/messageRepository";
 import { IChatService } from "../interfaces/IChatService";
-import { IMessage } from "../models/Chat";
-import Redis from "ioredis";
-const redis = new Redis();
+import { redis } from '../config/redisConfig';
+
 
 const chatService: IChatService = new ChatService(chatRepository, messageRepository);
 
@@ -18,9 +17,10 @@ let adminOnline = false;
 export const initializeSocket = (io: Server) => {
     io.on("connection", (socket: Socket) => {
 
-        // console.log("A user connected:", socket.id);
+        console.log("A user connected:", socket.id);
+        
         socket.on("user_connected", (userId) => {
-            console.log("user-connected:", userId);
+            // console.log("user-connected:", userId);
             onlineUsers.set(userId, socket.id);
             socket.broadcast.emit("user_online", userId); // Notify others only
         });
@@ -30,7 +30,7 @@ export const initializeSocket = (io: Server) => {
         });
 
         socket.on("admin_connected", () => {
-            console.log("admin-connected :");
+            console.log("admin-connected");
             adminOnline = true;
             socket.broadcast.emit("admin_online_status", adminOnline);
         });
@@ -94,7 +94,9 @@ export const initializeSocket = (io: Server) => {
                 console.log("newMessage.chatId :", newMessage.chatId);
 
                 // Emit the message to the room with all necessary data
-                io.to(newMessage.chatId).emit("receive_message", {
+                // io.emit("receive_message", {
+                // io.to(chatId).emit("receive_message", {
+                io.emit("receive_message", {
                     chatId,
                     senderId: newMessage.senderId,
                     receiverId: newMessage.senderId,

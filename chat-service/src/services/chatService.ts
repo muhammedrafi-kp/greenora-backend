@@ -8,17 +8,17 @@ import axios from 'axios';
 
 export class ChatService implements IChatService {
     constructor(
-        private chatRepository: IChatRepository,
-        private messageRepository: IMessageRepository
+        private _chatRepository: IChatRepository,
+        private _messageRepository: IMessageRepository
     ) { };
 
     async startChat(chatData: Partial<IChat>): Promise<IChat> {
         try {
             const { participant1, participant2 } = chatData;
-            let chat = await this.chatRepository.findOne({ participant1, participant2 });
+            let chat = await this._chatRepository.findOne({ participant1, participant2 });
             
             if (!chat) {
-                chat = await this.chatRepository.createChat(chatData);
+                chat = await this._chatRepository.createChat(chatData);
             }
             return chat;
 
@@ -30,7 +30,7 @@ export class ChatService implements IChatService {
 
     async getChat(participant1: string, participant2: string): Promise<IChat | null> {
         try {
-            let chat = await this.chatRepository.findOne({
+            let chat = await this._chatRepository.findOne({
                 $or: [
                     { participant1, participant2 },
                     { participant1: participant2, participant2: participant1 }
@@ -45,7 +45,7 @@ export class ChatService implements IChatService {
 
     async getChats(): Promise<IChat[]> {
         try {
-            return this.chatRepository.find({});
+            return this._chatRepository.find({});
         } catch (error) {
             console.error('Error while finding chats:', error);
             throw error;
@@ -55,9 +55,9 @@ export class ChatService implements IChatService {
     async sendMessage(messageData: IMessage): Promise<IMessage> {
         try {
             const { chatId, message } = messageData;
-            const newMessage = await this.messageRepository.create(messageData);
+            const newMessage = await this._messageRepository.create(messageData);
 
-            await this.chatRepository.updateLastMessage(chatId, message);
+            await this._chatRepository.updateLastMessage(chatId, message);
 
             return newMessage;
 
@@ -69,7 +69,7 @@ export class ChatService implements IChatService {
 
     async getMessages(chatId: string): Promise<IMessage[]> {
         try {
-            return this.messageRepository.getMessages(chatId);
+            return this._messageRepository.getMessages(chatId);
         } catch (error) {
             console.error('Error while finding messages:', error);
             throw error;
@@ -78,7 +78,7 @@ export class ChatService implements IChatService {
 
     async markMessagesAsRead(chatId: string, userId: string): Promise<any> {
         try {
-            return this.messageRepository.updateMany(
+            return this._messageRepository.updateMany(
                 { chatId, receiverId: userId, isRead: false },
                 { $set: { isRead: true } }
             );

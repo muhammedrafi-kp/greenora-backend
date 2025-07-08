@@ -5,13 +5,13 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 
 export class CollectionPaymentController implements ICollectionPaymentController {
-    constructor(private collectionPaymentService: ICollectionPaymentService) { };
+    constructor(private _collectionPaymentService: ICollectionPaymentService) { };
 
 
     async createOrder(req: Request, res: Response): Promise<void> {
         try {
             const { amount } = req.body;
-            const { orderId } = await this.collectionPaymentService.createRazorpayOrder(amount);
+            const { orderId } = await this._collectionPaymentService.createRazorpayOrder(amount);
             res.status(HTTP_STATUS.OK).json({ success: true, orderId });
 
         } catch (error: any) {
@@ -27,7 +27,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
 
             console.log("razorpayVerificationData :", razorpayVerificationData)
 
-            const { isValidPayment, paymentId } = await this.collectionPaymentService.verifyPayment(razorpayVerificationData);
+            const { isValidPayment, paymentId } = await this._collectionPaymentService.verifyPayment(razorpayVerificationData);
 
             if (!isValidPayment) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -64,7 +64,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
             console.log("amount :", amount);
             console.log("serviceType :", serviceType);
 
-            const { transactionId, paymentId } = await this.collectionPaymentService.payWithWallet(userId, amount, serviceType);
+            const { transactionId, paymentId } = await this._collectionPaymentService.payWithWallet(userId, amount, serviceType);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -93,7 +93,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
     async getPaymentData(req: Request, res: Response): Promise<void> {
         try {
             const paymentId = req.params.paymentId;
-            const paymentData = await this.collectionPaymentService.getPaymentData(paymentId);
+            const paymentData = await this._collectionPaymentService.getPaymentData(paymentId);
             console.log("payment data:", paymentData)
             if (!paymentData) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({

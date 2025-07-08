@@ -5,15 +5,15 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages"
 
 export class ServiceAreaController implements IServiceAreaController {
-    constructor(private serviceAreaService: IServiceAreaService) {
-        this.serviceAreaService = serviceAreaService;
+    constructor(private _serviceAreaService: IServiceAreaService) {
+        this._serviceAreaService = _serviceAreaService;
     }
 
     async createDistrict(req: Request, res: Response): Promise<void> {
         try {
             const districtName = req.body.name;
 
-            const district = await this.serviceAreaService.createDistrict(districtName);
+            const district = await this._serviceAreaService.createDistrict(districtName);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
@@ -33,7 +33,7 @@ export class ServiceAreaController implements IServiceAreaController {
             const { districtId } = req.params;
             const districtName = req.body.name;
 
-            const updatedDistrict = await this.serviceAreaService.updateDistrict(districtId, districtName);
+            const updatedDistrict = await this._serviceAreaService.updateDistrict(districtId, districtName);
 
             console.log("updatedDistrict:", updatedDistrict);
             if (updatedDistrict) {
@@ -58,7 +58,7 @@ export class ServiceAreaController implements IServiceAreaController {
     async deleteDistrict(req: Request, res: Response): Promise<void> {
         try {
             const { districtId } = req.params;
-            const updatedDistrict = await this.serviceAreaService.deleteDistrict(districtId);
+            const updatedDistrict = await this._serviceAreaService.deleteDistrict(districtId);
 
             if (updatedDistrict) {
                 res.status(HTTP_STATUS.OK).json({
@@ -89,7 +89,7 @@ export class ServiceAreaController implements IServiceAreaController {
         try {
 
             const query: any = { isActive: true };
-            const districts = await this.serviceAreaService.getDistricts(query);
+            const districts = await this._serviceAreaService.getDistricts(query);
 
             if (!districts) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -113,7 +113,7 @@ export class ServiceAreaController implements IServiceAreaController {
 
     async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
         try {
-            const districtsAndServiceAreas = await this.serviceAreaService.getDistrictsWithServiceAreas();
+            const districtsAndServiceAreas = await this._serviceAreaService.getDistrictsWithServiceAreas();
             console.log(districtsAndServiceAreas);
 
             res.status(HTTP_STATUS.OK).json({
@@ -131,7 +131,7 @@ export class ServiceAreaController implements IServiceAreaController {
     async createServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const serviceAreaData = req.body;
-            const serviceArea = await this.serviceAreaService.createServiceArea(serviceAreaData);
+            const serviceArea = await this._serviceAreaService.createServiceArea(serviceAreaData);
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: MESSAGES.SERVICE_AREA_CREATED,
@@ -147,7 +147,7 @@ export class ServiceAreaController implements IServiceAreaController {
     async getServiceAreasByDistrict(req: Request, res: Response): Promise<void> {
         try {
             const { districtId } = req.params;
-            const serviceAreas = await this.serviceAreaService.getServiceAreas(districtId as string);
+            const serviceAreas = await this._serviceAreaService.getServiceAreas(districtId as string);
 
             if (!serviceAreas) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -185,7 +185,7 @@ export class ServiceAreaController implements IServiceAreaController {
             console.log("serviceAreaId :", serviceAreaId)
             console.log("pinCode :", pinCode)
 
-            const serviceArea = await this.serviceAreaService.isServiceAvailable(serviceAreaId, pinCode);
+            const serviceArea = await this._serviceAreaService.isServiceAvailable(serviceAreaId, pinCode);
 
             if (!serviceArea) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -212,7 +212,7 @@ export class ServiceAreaController implements IServiceAreaController {
 
             console.log(districtId,serviceAreaId);
 
-            const { district, serviceArea } = await this.serviceAreaService.getDistrictWithServiceArea(districtId, serviceAreaId);
+            const { district, serviceArea } = await this._serviceAreaService.getDistrictWithServiceArea(districtId, serviceAreaId);
             console.log("district:", district);
             console.log("serviceArea:", serviceArea);
             res.status(HTTP_STATUS.OK).json({
@@ -233,7 +233,7 @@ export class ServiceAreaController implements IServiceAreaController {
             console.log("districtIds:", ids);
             const districtIds = typeof ids === 'string' ? ids.split(',') : [];
             console.log("districtIds:", districtIds);
-            const districts = await this.serviceAreaService.getDistrictsByIds(districtIds);
+            const districts = await this._serviceAreaService.getDistrictsByIds(districtIds);
             console.log("districts:", districts);
             res.status(HTTP_STATUS.OK).json(districts);
         } catch (error: any) {
@@ -248,7 +248,7 @@ export class ServiceAreaController implements IServiceAreaController {
             console.log("serviceAreaIds:", ids);
             const serviceAreaIds = typeof ids === 'string' ? ids.split(',') : [];
             console.log("serviceAreaIds:", serviceAreaIds);
-            const serviceAreas = await this.serviceAreaService.getServiceAreasByIds(serviceAreaIds);
+            const serviceAreas = await this._serviceAreaService.getServiceAreasByIds(serviceAreaIds);
             console.log("serviceAreas:", serviceAreas);  
             res.status(HTTP_STATUS.OK).json( serviceAreas);
         } catch (error: any) {

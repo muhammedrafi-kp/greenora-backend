@@ -22,12 +22,12 @@ const userProto: any = grpc.loadPackageDefinition(userPackageDef).user;
 const collectorProto: any = grpc.loadPackageDefinition(collectorPackageDef).collector;
 
 const userClient = new userProto.userService(
-    'localhost:50052',
+    process.env.GRPC_USER_SERVICE_URL,
     grpc.credentials.createInsecure()
 );
 
 const collectorClient = new collectorProto.collectorService(
-    'localhost:50052',
+    process.env.GRPC_USER_SERVICE_URL,
     grpc.credentials.createInsecure()
 );
 

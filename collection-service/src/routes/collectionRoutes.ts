@@ -35,5 +35,8 @@ router.post('/payment-request',upload.array('collectionProofs'), collectionContr
 router.post('/payment/razorpay/verify', collectionController.verifyRazorpayPayment.bind(collectionController));
 router.post('/payment/wallet',collectionController.payWithWallet.bind(collectionController));
 
+router.get('/dashboard',collectionController.getDashboardData.bind(collectionController));
+router.get('/collector/dashboard',collectionController.getCollectorDashboardData.bind(collectionController));
 router.get('/revenue',collectionController.getRevenueData.bind(collectionController));
+router.get('/revenue/collector',collectionController.getCollectorRevenueData.bind(collectionController));
 export default router;

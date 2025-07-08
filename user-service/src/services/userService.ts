@@ -22,7 +22,6 @@ configDotenv();
 
 export class UserService implements IUserService {
 
-    // private channel!: amqp.Channel;
 
     constructor(
         private userRepository: IUserRepository,
@@ -36,7 +35,7 @@ export class UserService implements IUserService {
     async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: IUser }> {
         try {
             const user = await this.userRepository.getUserByEmail(email);
-            // userRepository.create()
+            
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
@@ -130,7 +129,6 @@ export class UserService implements IUserService {
 
             const user = await this.userRepository.createUser(userData);
 
-            // this.channel.sendToQueue("userCreatedQueue", Buffer.from(JSON.stringify(user._id)), { persistent: true });
             RabbitMQ.publish("userCreatedQueue", { userId: user._id });
             console.log("User created and sent to queue:", user._id);
 

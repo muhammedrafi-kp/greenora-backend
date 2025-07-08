@@ -6,12 +6,12 @@ import { MESSAGES } from "../constants/messages";
 
 
 export class WalletController implements IWalletController {
-    constructor(private readonly walletService: IWalletService) { }
+    constructor(private readonly _walletService: IWalletService) { }
 
     async getWalletData(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-client-id'] as string;
-            const wallet = await this.walletService.getWalletData(userId);
+            const wallet = await this._walletService.getWalletData(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.WALLET_FETCHED,
@@ -31,7 +31,7 @@ export class WalletController implements IWalletController {
         try {
             const userId = req.headers['x-client-id'] as string;
             const amount = req.body.amount;
-            const { amount: orderAmount, orderId } = await this.walletService.initiateDeposit(userId, amount);
+            const { amount: orderAmount, orderId } = await this._walletService.initiateDeposit(userId, amount);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -54,7 +54,7 @@ export class WalletController implements IWalletController {
             const razorpayVerificationData = req.body;
             console.log("razorpayVerificationData:", razorpayVerificationData);
 
-            await this.walletService.verifyDeposit(userId, razorpayVerificationData);
+            await this._walletService.verifyDeposit(userId, razorpayVerificationData);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -75,7 +75,7 @@ export class WalletController implements IWalletController {
         try {
             const userId = req.headers['x-client-id'] as string;
             const amount = req.body.amount;
-            await this.walletService.withdrawMoney(userId, amount);
+            await this._walletService.withdrawMoney(userId, amount);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.MONEY_WITHDRAWN,

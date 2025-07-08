@@ -9,13 +9,13 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 
 export class ServiceAreaService implements IServiceAreaService {
     constructor(
-        private districtRepository: IDistrictRepository,
-        private serviceAreaRepository: IServiceAreaRepository
+        private _districtRepository: IDistrictRepository,
+        private _serviceAreaRepository: IServiceAreaRepository
     ) { };
 
     async createDistrict(districtName: string): Promise<IDistrict> {
         try {
-            return await this.districtRepository.create({ name: districtName });
+            return await this._districtRepository.create({ name: districtName });
         } catch (error) {
             console.error('Error while creating district:', error);
             throw error;
@@ -24,7 +24,7 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async updateDistrict(districtId: string, districtName: string): Promise<IDistrict | null> {
         try {
-            return await this.districtRepository.updateById(districtId, { name: districtName });
+            return await this._districtRepository.updateById(districtId, { name: districtName });
         } catch (error) {
             console.error('Error while creating district:', error);
             throw error;
@@ -33,14 +33,14 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async deleteDistrict(districtId: string): Promise<IDistrict | null> {
         try {
-            const district = await this.districtRepository.findById(districtId);
+            const district = await this._districtRepository.findById(districtId);
             if (!district) {
                 const error: any = new Error(MESSAGES.UNKNOWN_ERROR);
                 error.status = HTTP_STATUS.GONE;
                 throw error;
             }
             district.isActive = false;
-            return await this.districtRepository.updateById(districtId, district);
+            return await this._districtRepository.updateById(districtId, district);
         } catch (error) {
             console.error('Error while creating district:', error);
             throw error;
@@ -50,7 +50,7 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async createServiceArea(serviceAreaData: IServiceArea): Promise<IServiceArea> {
         try {
-            return await this.serviceAreaRepository.create(serviceAreaData);
+            return await this._serviceAreaRepository.create(serviceAreaData);
         } catch (error) {
             console.error('Error while creating ServiceArea:', error);
             throw error;
@@ -63,7 +63,7 @@ export class ServiceAreaService implements IServiceAreaService {
                 _id: 1,
                 name: 1
             }
-            return await this.districtRepository.find(query, projection);
+            return await this._districtRepository.find(query, projection);
         } catch (error) {
             console.error('Error while finding district:', error);
             throw error;
@@ -77,7 +77,7 @@ export class ServiceAreaService implements IServiceAreaService {
                 _id: 1,
                 name: 1
             }
-            return await this.serviceAreaRepository.find(query, projection);
+            return await this._serviceAreaRepository.find(query, projection);
         } catch (error) {
             console.error('Error while finding ServiceAreas:', error);
             throw error;
@@ -86,7 +86,7 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async getDistrictsWithServiceAreas(): Promise<IDistrict[]> {
         try {
-            return await this.districtRepository.getDistrictsWithServiceAreas();
+            return await this._districtRepository.getDistrictsWithServiceAreas();
         } catch (error) {
             console.error('Error while finding district with serviceAreas:', error);
             throw error;
@@ -101,7 +101,7 @@ export class ServiceAreaService implements IServiceAreaService {
                 isActive: true
             }
 
-            return await this.serviceAreaRepository.findOne(query);
+            return await this._serviceAreaRepository.findOne(query);
 
         } catch (error) {
             console.error('Error while checking availability:', error);
@@ -112,12 +112,12 @@ export class ServiceAreaService implements IServiceAreaService {
     async getDistrictWithServiceArea(districtId: string, serviceAreaId: string): Promise<{ district: IDistrict; serviceArea: IServiceArea; }> {
         try {
 
-            const district = await this.districtRepository.findById(districtId);
+            const district = await this._districtRepository.findById(districtId);
             if (!district) {
                 throw new Error(`District with ID ${districtId} not found`);
             }
 
-            const serviceArea = await this.serviceAreaRepository.findById(serviceAreaId);
+            const serviceArea = await this._serviceAreaRepository.findById(serviceAreaId);
             if (!serviceArea) {
                 throw new Error(`Service Area with ID ${serviceAreaId} not found`);
             }
@@ -132,7 +132,7 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async getDistrictsByIds(ids: string[]): Promise<IDistrict[]> {
         try {
-            return await this.districtRepository.find({ _id: { $in: ids } });
+            return await this._districtRepository.find({ _id: { $in: ids } });
         } catch (error) {
             console.error('Error while finding districts by IDs:', error);
             throw error;    
@@ -141,7 +141,7 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async getServiceAreasByIds(ids: string[]): Promise<IServiceArea[]> {
         try {
-            return await this.serviceAreaRepository.find({ _id: { $in: ids } });
+            return await this._serviceAreaRepository.find({ _id: { $in: ids } });
         } catch (error) {
             console.error('Error while finding service areas by IDs:', error);
             throw error;

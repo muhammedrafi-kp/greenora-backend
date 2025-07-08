@@ -5,7 +5,6 @@ import winston from 'winston';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
 
-import passportConfig from "./config/passportConfig"
 import connectDB from './config/dbConfig';
 import startGrpcServer from './gRPC/grpcServer';
 import { connectToRedis } from './config/redisConfig';
@@ -55,8 +54,6 @@ app.use(session({
     cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
-app.use(passportConfig.initialize());
-app.use(passportConfig.session());
 
 app.use('/user', userRoutes);
 app.use('/collector', collectorRoutes);

@@ -21,5 +21,8 @@ export interface ICollectionController {
     completeCollection(req: Request, res: Response): Promise<void>;
     cancelCollection(req: Request, res: Response): Promise<void>;
     requestCollectionPayment(req: Request, res: Response): Promise<void>;
+    getDashboardData(req: Request, res: Response): Promise<void>;
+    getCollectorDashboardData(req: Request, res: Response): Promise<void>;
     getRevenueData(req: Request, res: Response): Promise<void>;
+    getCollectorRevenueData(req: Request, res: Response): Promise<void>;
 }

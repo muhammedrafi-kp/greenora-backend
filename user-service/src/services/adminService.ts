@@ -354,8 +354,8 @@ export class AdminService implements IAdminService {
             ]);
 
             return user?.isBlocked
-                ? 'Blocked successfully.'
-                : 'Unblocked successfully.';
+                ? 'Unblocked successfully'
+                : 'Blocked successfully';
 
         } catch (error: any) {
             console.log("Error while updating user status :", error.message);

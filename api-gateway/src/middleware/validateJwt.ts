@@ -44,7 +44,7 @@ export const validateJwt = async (req: Request, res: Response, next: NextFunctio
             if (isBlocked === null) {
                 console.log("isBlocked is null");
                 const isBlocked = await refreshBlockedStatus(decoded.userId, decoded.role);
-
+                console.log("isblocked from db:", isBlocked);
                 if (isBlocked) {
                     return res.status(HTTP_STATUS.FORBIDDEN).json({
                         message: MESSAGES.USER_BLOCKED,
@@ -70,7 +70,10 @@ export const validateJwt = async (req: Request, res: Response, next: NextFunctio
 const refreshBlockedStatus = async (userId: string, role: string) => {
     try {
         const response = await axios.get(`${process.env.USER_SERVICE_URL}/${role}/is-blocked/${userId}`);
-        return response.data.isBlocked;
+        const isBlocked = response.data.isBlocked
+        await redis.set(`is-blocked:${userId}`, isBlocked, 'EX', 3600);
+        
+        return isBlocked;
     } catch (error) {
         console.log("Error while refreshing user blocked status :", error);
         return null;

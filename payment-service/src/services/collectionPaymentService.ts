@@ -1,37 +1,22 @@
 import { ICollectionPaymentService } from "../interfaces/collectionPayment/ICollectionPaymentService";
 import { ICollectionPaymentRepository } from "../interfaces/collectionPayment/ICollectionPaymentRepository";
-import collectionClient from "../gRPC/grpcClient";
 import Razorpay from "razorpay";
 import { createHmac } from "node:crypto"
 import { v4 as uuidv4 } from 'uuid';
 import { ICollectionPayment } from "../models/CollectionPayment";
-import RabbitMQ from "../utils/rabbitmq";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
 import { ITransaction } from "../models/Wallet";
-import { ICollection, INotification } from "../interfaces/external/external";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import { ClientSession } from "mongoose";
-// Events
-interface PaymentInitiatedEvent {
-    // paymentId: string;
-    userId: string;
-    collectionData: object;
-}
-
-interface PaymentCompletedEvent {
-    userId: string;
-    paymentId: string; // Add paymentId for reference
-    // status: "success" | "failed"; // Add status
-}
 
 
 export class CollectionPaymentService implements ICollectionPaymentService {
     private razorpay: Razorpay;
 
     constructor(
-        private collectionPaymentRepository: ICollectionPaymentRepository,
-        private walletRepository: IWalletRepository
+        private _collectionPaymentRepository: ICollectionPaymentRepository,
+        private _walletRepository: IWalletRepository
     ) {
         this.razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID as string,
@@ -84,7 +69,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
     async payWithWallet(userId: string, amount: number, serviceType: string): Promise<{ transactionId: string, paymentId: string }> {
         try {
 
-            const walletBalance = await this.walletRepository.getBalance(userId);
+            const walletBalance = await this._walletRepository.getBalance(userId);
 
             console.log("walletBalance :", walletBalance);  
 
@@ -102,7 +87,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
                 serviceType: serviceType
             }
 
-            const updatedWallet = await this.walletRepository.updateWallet(userId, amount * (-1), transaction);
+            const updatedWallet = await this._walletRepository.updateWallet(userId, amount * (-1), transaction);
 
             const transactionId = updatedWallet?.transactions[updatedWallet?.transactions.length - 1]._id;
 
@@ -124,7 +109,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
 
     async getPaymentData(paymentId: string): Promise<ICollectionPayment | null> {
         try {
-            return await this.collectionPaymentRepository.findOne({ paymentId });
+            return await this._collectionPaymentRepository.findOne({ paymentId });
         } catch (error: any) {
             console.error("Error while fetching payment details :", error.message);
             throw error;
@@ -140,7 +125,7 @@ export class CollectionPaymentService implements ICollectionPaymentService {
             console.log("paymentId:", paymentData)
 
 
-            return await this.collectionPaymentRepository.updateOne({ paymentId }, paymentData, options);
+            return await this._collectionPaymentRepository.updateOne({ paymentId }, paymentData, options);
         } catch (error: any) {
             console.error("Error while updating payment details :", error.message);
             throw error;

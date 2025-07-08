@@ -1,6 +1,6 @@
 import express from "express";
 import http from "http";
-import {Server} from "socket.io"
+import { Server } from "socket.io"
 import { configDotenv } from "dotenv";
 import morgan from "morgan";
 
@@ -14,13 +14,17 @@ import notificationRoutes from "./routes/notificationRoutes";
 configDotenv();
 
 const app = express();
+
 const server = http.createServer(app);
-export const io = new Server(server,{
-    cors:{
-        origin:"http://localhost:5173",
-        credentials:true
-    }
-})
+
+export const io = new Server(server, {
+    cors: {
+        origin: process.env.FRONTEND_URL,
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    path: "/notification/socket.io/"
+});
 
 
 connectDB();
@@ -30,9 +34,9 @@ initializeSocket(io);
 app.use(morgan('dev'));
 app.use(express.json());
 
-app.use("/notification",notificationRoutes);
+app.use("/notification", notificationRoutes);
 
 
-server.listen(process.env.PORT,()=>{
+server.listen(process.env.PORT, () => {
     console.log(`notification-service is running on port ${process.env.PORT} ✅`);
 });

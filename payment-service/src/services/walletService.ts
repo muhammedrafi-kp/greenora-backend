@@ -1,6 +1,5 @@
 import { IWalletService } from "../interfaces/wallet/IWalletService";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
-import amqp from "amqplib";
 import { IWallet, ITransaction } from "../models/Wallet";
 import Razorpay from "razorpay";
 import { HTTP_STATUS } from "../constants/httpStatus";
@@ -12,41 +11,13 @@ import { ClientSession } from "mongoose";
 
 export class WalletService implements IWalletService {
 
-    private channel!: amqp.Channel;
     private razorpay: Razorpay;
 
     constructor(private walletRepository: IWalletRepository) {
-        this.setupRabbitMQ();
         this.razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID as string,
             key_secret: process.env.RAZORPAY_KEY_SECRET as string
         });
-    }
-
-    private async setupRabbitMQ() {
-        const connection = await amqp.connect("amqp://localhost");
-        this.channel = await connection.createChannel();
-        // Declare queues
-        await this.channel.assertQueue("userCreatedQueue", { durable: true });
-
-        console.log("Waiting for messages in walletservice...");
-
-
-        this.channel.consume("userCreatedQueue", async (message) => {
-            try {
-                if (message) {
-                    console.log("Received message in wallet service:", message.content.toString());
-                    const event: { userId: string } = JSON.parse(message.content.toString());
-                    console.log("userId:", event.userId);
-                    await this.walletRepository.create({ userId: event.userId });
-                    this.channel.ack(message);
-                }
-            } catch (error) {
-                console.error("Error processing message:", error);
-                this.channel.reject(message as amqp.Message, false); // Reject the message without requeuing
-            }
-        });
-
     }
 
     async getWalletData(userId: string): Promise<IWallet> {

@@ -63,7 +63,7 @@ export class CollectionController implements ICollectionController {
       }
     }
   }
-  
+
 
   async payAdvanceWithWallet(req: Request, res: Response): Promise<void> {
     try {
@@ -127,10 +127,11 @@ export class CollectionController implements ICollectionController {
 
       const collections = await this._collectionService.getCollectionHistory(userId, queryOptions);
 
-      res.status(HTTP_STATUS.OK).json({ 
+      res.status(HTTP_STATUS.OK).json({
         success: true,
         message: MESSAGES.COLLECTIONS_FETCHED,
-         data: collections });
+        data: collections
+      });
 
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -170,10 +171,11 @@ export class CollectionController implements ICollectionController {
 
       const { collections, totalItems } = await this._collectionService.getCollectionHistories(queryOptions);
 
-      res.status(HTTP_STATUS.OK).json({ 
-        success: true, 
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
         message: MESSAGES.COLLECTIONS_FETCHED,
-        data: { collections, totalItems } });
+        data: { collections, totalItems }
+      });
 
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -234,6 +236,8 @@ export class CollectionController implements ICollectionController {
     try {
       const { collectionId } = req.params;
       const { paymentMethod, collectionData } = req.body;
+
+      console.log("paymentMethod :", paymentMethod);
 
       const collectionProofs = req.files as Express.Multer.File[];
 
@@ -350,9 +354,35 @@ export class CollectionController implements ICollectionController {
     }
   }
 
+  async getDashboardData(req: Request, res: Response): Promise<void> {
+    try {
+  
+      const data = await this._collectionService.getDashboardData();
+
+      res.status(HTTP_STATUS.OK).json({ success: true, data });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
+
+  async getCollectorDashboardData(req: Request, res: Response): Promise<void> {
+    try {
+      const collectorId = req.headers['x-client-id'] as string;
+      const data = await this._collectionService.getCollectorDashboardData(collectorId);
+      res.status(HTTP_STATUS.OK).json({ success: true, data });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
+
   async getRevenueData(req: Request, res: Response): Promise<void> {
     try {
       const { districtId, serviceAreaId, dateFilter, startDate, endDate } = req.query;
+
+      if (!dateFilter) {
+        res.status(400).json({ message: "dateFilter is required" });
+        return;
+      }
 
       const queryOptions = {
         districtId: districtId?.toString(),
@@ -366,9 +396,60 @@ export class CollectionController implements ICollectionController {
 
       const data = await this._collectionService.getRevenueData(queryOptions);
 
-      console.log("revenue data :", data);
+      // console.log("revenue data :", data);
 
       res.status(HTTP_STATUS.OK).json({ success: true, data });
+
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
+
+
+
+
+
+  async getCollectorRevenueData(req: Request, res: Response): Promise<void> {
+    try {
+      const collectorId = req.headers['x-client-id'] as string;
+      const { dateFilter, startDate, endDate } = req.query;
+
+      console.log("collectorId :", collectorId);
+      console.log("dateFilter :", dateFilter);
+      console.log("startDate :", startDate);
+      console.log("endDate :", endDate);
+
+
+
+      if (!collectorId) {
+        res.status(400).json({ message: "collectorId is required" });
+        return;
+      }
+
+      if (!dateFilter) {
+        res.status(400).json({ message: "dateFilter is required" });
+        return;
+      }
+
+      if (dateFilter === "custom" && (!startDate || !endDate)) {
+        res.status(400).json({ message: "startDate and endDate are required for custom range" });
+        return;
+      }
+
+      const queryOptions = {
+        collectorId: collectorId as string,
+        dateFilter: dateFilter as string,
+        startDate: startDate?.toString(),
+        endDate: endDate?.toString()
+      };
+
+      const revenueData = await this._collectionService.getCollectorRevenueData(queryOptions);
+
+
+
+      res.status(HTTP_STATUS.OK).json({ success: true, data: revenueData });
+
+
 
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });

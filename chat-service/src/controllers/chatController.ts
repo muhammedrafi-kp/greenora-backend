@@ -6,13 +6,13 @@ import { MESSAGES } from "../constants/messages";
 import getGeminiResponse from "../config/chatbotConfig";
 
 export class ChatController implements IChatController {
-    constructor(private chatService: IChatService) { };
+    constructor(private _chatService: IChatService) { };
 
     async createChat(req: Request, res: Response): Promise<void> {
         try {
             const chatData = req.body;
             // console.log("chatData :", chatData);
-            const chat = await this.chatService.startChat(chatData);
+            const chat = await this._chatService.startChat(chatData);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.CHAT_CREATED,
@@ -27,7 +27,7 @@ export class ChatController implements IChatController {
     async getChats(req: Request, res: Response): Promise<void> {
         try {
 
-            const chats = await this.chatService.getChats();
+            const chats = await this._chatService.getChats();
 
             if (!chats) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -50,7 +50,7 @@ export class ChatController implements IChatController {
     async getMessages(req: Request, res: Response): Promise<void> {
         try {
             const { chatId } = req.params;
-            const messages = await this.chatService.getMessages(chatId);
+            const messages = await this._chatService.getMessages(chatId);
 
             // console.log("messages :",messages);
 
@@ -68,14 +68,14 @@ export class ChatController implements IChatController {
     async markMessagesAsRead(req: Request, res: Response): Promise<void> {
         try {
             const { senderId, receiverId } = req.params;
-            await this.chatService.markMessagesAsRead(senderId, receiverId);
+            await this._chatService.markMessagesAsRead(senderId, receiverId);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: MESSAGES.MARKED_AS_READ
             });
         } catch (error) {
-            console.error("Error during calculate cost:", error);
+            console.error("Error during mark messages as read:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }
     }

@@ -1,0 +1,123 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: greenora-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: greenora-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ../api-gateway
+    container_name: api-gateway
+    ports:
+      - "80:80"
+    env_file:
+      - ../api-gateway/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ../user-service
+    container_name: user-service
+    ports:
+      - "3001:3001"
+    env_file:
+      - ../user-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  collection-service:
+    build:
+      context: ../collection-service
+    container_name: collection-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ../collection-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: ../payment-service
+    container_name: payment-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - ../payment-service/.env
+    restart: unless-stopped
+
+  location-service:
+    build:
+      context: ../location-service
+    container_name: location-service
+    ports:
+      - "3004:3004"
+    env_file:
+      - ../location-service/.env
+    restart: unless-stopped
+
+  chat-service:
+    build:
+      context: ../chat-service
+    container_name: chat-service
+    ports:
+      - "3005:3005"
+    env_file:
+      - ../chat-service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: ../notification-service
+    container_name: notification-service
+    ports:
+      - "3006:3006"
+    env_file:
+      - ../notification-service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped

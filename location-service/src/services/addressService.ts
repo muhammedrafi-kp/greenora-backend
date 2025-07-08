@@ -3,11 +3,11 @@ import { IAddressService } from "../interfaces/address/IAddressService";
 import { IAddress } from "../models/Address";
 
 export class AddressService implements IAddressService {
-    constructor(private addressRepository: IAddressRepository) { };
+    constructor(private _addressRepository: IAddressRepository) { };
 
     async createAddress(addressData: IAddress): Promise<IAddress> {
         try {
-            return await this.addressRepository.create(addressData);
+            return await this._addressRepository.create(addressData);
         } catch (error) {
             console.error('Error while creating address:', error);
             throw error;
@@ -16,7 +16,7 @@ export class AddressService implements IAddressService {
 
     async getAddresses(userId: string): Promise<IAddress[] | null> {
         try {
-            return await this.addressRepository.find({ userId });
+            return await this._addressRepository.find({ userId });
         } catch (error) {
             console.error('Error while finding addresses:', error);
             throw error;
@@ -25,7 +25,7 @@ export class AddressService implements IAddressService {
 
     async updateAddress(addressId: string, addressData: Partial<IAddress>): Promise<IAddress | null> {
         try {
-            return await this.addressRepository.updateById(addressId, addressData);
+            return await this._addressRepository.updateById(addressId, addressData);
         } catch (error) {
             console.error('Error while updating address:', error);
             throw error;
@@ -34,7 +34,7 @@ export class AddressService implements IAddressService {
 
     async deleteAddress(addressId: string): Promise<IAddress | null> {
         try {
-            return await this.addressRepository.deleteById(addressId);
+            return await this._addressRepository.deleteById(addressId);
         } catch (error) {
             console.error('Error while deleting address:', error);
             throw error;

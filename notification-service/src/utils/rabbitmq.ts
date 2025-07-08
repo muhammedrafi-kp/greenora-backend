@@ -4,10 +4,10 @@ class RabbitMQ {
     private static channel: amqp.Channel;
 
     static async connect() {
-        const connection = await amqp.connect("amqp://localhost");
+        const connection = await amqp.connect(process.env.RABBITMQ_URL as string);
         this.channel = await connection.createChannel();
 
-        console.log("RabbitMQ connected. waiting for messages...");
+        console.log("RabbitMQ connected ✅ waiting for messages...");
     }
 
     static async publish(queue: string, message: object) {

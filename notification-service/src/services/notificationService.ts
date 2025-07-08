@@ -8,11 +8,11 @@ import { MESSAGES } from "../constants/messages";
 
 export class NotificationService implements INotificationService {
 
-    constructor(private readonly notificationRepository: INotificationRepository) { };
+    constructor(private readonly _notificationRepository: INotificationRepository) { };
 
     async getNotifications(userId: string, limit: number, skip: number): Promise<INotification[]> {
         try {
-            const notifications = await this.notificationRepository.find({ userId }, {}, { limit, skip, sort: { createdAt: -1 } });
+            const notifications = await this._notificationRepository.find({ userId }, {}, { limit, skip, sort: { createdAt: -1 } });
             return notifications;
         } catch (error) {
             console.log(error);
@@ -22,7 +22,7 @@ export class NotificationService implements INotificationService {
 
     async createNotification(notificationData: INotification): Promise<void> {
         try {
-            await this.notificationRepository.create(notificationData);
+            await this._notificationRepository.create(notificationData);
         } catch (error) {
             console.log(error);
             throw error;
@@ -35,7 +35,7 @@ export class NotificationService implements INotificationService {
 
             io.to(userId).emit("receive-notification", notificationData);
 
-            await this.notificationRepository.create(notificationData);
+            await this._notificationRepository.create(notificationData);
         } catch (error) {
             console.log(error);
         }
@@ -44,7 +44,7 @@ export class NotificationService implements INotificationService {
 
     async getUnreadNotificationsCount(userId: string): Promise<number> {
         try {
-            const count = await this.notificationRepository.count({ userId, isRead: false });
+            const count = await this._notificationRepository.count({ userId, isRead: false });
             return count;
         } catch (error) {
             console.log(error);
@@ -54,7 +54,7 @@ export class NotificationService implements INotificationService {
 
     async markNotificationAsRead(notificationId: string): Promise<void> {
         try {
-            const response = await this.notificationRepository.updateById(notificationId, { isRead: true });
+            const response = await this._notificationRepository.updateById(notificationId, { isRead: true });
             if (!response) {
                 throw new Error('Notification not found');
                 const error: any = new Error(MESSAGES.NOTIFICATION_NOT_FOUND);
@@ -69,7 +69,7 @@ export class NotificationService implements INotificationService {
 
     async markAllAsRead(): Promise<void> {
         try {
-            await this.notificationRepository.updateMany({ isRead: false }, { isRead: true });
+            await this._notificationRepository.updateMany({ isRead: false }, { isRead: true });
         } catch (error) {
             throw error;
         }

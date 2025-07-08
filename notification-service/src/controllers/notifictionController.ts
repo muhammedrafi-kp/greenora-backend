@@ -6,7 +6,7 @@ import { MESSAGES } from "../constants/messages";
 
 
 export class NotificationController implements INotificationController {
-    constructor(private readonly notificationService: INotificationService) { }
+    constructor(private readonly _notificationService: INotificationService) { }
 
     async getNotifications(req: Request, res: Response): Promise<void> {
         try {
@@ -15,7 +15,7 @@ export class NotificationController implements INotificationController {
             const limit = 10; // Number of notifications per page
             const skip = (page - 1) * limit;
 
-            const notifications = await this.notificationService.getNotifications(userId, limit, skip);
+            const notifications = await this._notificationService.getNotifications(userId, limit, skip);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.NOTIFICATIONS_FETCHED,
@@ -31,7 +31,7 @@ export class NotificationController implements INotificationController {
         try {
             const notification = req.body;
 
-            await this.notificationService.sendNotification(notification);
+            await this._notificationService.sendNotification(notification);
             res.status(200).send('Notification sent');
         } catch (error) {
             console.log(error);
@@ -42,7 +42,7 @@ export class NotificationController implements INotificationController {
     async getUnreadNotificationsCount(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-client-id'] as string;
-            const count = await this.notificationService.getUnreadNotificationsCount(userId);
+            const count = await this._notificationService.getUnreadNotificationsCount(userId);
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.UNREAD_NOTIFICATIONS_COUNT_FETCHED,
@@ -66,7 +66,7 @@ export class NotificationController implements INotificationController {
                 return;
             }
 
-            await this.notificationService.markNotificationAsRead(notificationId);
+            await this._notificationService.markNotificationAsRead(notificationId);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -88,7 +88,7 @@ export class NotificationController implements INotificationController {
 
     async markAllAsRead(req: Request, res: Response): Promise<void> {
         try {
-            await this.notificationService.markAllAsRead();
+            await this._notificationService.markAllAsRead();
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,

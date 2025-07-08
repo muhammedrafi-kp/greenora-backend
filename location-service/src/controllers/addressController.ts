@@ -6,8 +6,8 @@ import { MESSAGES } from "../constants/messages";
 import { Types } from 'mongoose';
 
 export class AddressController implements IAddressController {
-    constructor(private addressService: IAddressService) {
-        this.addressService = addressService;
+    constructor(private _addressService: IAddressService) {
+        this._addressService = _addressService;
     }
 
     async createAddress(req: Request, res: Response): Promise<void> {
@@ -26,7 +26,7 @@ export class AddressController implements IAddressController {
                 return;
             }
 
-            const address = await this.addressService.createAddress(addressData);
+            const address = await this._addressService.createAddress(addressData);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
@@ -46,7 +46,7 @@ export class AddressController implements IAddressController {
 
             console.log("user Id:",userId);
 
-            const addresses = await this.addressService.getAddresses(userId as string);
+            const addresses = await this._addressService.getAddresses(userId as string);
 
             if (!addresses) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -92,7 +92,7 @@ export class AddressController implements IAddressController {
                 return;
             }
 
-            const updatedAddress = await this.addressService.updateAddress(addressId, addressData);
+            const updatedAddress = await this._addressService.updateAddress(addressId, addressData);
 
             console.log("updatedAddress:", updatedAddress);
 
@@ -128,7 +128,7 @@ export class AddressController implements IAddressController {
                 return;
             }
 
-            const deletedAddress = await this.addressService.deleteAddress(addressId);
+            const deletedAddress = await this._addressService.deleteAddress(addressId);
 
             if (!deletedAddress) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({

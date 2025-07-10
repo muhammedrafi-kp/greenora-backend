@@ -15,12 +15,12 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-    cors: {
-      origin: process.env.FRONTEND_URL,
-      methods: ["GET", "POST"],
-      credentials: true
-    },
-    path: "/chat/socket.io"
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  path: "/chat/socket.io",
 });
 
 connectToRedis();
@@ -29,9 +29,9 @@ connectDB();
 
 app.use(morgan("dev"));
 app.use(express.json());
+
 app.use("/", chatRoutes);
 
-// ✅ Start socket-enabled HTTP server, not just app
 server.listen(process.env.PORT, () => {
-    console.log(`chat-service is running on port ${process.env.PORT} ✅`);
+  console.log(`new chat-service is running on port ${process.env.PORT} ✅`);
 });

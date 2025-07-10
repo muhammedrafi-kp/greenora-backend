@@ -5,17 +5,25 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import { redis } from "../config/redisConfig";
 import axios from "axios";
 
-const excludedPaths = ['login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token', 'callback', 'change-password', 'forget-password', 'reset-password'];
+const excludedPaths = [
+    'login', 'signup', 'verify-otp', 'resend-otp', 'refresh-token',
+    'callback', 'change-password', 'forget-password', 'reset-password',
+];
 
 export const validateJwt = async (req: Request, res: Response, next: NextFunction) => {
 
+    const path = req.path;
     const lastPath = req.path.split('/').pop() as string;
+
+    console.log("Incoming path:", path);
     console.log("Last path :", lastPath);
-    if (excludedPaths.includes(lastPath)) {
+
+    if (excludedPaths.includes(lastPath) || path == "/socket/chat/") {
         return next();
     }
 
     const authHeader = req.headers.authorization;
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -24,10 +32,10 @@ export const validateJwt = async (req: Request, res: Response, next: NextFunctio
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET || "access_secret") as JwtPayload;
+
         console.log("decoded :", decoded);
 
         if (decoded.role === 'user' || decoded.role === 'collector') {
-            console.log("entered in if");
 
             const isBlocked = await redis.get(`is-blocked:${decoded.userId}`);
 
@@ -72,7 +80,7 @@ const refreshBlockedStatus = async (userId: string, role: string) => {
         const response = await axios.get(`${process.env.USER_SERVICE_URL}/${role}/is-blocked/${userId}`);
         const isBlocked = response.data.isBlocked
         await redis.set(`is-blocked:${userId}`, isBlocked, 'EX', 3600);
-        
+
         return isBlocked;
     } catch (error) {
         console.log("Error while refreshing user blocked status :", error);

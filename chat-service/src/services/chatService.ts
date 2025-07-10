@@ -2,9 +2,6 @@ import { IChatRepository } from "../interfaces/IChatRepository";
 import { IMessageRepository } from "../interfaces/IMessageRepository";
 import { IChatService } from "../interfaces/IChatService";
 import { IChat, IMessage } from "../models/Chat";
-import { v4 as uuidv4 } from 'uuid';
-import mongoose from "mongoose";
-import axios from 'axios';
 
 export class ChatService implements IChatService {
     constructor(

@@ -12,6 +12,9 @@ export class ChatController implements IChatController {
         try {
             const chatData = req.body;
             // console.log("chatData :", chatData);
+            console.log("origin :", req.originalUrl);
+
+                  console.log("path :", req.path);
             const chat = await this._chatService.startChat(chatData);
             res.status(HTTP_STATUS.OK).json({
                 success: true,

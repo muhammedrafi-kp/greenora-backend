@@ -25,9 +25,6 @@ AuthConsumer.initialize();
 
 app.use(validateJwt as express.RequestHandler);
 
-console.log(process.env.CHAT_SERVICE_URL)
-
-console.log(process.env.CHAT_SERVICE_URL)
 
 app.use("/user-service", createProxyMiddleware({ target: process.env.USER_SERVICE_URL, changeOrigin: true }));
 app.use("/collection-service", createProxyMiddleware({ target: process.env.COLLECTION_SERVICE_URL, changeOrigin: true }));
@@ -35,35 +32,15 @@ app.use("/payment-service", createProxyMiddleware({ target: process.env.PAYMENT_
 app.use("/collection-service", createProxyMiddleware({ target: process.env.COLLECTION_SERVICE_URL, changeOrigin: true }));
 app.use("/payment-service", createProxyMiddleware({ target: process.env.PAYMENT_SERVICE_URL, changeOrigin: true }));
 app.use("/location-service", createProxyMiddleware({ target: process.env.LOCATION_SERVICE_URL, changeOrigin: true }));
-app.use("/chat-service", createProxyMiddleware({ target: process.env.CHAT_SERVICE_URL, changeOrigin: true }));
+app.use("/chat-service", createProxyMiddleware({ target: process.env.CHAT_SERVICE_URL, changeOrigin: true, ws: true }));
 app.use("/notification-service", createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL, changeOrigin: true, ws: true }));
 
-app.use("/chat/socket.io", createProxyMiddleware({
-    target: process.env.CHAT_SERVICE_URL,
-    changeOrigin: true,
-    ws: true,
-    pathRewrite: (path, req: Request) => {
-        console.log("path :", path);
-        console.log("req.baseUrl :", req.url);
-        console.log("req.originalUrl :", req.baseUrl);
-        return req.baseUrl
-    },
-    logger: console
-}));
-app.use("/notification-service", createProxyMiddleware({ target: process.env.NOTIFICATION_SERVICE_URL, changeOrigin: true, ws: true }));
+// app.use('/socket/chat', createProxyMiddleware({
+//     target: process.env.CHAT_SERVICE_URL,
+//     ws: true,
+//     pathRewrite: (path, req: Request) => req.originalUrl,
+// }));
 
-app.use("/chat/socket.io", createProxyMiddleware({
-    target: process.env.CHAT_SERVICE_URL,
-    changeOrigin: true,
-    ws: true,
-    pathRewrite: (path, req: Request) => {
-        console.log("path :", path);
-        console.log("req.baseUrl :", req.url);
-        console.log("req.originalUrl :", req.baseUrl);
-        return req.baseUrl
-    },
-    logger: console
-}));
 
 app.listen(process.env.PORT, () => {
     console.log(`api-gateway is running on port ${process.env.PORT} ✅`);

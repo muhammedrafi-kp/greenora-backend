@@ -7,7 +7,6 @@ import morgan from "morgan";
 
 import connectDB from "./config/dbConfig";
 import { initializeSocket } from "./socket/socket";
-
 import NotificationConsumer from "./consumers/notificationConsumer";
 import notificationRoutes from "./routes/notificationRoutes";
 
@@ -23,9 +22,8 @@ export const io = new Server(server, {
         methods: ["GET", "POST"],
         credentials: true
     },
-    path: "/notification/socket.io/"
+    path: "/notification/socket.io",
 });
-
 
 connectDB();
 NotificationConsumer.initialize();
@@ -35,7 +33,6 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 app.use("/notification", notificationRoutes);
-
 
 server.listen(process.env.PORT, () => {
     console.log(`notification-service is running on port ${process.env.PORT} ✅`);

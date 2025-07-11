@@ -42,7 +42,7 @@ jobs:
   deploy:
     name: Deploy to GKE
     runs-on: ubuntu-latest
-    needs: build-and-push # Ensure images are built and pushed before deployment
+    needs: build-and-push
 
     strategy:
       matrix:
@@ -80,8 +80,6 @@ jobs:
 
       - name: Apply Kubernetes manifests
         # Applies all Kubernetes manifests from the centralized 'k8s/' directory.
-        # This assumes all service deployments, services, ingress, cluster-issuer, etc.,
-        # are defined in .yaml files directly within the 'k8s/' folder.
         run: |
           echo "Applying all Kubernetes manifests from ./k8s/..."
           kubectl apply -f ./k8s/
@@ -89,7 +87,6 @@ jobs:
 
       - name: Restart and wait for rollout of ${{ matrix.deployment }}
         # This step ensures that the deployment is restarted and waits for it to be stable.
-        # It uses the matrix variable to target each specific deployment by its name.
         run: |
           echo "Restarting and waiting for rollout of ${{ matrix.deployment }}..."
           kubectl rollout restart deployment ${{ matrix.deployment }}

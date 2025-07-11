@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: rafikp10/greenora-user-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+            - containerPort: 50052
+          envFrom:
+            - secretRef:
+                name: user-service-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+    - name: grpc
+      port: 50052
+      targetPort: 50052
+  type: ClusterIP

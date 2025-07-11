@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chat-service
+  template:
+    metadata:
+      labels:
+        app: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: rafikp10/greenora-chat-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3005
+          envFrom:
+            - secretRef:
+                name: chat-service-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  selector:
+    app: chat-service
+  ports:
+    - port: 3005
+      targetPort: 3005
+  type: ClusterIP

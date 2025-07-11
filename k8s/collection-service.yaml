@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collection-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: collection-service
+  template:
+    metadata:
+      labels:
+        app: collection-service
+    spec:
+      containers:
+        - name: collection-service
+          image: rafikp10/greenora-collection-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+          envFrom:
+            - secretRef:
+                name: collection-service-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collection-service
+spec:
+  selector:
+    app: collection-service
+  ports:
+    - port: 3002
+      targetPort: 3002
+  type: ClusterIP

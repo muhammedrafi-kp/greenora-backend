@@ -1,7 +1,6 @@
 name: CI/CD Pipeline
 
 on:
-  # Trigger the workflow on push or pull request to the main branch
   push:
     branches: [main]
   pull_request:
@@ -39,3 +38,51 @@ jobs:
       - name: Push Docker image for ${{ matrix.service }}
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/greenora-${{ matrix.service }}:latest
+
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    strategy:
+      matrix:
+        deployment:
+          - api-gateway
+          - user-service
+          - collection-service
+          - payment-service
+          - location-service
+          - chat-service
+          - notification-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Google Cloud SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-sdk
+      
+      - name: Install GKE Auth Plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin   
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+
+      - name: Configure Kubeconfig to connect to GKE
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f ./k8s/
+
+      - name: Restart and wait for rollout of ${{ matrix.deployment }}
+        run: |
+          kubectl rollout restart deployment ${{ matrix.deployment }}
+          kubectl rollout status deployment ${{ matrix.deployment }} --timeout=120s

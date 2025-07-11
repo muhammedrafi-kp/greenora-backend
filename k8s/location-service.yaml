@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: location-service
+  template:
+    metadata:
+      labels:
+        app: location-service
+    spec:
+      containers:
+        - name: location-service
+          image: rafikp10/greenora-location-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3004
+          envFrom:
+            - secretRef:
+                name: location-service-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: location-service
+spec:
+  selector:
+    app: location-service
+  ports:
+    - port: 3004
+      targetPort: 3004
+  type: ClusterIP
+  

@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: greenora-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/enable-websockets: "true"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Essential for WebSocket proxying with Nginx Ingress Controller
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api-greenora.mhdrafi.online
+      secretName: greenora-tls
+  rules:
+    - host: api-greenora.mhdrafi.online
+      http:
+        paths:
+          - path: /chat/socket.io(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 3005
+          - path: /notification/socket.io(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: 3006                  
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80

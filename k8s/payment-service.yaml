@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: rafikp10/greenora-payment-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3003
+          envFrom:
+            - secretRef:
+                name: payment-service-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+spec:
+  selector:
+    app: payment-service
+  ports:
+    - port: 3003
+      targetPort: 3003
+  type: ClusterIP

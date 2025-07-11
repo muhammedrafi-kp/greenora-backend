@@ -59,13 +59,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Install Google Cloud SDK and auth plugin
+      - name: Install Google Cloud SDK and GKE auth plugin
         run: |
           sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates gnupg curl
-          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee /etc/apt/sources.list.d/google-cloud-sdk.list
           curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
-          sudo apt-get update && sudo apt-get install -y google-cloud-sdk
-          gcloud components install gke-gcloud-auth-plugin -q    
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-sdk google-cloud-cli-gke-gcloud-auth-plugin  
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3

@@ -66,6 +66,7 @@ jobs:
 
       - name: Configure Kubeconfig to connect to GKE
         run: |
+          mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
 
       - name: Apply Kubernetes manifests

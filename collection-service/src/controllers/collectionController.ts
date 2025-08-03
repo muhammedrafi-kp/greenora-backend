@@ -102,6 +102,41 @@ export class CollectionController implements ICollectionController {
     }
   }
 
+  async getCollection(req: Request, res: Response): Promise<void> {
+    try {
+      const collectionId = req.params.collectionId;
+
+      if (!collectionId) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: MESSAGES.COLLECTION_DATA_REQUIRED,
+        });
+        return;
+      }
+
+      const collection = await this._collectionService.getCollection(collectionId);
+
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: MESSAGES.COLLECTION_SCHEDULED,
+        data: collection
+      });
+
+    } catch (error: any) {
+
+      if (error.status === HTTP_STATUS.NOT_FOUND) {
+        res.status(HTTP_STATUS.NOT_FOUND).json({
+          success: false,
+          message: error.message
+        });
+        return;
+      }
+
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+
+    }
+  }
+
   async getCollectionHistory(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.headers['x-client-id'] as string;
@@ -356,7 +391,7 @@ export class CollectionController implements ICollectionController {
 
   async getDashboardData(req: Request, res: Response): Promise<void> {
     try {
-  
+
       const data = await this._collectionService.getDashboardData();
 
       res.status(HTTP_STATUS.OK).json({ success: true, data });

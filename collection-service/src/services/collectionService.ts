@@ -491,6 +491,24 @@ export class CollectionService implements ICollectionservice {
         }
     }
 
+    async getCollection(collectionId: string): Promise<ICollection | null> {
+        try {
+            const collection = await this._collectionRepository.findOne({ collectionId });
+            console.log("collection :", collection);
+
+            if (!collection) {
+                const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+
+            return collection;
+        } catch (error) {
+            console.error('Error while fetching collection:', error);
+            throw error;
+        }
+    }
+
     async getCollectionHistory(userId: string, options: {
         status?: string;
         type?: string;
@@ -944,18 +962,18 @@ export class CollectionService implements ICollectionservice {
 
 
 
-   async getRevenueData(options: { districtId?: string; serviceAreaId?: string; dateFilter: string; startDate?: Date; endDate?: Date; }): Promise<{ date: string; waste: number; scrap: number; total: number; wasteCollections: number; scrapCollections: number; }[]> {
-       try {
-        const {districtId, serviceAreaId, dateFilter, startDate, endDate} = options;
-        console.log("options :", options);
+    async getRevenueData(options: { districtId?: string; serviceAreaId?: string; dateFilter: string; startDate?: Date; endDate?: Date; }): Promise<{ date: string; waste: number; scrap: number; total: number; wasteCollections: number; scrapCollections: number; }[]> {
+        try {
+            const { districtId, serviceAreaId, dateFilter, startDate, endDate } = options;
+            console.log("options :", options);
 
-        return await this._collectionRepository.getRevenueData({dateFilter,districtId, serviceAreaId, startDate, endDate});
+            return await this._collectionRepository.getRevenueData({ dateFilter, districtId, serviceAreaId, startDate, endDate });
 
-       } catch (error) {
+        } catch (error) {
             console.error('Error while fetching revenue data:', error);
             throw error;
-       }
-   }
+        }
+    }
 
 
     async getCollectorRevenueData(options: {
@@ -974,7 +992,7 @@ export class CollectionService implements ICollectionservice {
         try {
 
             console.log("options :", options);
-            const {collectorId, dateFilter, startDate, endDate} = options;
+            const { collectorId, dateFilter, startDate, endDate } = options;
 
             return await this._collectionRepository.getCollectorRevenueData(collectorId, dateFilter, startDate, endDate);
 
@@ -1012,6 +1030,6 @@ export class CollectionService implements ICollectionservice {
             throw error;
         }
     }
-    
+
 
 }

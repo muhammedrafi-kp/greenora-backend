@@ -19,8 +19,8 @@ router.post("/payment/advance/razorpay/initiate",collectionController.initiateRa
 router.post("/payment/advance/razorpay/verify",collectionController.verifyRazorpayAdvance.bind(collectionController));
 router.post("/payment/advance/wallet",collectionController.payAdvanceWithWallet.bind(collectionController));
 
-router.get('/:collectionId', collectionController.getCollection.bind(collectionController));
 router.get('/history', collectionController.getCollectionHistory.bind(collectionController));
+router.get('/:collectionId', collectionController.getCollection.bind(collectionController));
 router.get('/collections', collectionController.getCollectionHistories.bind(collectionController));
 router.post('/schedule/:collectionId', collectionController.scheduleCollectionManually.bind(collectionController));
 router.get('/available-collectors/:serviceAreaId', collectionController.getAvailableCollectors.bind(collectionController));

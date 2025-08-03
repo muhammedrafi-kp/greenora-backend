@@ -8,6 +8,7 @@ export interface IUserController {
     googleAuthCallback(req: Request, res: Response): Promise<void>;
     sendResetPasswordLink(req: Request, res: Response): Promise<void>;
     resetPassword(req: Request, res: Response): Promise<void>;
+    logout(Req:Request,res:Response):Promise<void>;
 
     getUser(req: Request, res: Response): Promise<void>;
     getUsers(req: Request, res: Response): Promise<void>;

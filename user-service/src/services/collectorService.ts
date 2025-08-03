@@ -1,24 +1,27 @@
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
-import Collector, { ICollector } from "../models/Collector";
+import { ICollector } from "../models/Collector";
 import bcrypt from "bcrypt";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleToken, generateResetPasswordToken } from "../utils/token";
 import { TokenPayload } from "google-auth-library";
 import OTP from "otp-generator";
-import { sendOtp,sendResetPasswordLink } from "../utils/mail";
+import { sendOtp, sendResetPasswordLink } from "../utils/mail";
+
+import { AuthDTo } from "../dtos/response/auth.dto";
+import { CollectorDto } from "../dtos/response/collector.dto";
 
 export class CollectorService implements ICollectorService {
     constructor(
-        private collectorRepository: ICollectorRepository,
-        private redisRepository: IRedisRepository,
+        private _collectorRepository: ICollectorRepository,
+        private _redisRepository: IRedisRepository,
     ) { };
 
-    async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector; }> {
+    async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; collector: AuthDTo; }> {
         try {
-            const collector = await this.collectorRepository.getCollectorByEmail(email);
+            const collector = await this._collectorRepository.getCollectorByEmail(email);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -43,7 +46,7 @@ export class CollectorService implements ICollectorService {
             const accessToken = generateAccessToken(collector._id as string, 'collector');
             const refreshToken = generateRefreshToken(collector._id as string, 'collector');
 
-            return { accessToken, refreshToken, collector };
+            return { accessToken, refreshToken, collector: AuthDTo.from(collector) };
 
         } catch (error) {
             console.error('Error while creating collector:', error);
@@ -55,7 +58,7 @@ export class CollectorService implements ICollectorService {
         try {
             const { email } = collectorData;
 
-            const existingCollector = await this.collectorRepository.getCollectorByEmail(email);
+            const existingCollector = await this._collectorRepository.getCollectorByEmail(email);
 
             if (existingCollector) {
                 const error: any = new Error("Email already exists!");
@@ -66,18 +69,18 @@ export class CollectorService implements ICollectorService {
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             console.log("otp :", otp);
             await sendOtp(email, otp);
-            await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
-            await this.redisRepository.set(`collector:${email}`, collectorData, 86400);
+            await this._redisRepository.set(`collector-otp:${email}`, otp, 35);
+            await this._redisRepository.set(`collector:${email}`, collectorData, 86400);
         } catch (error) {
             console.error('Error while storing otp and collectorata :', error);
             throw error;
         }
     };
 
-    async verifyOtp(email: string, otp: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector }> {
+    async verifyOtp(email: string, otp: string): Promise<{ accessToken: string; refreshToken: string; collector: AuthDTo }> {
         try {
 
-            const savedOtp = await this.redisRepository.get(`collector-otp:${email}`);
+            const savedOtp = await this._redisRepository.get(`collector-otp:${email}`);
             console.log("Enterd otp:", otp);
             console.log("saved Otp :", savedOtp);
 
@@ -88,7 +91,7 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            const collectorData = await this.redisRepository.get(`collector:${email}`) as ICollector;
+            const collectorData = await this._redisRepository.get(`collector:${email}`) as ICollector;
 
             console.log("OTP verified successfully for email:", collectorData);
 
@@ -96,19 +99,20 @@ export class CollectorService implements ICollectorService {
                 throw new Error(MESSAGES.UNKNOWN_ERROR);
             }
 
-            await this.redisRepository.delete(`collector:${email}`);
+            await this._redisRepository.delete(`collector:${email}`);
 
             const hashedPassword = await bcrypt.hash(collectorData.password, 10);
             collectorData.password = hashedPassword;
             // collectorData.serviceArea = 'not-provided';
 
-            const collector = await this.collectorRepository.createCollector(collectorData);
-            console.log("collectorrrrrrrrrr:", collector)
+            const collector = await this._collectorRepository.createCollector(collectorData);
+
+            console.log("created collector:", collector)
 
             const accessToken = generateAccessToken(collector._id as string, 'collector');
             const refreshToken = generateRefreshToken(collector._id as string, 'collector');
 
-            return { accessToken, refreshToken, collector };
+            return { accessToken, refreshToken, collector: AuthDTo.from(collector) };
 
         } catch (error: any) {
             console.error("Error while verifying OTP and creating user:", error);
@@ -121,7 +125,7 @@ export class CollectorService implements ICollectorService {
             const otp = OTP.generate(4, { upperCaseAlphabets: false, lowerCaseAlphabets: false, specialChars: false });
             console.log("otp :", otp);
             await sendOtp(email, otp);
-            await this.redisRepository.set(`collector-otp:${email}`, otp, 35);
+            await this._redisRepository.set(`collector-otp:${email}`, otp, 35);
         } catch (error) {
             console.error('Error while resending otp:', error);
             throw error;
@@ -130,7 +134,7 @@ export class CollectorService implements ICollectorService {
 
     async sendResetPasswordLink(email: string): Promise<void> {
         try {
-            const collector = await this.collectorRepository.getCollectorByEmail(email);
+            const collector = await this._collectorRepository.getCollectorByEmail(email);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -161,7 +165,7 @@ export class CollectorService implements ICollectorService {
             const decoded = verifyToken(token, process.env.JWT_RESET_PASSOWORD_SECRET as string);
 
             console.log("decode :", decoded)
-            const collector = await this.collectorRepository.getCollectorById(decoded.userId);
+            const collector = await this._collectorRepository.getCollectorById(decoded.userId);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -171,7 +175,7 @@ export class CollectorService implements ICollectorService {
 
             console.log("password :", password);
             const hashedPassword = await bcrypt.hash(password, 10);
-            await this.collectorRepository.updateById(collector._id as string, { password: hashedPassword, authProvider: "local" });
+            await this._collectorRepository.updateById(collector._id as string, { password: hashedPassword, authProvider: "local" });
 
         } catch (error: any) {
             console.log("Error while sending reset link user data :", error.message);
@@ -184,7 +188,7 @@ export class CollectorService implements ICollectorService {
 
             const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
-            const user = await this.collectorRepository.getCollectorById(decoded.userId);
+            const user = await this._collectorRepository.getCollectorById(decoded.userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -205,7 +209,7 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-    async handleGoogleAuth(credential: string): Promise<{ accessToken: string; refreshToken: string; collector: ICollector; }> {
+    async handleGoogleAuth(credential: string): Promise<{ accessToken: string; refreshToken: string; collector: AuthDTo; }> {
         try {
 
             const payload = await verifyGoogleToken(credential) as TokenPayload;
@@ -218,12 +222,12 @@ export class CollectorService implements ICollectorService {
 
             console.log("payload :", payload);
 
-            let collector = await this.collectorRepository.getCollectorByEmail(payload.email);
+            let collector = await this._collectorRepository.getCollectorByEmail(payload.email);
 
             console.log("user :", collector);
 
             if (!collector) {
-                collector = await this.collectorRepository.createCollector({
+                collector = await this._collectorRepository.createCollector({
                     name: payload.name,
                     email: payload.email,
                     phone: 'N/A',
@@ -238,7 +242,7 @@ export class CollectorService implements ICollectorService {
             const accessToken = generateAccessToken(collector._id as string, 'collector');
             const refreshToken = generateRefreshToken(collector._id as string, 'collector');
 
-            return { accessToken, refreshToken, collector };
+            return { accessToken, refreshToken, collector: AuthDTo.from(collector) };
 
         } catch (error) {
             console.error('Error while storing refreshToken :', error);
@@ -246,14 +250,10 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-    async getCollector(id: string): Promise<ICollector> {
+    async getCollector(id: string): Promise<CollectorDto> {
         try {
-            const projection = {
-                password: 0,
-                __v: 0
-            }
-            
-            const collector = await this.collectorRepository.findById(id, projection);
+
+            const collector = await this._collectorRepository.findById(id);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -261,7 +261,7 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            return collector;
+            return CollectorDto.from(collector);
 
         } catch (error: any) {
             console.log("Error while fetching collectorData :", error.message);
@@ -271,7 +271,7 @@ export class CollectorService implements ICollectorService {
 
     async getCollectors(collectorIds: string[]): Promise<ICollector[]> {
         try {
-            const collectors = await this.collectorRepository.find({ _id: { $in: collectorIds } });
+            const collectors = await this._collectorRepository.find({ _id: { $in: collectorIds } });
             console.log("collectors :", collectors);
             return collectors;
         } catch (error: any) {
@@ -282,7 +282,7 @@ export class CollectorService implements ICollectorService {
 
     async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
         try {
-            const collector = await this.collectorRepository.updateCollectorById(id, collectorData);
+            const collector = await this._collectorRepository.updateCollectorById(id, collectorData);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -299,7 +299,7 @@ export class CollectorService implements ICollectorService {
 
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         try {
-            const collector = await this.collectorRepository.getCollectorById(userId);
+            const collector = await this._collectorRepository.getCollectorById(userId);
 
             console.log("collector in service:", collector);
 
@@ -320,7 +320,7 @@ export class CollectorService implements ICollectorService {
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             collector.password = hashedPassword;
 
-            await this.collectorRepository.updateCollectorById(userId, collector);
+            await this._collectorRepository.updateCollectorById(userId, collector);
         } catch (error: any) {
             console.log("Error while changing collector password :", error.message);
             throw error;
@@ -356,7 +356,7 @@ export class CollectorService implements ICollectorService {
                 dailyTaskCounts: 1
             }
 
-            const collectors = await this.collectorRepository.find(filter, projection);
+            const collectors = await this._collectorRepository.find(filter, projection);
 
             if (collectors.length === 0) {
                 return {
@@ -405,10 +405,10 @@ export class CollectorService implements ICollectorService {
             console.log("id :", id);
             console.log("collectionId :", collectionId);
             console.log("preferredDate :", preferredDate);
-            await this.collectorRepository.updateById(id, { $push: { assignedTasks: collectionId } });
+            await this._collectorRepository.updateById(id, { $push: { assignedTasks: collectionId } });
 
             const taskDateKey = new Date(preferredDate).toISOString().split('T')[0];
-            await this.collectorRepository.updateById(id, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: 1 } });
+            await this._collectorRepository.updateById(id, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: 1 } });
 
         } catch (error: any) {
             console.log("Error while assigning collection to collector :", error.message);
@@ -418,13 +418,13 @@ export class CollectorService implements ICollectorService {
 
     async cancelCollection(collectionId: string, collectorId: string, preferredDate: string): Promise<void> {
         try {
-            await this.collectorRepository.updateById(
+            await this._collectorRepository.updateById(
                 collectorId,
                 { $pull: { assignedTasks: collectionId } }
             );
 
             const taskDateKey = new Date(preferredDate).toISOString().split('T')[0];
-            await this.collectorRepository.updateById(collectorId, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: -1 } });
+            await this._collectorRepository.updateById(collectorId, { $inc: { [`dailyTaskCounts.${taskDateKey}`]: -1 } });
             console.log(`Successfully processed cancellation for collection ${collectionId}`);
 
         } catch (error: any) {
@@ -435,7 +435,7 @@ export class CollectorService implements ICollectorService {
 
     async getCollectorBlockedStatus(collectorId: string): Promise<boolean> {
         try {
-            const collector = await this.collectorRepository.getCollectorById(collectorId);
+            const collector = await this._collectorRepository.getCollectorById(collectorId);
             return collector?.isBlocked || false;
         } catch (error: any) {
             console.log("Error while getting collector blocked status :", error.message);

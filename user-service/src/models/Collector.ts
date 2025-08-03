@@ -1,6 +1,7 @@
 import { Schema, Document, model, Types } from "mongoose";
 
 export interface ICollector extends Document {
+    _id:string;
     collectorId: string;
     name: string;
     email: string;

@@ -17,9 +17,9 @@ import RabbitMQ from '../utils/rabbitmq';
 export class AdminService implements IAdminService {
 
     constructor(
-        private adminRepository: IAdminRepository,
-        private userRepository: IUserRepository,
-        private collectorRepository: ICollectorRepository
+        private _adminRepository: IAdminRepository,
+        private _userRepository: IUserRepository,
+        private _collectorRepository: ICollectorRepository
     ) { };
 
 
@@ -27,7 +27,7 @@ export class AdminService implements IAdminService {
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
 
-            const admin = await this.adminRepository.createAdmin({ email, password: hashedPassword });
+            const admin = await this._adminRepository.createAdmin({ email, password: hashedPassword });
             return admin;
 
         } catch (error) {
@@ -38,7 +38,7 @@ export class AdminService implements IAdminService {
 
     async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; admin: IAdmin }> {
         try {
-            const admin = await this.adminRepository.findAdminByEmail(email);
+            const admin = await this._adminRepository.findAdminByEmail(email);
 
             if (!admin) {
                 throw new Error(MESSAGES.USER_NOT_FOUND);
@@ -68,7 +68,7 @@ export class AdminService implements IAdminService {
 
             const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
-            const user = await this.adminRepository.getAdminById(decoded.userId);
+            const user = await this._adminRepository.getAdminById(decoded.userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -124,10 +124,10 @@ export class AdminService implements IAdminService {
             sort[sortField] = sortOrder === 'asc' ? 1 : -1;
 
             const skip = (page - 1) * limit;
-            const totalItems = await this.userRepository.countDocuments(filter);
+            const totalItems = await this._userRepository.countDocuments(filter);
             const totalPages = Math.ceil(totalItems / limit);
 
-            const users = await this.userRepository.find(filter, {}, sort, skip, limit);
+            const users = await this._userRepository.find(filter, {}, sort, skip, limit);
 
             return { users, totalItems, totalPages };
         } catch (error) {
@@ -166,7 +166,7 @@ export class AdminService implements IAdminService {
                 password: 0,
                 __v: 0
             }
-            const collector = await this.collectorRepository.findById(collectorId, projection);
+            const collector = await this._collectorRepository.findById(collectorId, projection);
             if (!collector) {
                 const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
@@ -222,14 +222,14 @@ export class AdminService implements IAdminService {
 
             const skip = (page - 1) * limit;
 
-            const totalItems = await this.collectorRepository.countDocuments(filter);
+            const totalItems = await this._collectorRepository.countDocuments(filter);
             const totalPages = Math.ceil(totalItems / limit);
             console.log("filter :", filter);
             console.log("projection :", projection);
             console.log("sort :", sort);
             console.log("skip :", skip);
             console.log("limit :", limit);
-            const collectors = await this.collectorRepository.find(filter, projection, sort, skip, limit);
+            const collectors = await this._collectorRepository.find(filter, projection, sort, skip, limit);
 
             const districtIds = [...new Set(collectors.map(c => c.district).filter(Boolean))] as string[];
             const serviceAreaIds = [...new Set(collectors.map(c => c.serviceArea).filter(Boolean))] as string[];
@@ -275,7 +275,7 @@ export class AdminService implements IAdminService {
             const collectionDate = new Date(preferredDate);
             const dateKey = collectionDate.toISOString().split('T')[0];
             console.log("dateKey :", dateKey);
-            const collectors = await this.adminRepository.getAvailableCollectors(serviceArea, dateKey);
+            const collectors = await this._adminRepository.getAvailableCollectors(serviceArea, dateKey);
             console.log("collectors :", collectors);
             return collectors;
         } catch (error) {
@@ -288,7 +288,7 @@ export class AdminService implements IAdminService {
         try {
             const query = { verificationStatus: 'requested' };
 
-            const collectors = await this.collectorRepository.find(query);
+            const collectors = await this._collectorRepository.find(query);
 
             const districtIds = [...new Set(collectors.map(c => c.district).filter(Boolean))] as string[];
             const serviceAreaIds = [...new Set(collectors.map(c => c.serviceArea).filter(Boolean))] as string[];
@@ -330,7 +330,7 @@ export class AdminService implements IAdminService {
         try {
             if (status === 'approve') status = 'approved';
             if (status === 'reject') status = 'rejected';
-            return this.collectorRepository.updateById(id, { verificationStatus: status });
+            return this._collectorRepository.updateById(id, { verificationStatus: status });
         } catch (error) {
             console.error('Error while updating verification status:', error);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
@@ -340,7 +340,7 @@ export class AdminService implements IAdminService {
     async updateUserStatus(id: string): Promise<string> {
         try {
 
-            const user = await this.userRepository.getUserById(id);
+            const user = await this._userRepository.getUserById(id);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -349,7 +349,7 @@ export class AdminService implements IAdminService {
             }
 
             await Promise.all([
-                this.userRepository.updateStatusById(id, !user.isBlocked as boolean),
+                this._userRepository.updateStatusById(id, !user.isBlocked as boolean),
                 RabbitMQ.publish('blocked-status', { clientId: id, isBlocked: !user.isBlocked })
             ]);
 
@@ -365,7 +365,7 @@ export class AdminService implements IAdminService {
 
     async updateCollectorStatus(id: string): Promise<string> {
         try {
-            const collector = await this.collectorRepository.getCollectorById(id);
+            const collector = await this._collectorRepository.getCollectorById(id);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.UNKNOWN_ERROR);
@@ -374,7 +374,7 @@ export class AdminService implements IAdminService {
             }
 
             await Promise.all([
-                this.collectorRepository.updateStatusById(id, !collector.isBlocked as boolean),
+                this._collectorRepository.updateStatusById(id, !collector.isBlocked as boolean),
                 RabbitMQ.publish('blocked-status', { clientId: id, isBlocked: !collector.isBlocked })
             ]);
 

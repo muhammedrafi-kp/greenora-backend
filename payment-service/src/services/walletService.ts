@@ -89,7 +89,7 @@ export class WalletService implements IWalletService {
             }
             // await this.walletRepository.withdrawMoney(userId, amount);
         } catch (error) {
-            console.error("Error during withdrawing money:", error);
+            console.error("Error during verifying deposite:", error);
             throw error;
         }
     }
@@ -126,7 +126,7 @@ export class WalletService implements IWalletService {
             await this.walletRepository.updateWallet(userId, amount, transaction, session);
 
         } catch (error) {
-            console.error("Error during withdrawing money:", error);
+            console.error("Error during update wallet:", error);
             throw error;
         }
     }

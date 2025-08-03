@@ -3,6 +3,7 @@ import { IAdminController } from '../interfaces/admin/IAdminController';
 import { IAdminService } from "../interfaces/admin/IAdminService";
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
+import { setRefreshTokenCookie } from "../utils/cookie"
 
 export class AdminController implements IAdminController {
 
@@ -15,12 +16,7 @@ export class AdminController implements IAdminController {
 
             const { accessToken, refreshToken } = await this._adminService.login(email, password);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res,refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -71,12 +67,7 @@ export class AdminController implements IAdminController {
 
             const { accessToken, refreshToken } = await this._adminService.validateRefreshToken(req.cookies.refreshToken);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res,refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,

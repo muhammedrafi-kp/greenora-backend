@@ -4,7 +4,7 @@ import { IUserService } from "../interfaces/user/IUserService";
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
 import { IUser } from "../models/User";
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../utils/cookie"
 
 import { configDotenv } from 'dotenv';
 configDotenv();
@@ -25,24 +25,14 @@ export class UserController implements IUserController {
 
             const { accessToken, refreshToken, user } = await this._userService.login(email, password);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res, refreshToken);
 
-            const userData = { name: user.name, email: user.email }
+            console.log("user :", user);
 
-            console.log("Login successfull!");
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.LOGIN_SUCCESS,
-                data: {
-                    token: accessToken,
-                    role: "user",
-                    user: userData
-                }
+                data: { token: accessToken, role: "user", user }
             });
 
         } catch (error: any) {
@@ -89,23 +79,12 @@ export class UserController implements IUserController {
 
             const { accessToken, refreshToken, user } = await this._userService.verifyOtp(email, otp);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            const userData = { name: user.name, email: user.email };
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: "OTP verification successful, user created!",
-                data: {
-                    token: accessToken,
-                    role: "user",
-                    user: userData
-                }
+                data: { token: accessToken, role: "user", user }
             });
 
         } catch (error: any) {
@@ -187,28 +166,19 @@ export class UserController implements IUserController {
         }
     }
 
+
     async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
             const { credential } = req.body;
-            const { accessToken, refreshToken, user: { name, email } } = await this._userService.handleGoogleAuth(credential);
+            
+            const { accessToken, refreshToken, user } = await this._userService.handleGoogleAuth(credential);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            const userData = { name, email };
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                data: {
-                    token: accessToken,
-                    role: "user",
-                    user: userData
-                }
+                data: { token: accessToken, role: "user", user }
             });
 
         } catch (error: any) {
@@ -240,8 +210,9 @@ export class UserController implements IUserController {
         try {
 
             console.log("req.cookies :", req.cookies);
+            const token = req.cookies?.refreshToken;
 
-            if (!req.cookies.refreshToken) {
+            if (!token) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
                     message: MESSAGES.TOKEN_NOT_FOUND,
@@ -251,43 +222,53 @@ export class UserController implements IUserController {
 
             const { accessToken, refreshToken } = await this._userService.validateRefreshToken(req.cookies.refreshToken);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                message: "token created!",
+                message: MESSAGES.TOKEN_CREATED,
                 token: accessToken,
                 role: "user"
             });
 
         } catch (error: any) {
 
-            if (error.status === 401) {
-                res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    message: error.message
-                });
-                return;
-            }
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            const status = error.status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+            res.status(status).json({
                 success: false,
-                message: error.message || 'An internal server error occurred.',
-            })
+                message: error.message || MESSAGES.SERVER_ERROR,
+            });
+        }
+    }
+
+    async logout(req: Request, res: Response): Promise<void> {
+        try {
+            const token = req.cookies?.refreshToken;
+
+            if (token) {
+                await this._userService.logout(token);
+            }
+
+            clearRefreshTokenCookie(res);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.LOGOUT_SUCCESS,
+            });
+
+        } catch (error: any) {
+            console.error("Error while logout : ", error.message);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
 
     async getUser(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-client-id'];
+            console.log("req.cookies :", req.cookies);
+
 
             const user = await this._userService.getUser(userId as string);
-
-            user.password = '';
 
             console.log("userdata in controller:", user);
 

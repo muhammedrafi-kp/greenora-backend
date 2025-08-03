@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --prefix api-gateway-service\" \"npm run dev --prefix user-service\" \"npm run dev --prefix collection-service\" \"npm run dev --prefix payment-service\" \"npm run dev --prefix location-service\" \"npm run dev --prefix chat-service\" \"npm run dev --prefix notification-service\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

@@ -4,6 +4,7 @@ import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { ICollector } from "../models/Collector";
 import { MESSAGES } from '../constants/messages';
+import { setRefreshTokenCookie } from "../utils/cookie"
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import s3 from "../config/s3Config";
 
@@ -25,24 +26,13 @@ export class CollcetorController implements ICollcetorController {
 
             const { accessToken, refreshToken, collector } = await this._collectorService.login(email, password);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            const collectorData = { name: collector.name, email: collector.email }
+            setRefreshTokenCookie(res, refreshToken);
 
             console.log("Login successfull!");
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: "Login successful",
-                data: {
-                    token: accessToken,
-                    role: "collector",
-                    collector: collectorData
-                }
+                data: { token: accessToken, role: "collector", collector }
             });
 
         } catch (error: any) {
@@ -88,12 +78,7 @@ export class CollcetorController implements ICollcetorController {
 
             const { accessToken, refreshToken, collector } = await this._collectorService.verifyOtp(email, otp);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res, refreshToken);
 
             const collectorData = { name: collector.name, email: collector.email };
 
@@ -199,12 +184,7 @@ export class CollcetorController implements ICollcetorController {
 
             const { accessToken, refreshToken } = await this._collectorService.validateRefreshToken(req.cookies.refreshToken);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -232,25 +212,14 @@ export class CollcetorController implements ICollcetorController {
     async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
             const { credential } = req.body;
-            const { accessToken, refreshToken, collector: { name, email } } = await this._collectorService.handleGoogleAuth(credential);
+            const { accessToken, refreshToken, collector } = await this._collectorService.handleGoogleAuth(credential);
 
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'none',
-            });
-
-            const userData = { name, email };
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                data: {
-                    token: accessToken,
-                    role: "collector",
-                    collector: userData
-                }
+                data: {token: accessToken,role: "collector",collector}
             });
 
         } catch (error: any) {

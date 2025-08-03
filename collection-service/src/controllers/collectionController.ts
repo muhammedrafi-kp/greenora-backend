@@ -104,6 +104,7 @@ export class CollectionController implements ICollectionController {
 
   async getCollection(req: Request, res: Response): Promise<void> {
     try {
+      console.log("Inside getCollection");
       const collectionId = req.params.collectionId;
 
       if (!collectionId) {
@@ -139,6 +140,7 @@ export class CollectionController implements ICollectionController {
 
   async getCollectionHistory(req: Request, res: Response): Promise<void> {
     try {
+       console.log("Inside getCollectionHistory");
       const userId = req.headers['x-client-id'] as string;
       console.log("params:", req.query);
 

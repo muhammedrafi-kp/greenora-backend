@@ -12,7 +12,7 @@ export class NotificationController implements INotificationController {
         try {
             const userId = req.headers['x-client-id'] as string;
             const page = parseInt(req.query.page as string) || 1;
-            const limit = 10; // Number of notifications per page
+            const limit = 10;
             const skip = (page - 1) * limit;
 
             const notifications = await this._notificationService.getNotifications(userId, limit, skip);

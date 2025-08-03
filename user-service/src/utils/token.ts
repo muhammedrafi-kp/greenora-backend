@@ -24,6 +24,16 @@ export function generateResetPasswordToken(userId: string): string {
     return generateToken({ userId }, process.env.JWT_RESET_PASSOWORD_SECRET as string, "1h");
 }
 
+export const decodeToken = (token: string): JwtPayload => {
+    const decoded = jwt.decode(token) as JwtPayload;
+    if (!decoded) {
+        const error: any = new Error(MESSAGES.INVALID_TOKEN);
+        error.status = HTTP_STATUS.UNAUTHORIZED;
+        throw error;
+    }
+    return decoded;
+};
+
 export const verifyToken = (token: string, secret: string): JwtPayload => {
     try {
         const decoded = jwt.verify(token, secret) as JwtPayload;

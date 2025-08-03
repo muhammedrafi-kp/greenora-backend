@@ -1,6 +1,7 @@
 import { Schema, Document, model } from 'mongoose';
 
 export interface IAdmin extends Document {
+    _id: string;
     email: string;
     password: string;
 }

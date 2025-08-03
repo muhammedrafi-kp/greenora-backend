@@ -40,9 +40,9 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
     async getCollections(userId: string): Promise<ICollection[]> {
         try {
             return await this.model.find({ userId }).populate({
-                path: "items.categoryId", // populate inside array
-                model: "Category",         // your category model name
-                select: "name"   // fields you want to include, exclude _id if needed
+                path: "items.categoryId",
+                model: "Category",         
+                select: "name" 
             }).sort({ createdAt: -1 });
 
         } catch (error) {

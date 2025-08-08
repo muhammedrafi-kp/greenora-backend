@@ -14,16 +14,13 @@ export class AdminController implements IAdminController {
             const { email, password } = req.body;
             console.log("Admin data: ", email, password);
 
-            const { accessToken, refreshToken } = await this._adminService.login(email, password);
+            const { accessToken, refreshToken, admin } = await this._adminService.login(email, password);
 
-            setRefreshTokenCookie(res,refreshToken);
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
-                data: {
-                    token: accessToken,
-                    role:"admin"
-                }
+                data: { token: accessToken, role: "admin", admin }
             });
 
         } catch (error: any) {
@@ -56,7 +53,7 @@ export class AdminController implements IAdminController {
         try {
 
             console.log("req.cookies :", req.cookies);
-            
+
             if (!req.cookies.refreshToken) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
@@ -67,13 +64,13 @@ export class AdminController implements IAdminController {
 
             const { accessToken, refreshToken } = await this._adminService.validateRefreshToken(req.cookies.refreshToken);
 
-            setRefreshTokenCookie(res,refreshToken);
+            setRefreshTokenCookie(res, refreshToken);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: "token created!",
                 token: accessToken,
-                role:"admin"
+                role: "admin"
             });
 
         } catch (error: any) {
@@ -94,13 +91,13 @@ export class AdminController implements IAdminController {
 
     async getUsers(req: Request, res: Response): Promise<void> {
         try {
-            const { 
-                search, 
-                status, 
-                sortField, 
-                sortOrder, 
-                page = 1, 
-                limit = 10 
+            const {
+                search,
+                status,
+                sortField,
+                sortOrder,
+                page = 1,
+                limit = 10
             } = req.query;
 
             const queryOptions = {
@@ -113,17 +110,12 @@ export class AdminController implements IAdminController {
             }
 
             console.log("queryOptions :", queryOptions);
-            const { users, totalItems,totalPages } = await this._adminService.getUsers(queryOptions);
+            const { users, totalItems, totalPages } = await this._adminService.getUsers(queryOptions);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 message: MESSAGES.USERS_FETCHED,
-                data: {
-                    users,
-                    totalItems,
-                    currentPage: Number(page),
-                    totalPages
-                }
+                data: { users, totalItems, currentPage: Number(page), totalPages }
             });
 
         } catch (error: any) {
@@ -206,7 +198,7 @@ export class AdminController implements IAdminController {
                 message: MESSAGES.AVAILABLE_COLLECTORS_FETCHED,
                 data: collectors
             });
-        }catch (error: any) {
+        } catch (error: any) {
             console.error("Error while fetching available collectors data", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }

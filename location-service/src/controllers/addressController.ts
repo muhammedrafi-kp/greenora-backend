@@ -50,7 +50,7 @@ export class AddressController implements IAddressController {
 
             if (!addresses) {
                 res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: true,
+                    success: false,
                     message: MESSAGES.ADDRESSES_NOT_FOUND
                 });
                 return;

@@ -25,24 +25,24 @@ const router = Router();
 
 router.post('/login', validateDto(LoginDto), collectorController.login.bind(collectorController));
 router.post('/signup',validateDto(SignupDto), collectorController.signUp.bind(collectorController));
-router.post('/verify-otp',validateDto(VerifyOtpDto), collectorController.verifyOtp.bind(collectorController));
-router.post('/resend-otp',validateDto(ResendOtpDto), collectorController.resendOtp.bind(collectorController));
-router.post('/forget-password',validateDto(SendResetPasswordLinkDto), collectorController.sendResetPasswordLink.bind(collectorController));
-router.patch('/reset-password',validateDto(SendResetPasswordLinkDto), collectorController.resetPassword.bind(collectorController));
+router.post('/otp/verify',validateDto(VerifyOtpDto), collectorController.verifyOtp.bind(collectorController));
+router.post('/otp/resend',validateDto(ResendOtpDto), collectorController.resendOtp.bind(collectorController));
+router.post('/password-reset',validateDto(SendResetPasswordLinkDto), collectorController.sendResetPasswordLink.bind(collectorController));
+router.patch('/password-reset',validateDto(SendResetPasswordLinkDto), collectorController.resetPassword.bind(collectorController));
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
 router.post('/google/callback',validateDto(GoogleAuthCallbackDto), collectorController.googleAuthCallback.bind(collectorController));
 
-router.get('/is-blocked/:clientId', collectorController.getCollectorBlockedStatus.bind(collectorController));
+router.get('/blocked-status/:clientId', collectorController.getCollectorBlockedStatus.bind(collectorController));
 
-router.get('/', validateCollector, collectorController.getCollector.bind(collectorController));
+router.get('/me', validateCollector, collectorController.getCollector.bind(collectorController));
 router.post('/collectors/batch', collectorController.getCollectors.bind(collectorController));
-router.put('/', validateCollector, upload.fields([
+router.put('/me', validateCollector, upload.fields([
     { name: 'profileImage', maxCount: 1 },
     { name: 'idProofFront', maxCount: 1 },
     { name: 'idProofBack', maxCount: 1 }]),
     collectorController.updateCollector.bind(collectorController)
 );
-router.patch('/password', validateCollector, collectorController.changePassword.bind(collectorController));
+router.patch('/me/password', validateCollector, collectorController.changePassword.bind(collectorController));
 
 router.post('/available-collector', collectorController.getAvailableCollector.bind(collectorController));
 

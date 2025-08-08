@@ -13,7 +13,7 @@ export function generateToken(
 }
 
 export function generateAccessToken(userId: string, role: string): string {
-    return generateToken({ userId, role }, process.env.JWT_ACCESS_SECRET as string, "15m");
+    return generateToken({ userId, role }, process.env.JWT_ACCESS_SECRET as string, "1h");
 }
 
 export function generateRefreshToken(userId: string, role: string): string {

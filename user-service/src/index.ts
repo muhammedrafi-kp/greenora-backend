@@ -43,7 +43,7 @@ startGrpcServer();
 connectToRedis();
 UserConsumer.initialize();
 
-// app.use(morgan('dev'));
+app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -55,8 +55,8 @@ app.use(session({
 }));
 
 
-app.use('/user', userRoutes);
-app.use('/collector', collectorRoutes);
+app.use('/users', userRoutes);
+app.use('/collectors', collectorRoutes);
 app.use('/admin', adminRoutes);
 
 

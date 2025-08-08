@@ -23,7 +23,7 @@ app.use(morgan('dev'));
 app.use(express.json()); 
 
 app.use('/category', categoryRoutes);
-app.use('/collection', collectionRoutes);
+app.use('/collections', collectionRoutes);
 
 app.listen(process.env.PORT, () => {
     console.log(`collection-Service is running on port ${process.env.PORT} ✅`);

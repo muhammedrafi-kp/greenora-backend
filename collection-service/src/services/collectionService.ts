@@ -25,6 +25,25 @@ export class CollectionService implements ICollectionservice {
 
     async initiateRazorpayAdvance(userId: string, collectionData: Partial<ICollection>): Promise<{ orderId: string, amount: number }> {
         try {
+
+            // const isPaytmentInitaited = false;
+
+            // const redisKey1 = `collectionId:${userId}`;
+
+            // let collectionId1: string | null = await this._redisRepository.get(redisKey1);
+
+            // console.log("EXISITNG collectionId id ininitiate payment:", collectionId1)
+
+            // if (collectionId1) {
+            //     const collection1 = await this._collectionRepository.findOne({ collectionId:collectionId1 });
+            //     console.log("Existing collection")
+            //     if (collection1) {
+            //         const error: any = new Error(MESSAGES.PAYMENT_IN_PROGRESS);
+            //         error.status = HTTP_STATUS.CONFLICT;
+            //         throw error;
+            //     }
+            // }
+
             const totalAmout = await this.validateCollection(collectionData);
 
             console.log("totalCost :", totalAmout);
@@ -47,10 +66,11 @@ export class CollectionService implements ICollectionservice {
             const collection = await this._collectionRepository.create(collectionData);
 
             const redisKey = `collectionId:${userId}`;
+            console.log("collectionId id in intiate payment:", collectionId)
             await this._redisRepository.set(redisKey, collection.collectionId, 600);
 
-
-            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/order`, {
+            console.log(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/order`)
+            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/order`, {
                 amount: 50
             });
 
@@ -75,7 +95,7 @@ export class CollectionService implements ICollectionservice {
 
             console.log("totalCost :", totalAmout);
 
-            const response = await axios.post<{ success: boolean, message: string, transactionId: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/wallet`, {
+            const response = await axios.post<{ success: boolean, message: string, transactionId: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/wallet`, {
                 userId,
                 amount: 50,
                 serviceType: "collection advance"
@@ -138,7 +158,7 @@ export class CollectionService implements ICollectionservice {
                 throw error;
             }
 
-            const response = await axios.post<{ success: boolean, message: string, walletData: { balance: number } }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/wallet`, {
+            const response = await axios.post<{ success: boolean, message: string, walletData: { balance: number } }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/wallet`, {
                 userId,
                 amount: (collection.payment.amount - collection.payment.advanceAmount),
                 serviceType: "collection payment"
@@ -172,7 +192,7 @@ export class CollectionService implements ICollectionservice {
 
     async verifyRazorpayAdvance(userId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void> {
         try {
-            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/verification`, razorpayVerificationData);
+            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/verification`, razorpayVerificationData);
 
             if (!response.data.success) {
                 const error: any = new Error(MESSAGES.PAYMENT_FAILED);
@@ -183,6 +203,8 @@ export class CollectionService implements ICollectionservice {
             const redisKey = `collectionId:${userId}`;
 
             let collectionId: string | null = await this._redisRepository.get(redisKey);
+
+            console.log("collectionId id in verify payment:", collectionId)
 
             if (!collectionId) {
                 const error: any = new Error(MESSAGES.COLLECTION_NOT_FOUND);
@@ -251,7 +273,7 @@ export class CollectionService implements ICollectionservice {
 
     async verifyRazorpayPayment(collectionId: string, razorpayVerificationData: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }): Promise<void> {
         try {
-            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/verification`, razorpayVerificationData);
+            const response = await axios.post<{ success: boolean, message: string, paymentId: string }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/verification`, razorpayVerificationData);
 
             if (!response.data.success) {
                 const error: any = new Error(MESSAGES.PAYMENT_FAILED);
@@ -532,6 +554,7 @@ export class CollectionService implements ICollectionservice {
             filter.userId = userId;
             if (status) filter.status = status;
             if (type) filter.type = type;
+            filter["payment.advancePaymentStatus"] = { $ne: "pending" };
 
             const sort: Record<string, 1 | -1> = {};
             sort.createdAt = -1;
@@ -626,6 +649,7 @@ export class CollectionService implements ICollectionservice {
 
             const collections = await this._collectionRepository.findAll(filter, {}, sort, skip, limit);
 
+            console.log("collections :", collections.length)
 
             const userIds = [...new Set(collections.map(c => c.userId))];
             // console.log("userIds :", userIds);
@@ -662,7 +686,7 @@ export class CollectionService implements ICollectionservice {
                 totalItems
             };
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error while fetching collection histories:', error);
             throw error;
         }
@@ -894,7 +918,7 @@ export class CollectionService implements ICollectionservice {
 
             console.log("totalAmount :", totalAmount);
 
-            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/collection-payment/order`, {
+            const response = await axios.post<{ success: boolean, orderId: string }>(`${process.env.PAYMENT_SERVICE_URL}/api/collection-payment/order`, {
                 amount: totalAmount - (collection.payment?.advanceAmount ?? 0)
             });
 

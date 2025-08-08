@@ -3,12 +3,13 @@ import { IUser } from "../../models/User";
 import { ICollector } from "../../models/Collector";
 import { IDistrict } from "../../interfaces/external/locationService";
 import { IServiceArea } from "../../interfaces/external/locationService";
+import { AuthDTo } from "../../dtos/response/auth.dto";
+import { UserDto } from "../../dtos/response/user.dto";
 
 export interface IAdminService {
-    login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string }>;
-    createAdmin(email: string, password: string): Promise<IAdmin>;
+    login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, admin: AuthDTo }>;
+    createAdmin(email: string, password: string): Promise<AuthDTo>;
     validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }>;
-    // getUsers(search: string, filter: string, sort: string, page: number, limit: number): Promise<IUser[]>;
     getUsers(queryOptions: {
         search?: string;
         status?: string;
@@ -16,7 +17,7 @@ export interface IAdminService {
         sortOrder?: string;
         page?: number;
         limit?: number;
-    }): Promise<{ users: IUser[], totalItems: number, totalPages: number }>;
+    }): Promise<{ users: UserDto[], totalItems: number, totalPages: number }>;
 
     getCollector(collectorId: string): Promise<ICollector>;
 

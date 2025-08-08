@@ -9,6 +9,9 @@ import { generateAccessToken, generateRefreshToken, verifyToken, verifyGoogleTok
 import { TokenPayload } from "google-auth-library";
 import OTP from "otp-generator";
 import { sendOtp, sendResetPasswordLink } from "../utils/mail";
+import { s3 } from "../config/s3Config";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedProfileImageUrl } from "../utils/s3";
 
 import { AuthDTo } from "../dtos/response/auth.dto";
 import { CollectorDto } from "../dtos/response/collector.dto";
@@ -261,8 +264,22 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            return CollectorDto.from(collector);
+            console.log("collector:", collector)
 
+            if (collector.profileUrl) {
+                collector.profileUrl = await getSignedProfileImageUrl(collector.profileUrl);
+            }
+
+            if (collector.idProofFrontUrl) {
+                collector.idProofFrontUrl = await getSignedProfileImageUrl(collector.idProofFrontUrl);
+            }
+
+            if (collector.idProofBackUrl) {
+                collector.idProofBackUrl = await getSignedProfileImageUrl(collector.idProofBackUrl);
+            }
+
+            return CollectorDto.from(collector);
+            
         } catch (error: any) {
             console.log("Error while fetching collectorData :", error.message);
             throw error;
@@ -280,17 +297,82 @@ export class CollectorService implements ICollectorService {
         }
     }
 
-    async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
+    // async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
+    //     try {
+    //         const collector = await this._collectorRepository.updateCollectorById(id, collectorData);
+
+    //         if (!collector) {
+    //             const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+    //             error.status = HTTP_STATUS.NOT_FOUND;
+    //             throw error;
+    //         }
+
+    //         return collector;
+    //     } catch (error: any) {
+    //         console.log("Error while updating collector :", error.message);
+    //         throw error;
+    //     }
+    // }
+
+    async updateCollector(collectorId: string, collectorData: Partial<ICollector>, profileImage?: Express.Multer.File, idProofFront?: Express.Multer.File, idProofBack?: Express.Multer.File): Promise<CollectorDto> {
         try {
-            const collector = await this._collectorRepository.updateCollectorById(id, collectorData);
+            let profileKey: string | undefined;
+            let idProofFrontKey: string | undefined;
+            let idProofBackKey: string | undefined;
+
+            // Profile Image
+            if (profileImage) {
+                profileKey = `profile-images/collector/${Date.now()}_${profileImage.originalname}`;
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: profileKey,
+                    Body: profileImage.buffer,
+                    ContentType: profileImage.mimetype,
+                };
+                await s3.send(new PutObjectCommand(s3Params));
+            }
+
+            // ID Proof Front
+            if (idProofFront) {
+                idProofFrontKey = `id-proofs/collector/${Date.now()}_front_${idProofFront.originalname}`;
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: idProofFrontKey,
+                    Body: idProofFront.buffer,
+                    ContentType: idProofFront.mimetype,
+                };
+                await s3.send(new PutObjectCommand(s3Params));
+            }
+
+            // ID Proof Back
+            if (idProofBack) {
+                idProofBackKey = `id-proofs/collector/${Date.now()}_back_${idProofBack.originalname}`;
+                const s3Params = {
+                    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                    Key: idProofBackKey,
+                    Body: idProofBack.buffer,
+                    ContentType: idProofBack.mimetype,
+                };
+                await s3.send(new PutObjectCommand(s3Params));
+            }
+
+            const updatedData: Partial<ICollector> = {
+                ...collectorData,
+                ...(profileKey && { profileUrl: profileKey }),
+                ...(idProofFrontKey && { idProofFrontUrl: idProofFrontKey }),
+                ...(idProofBackKey && { idProofBackUrl: idProofBackKey }),
+            };
+
+            const collector = await this._collectorRepository.updateCollectorById(collectorId, updatedData);
 
             if (!collector) {
-                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
                 throw error;
             }
 
-            return collector;
+            return CollectorDto.from(collector)
+
         } catch (error: any) {
             console.log("Error while updating collector :", error.message);
             throw error;

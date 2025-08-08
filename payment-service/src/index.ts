@@ -15,7 +15,7 @@ connectDB();
 app.use(morgan('dev'));
 app.use(express.json());
 
-app.use("/collection-payment",collectionPaymentRoutes);
+app.use("/api/collection-payment",collectionPaymentRoutes);
 app.use("/wallet",walletRoutes);
 
 app.listen(process.env.PORT,()=>{

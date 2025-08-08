@@ -25,7 +25,7 @@ export class WalletService implements IWalletService {
             console.log("userId:", userId);
 
             const wallet = await this.walletRepository.findOne({ userId });
-            
+
             if (!wallet) {
                 const error: any = new Error(MESSAGES.WALLET_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
@@ -40,12 +40,20 @@ export class WalletService implements IWalletService {
 
     async initiateDeposit(userId: string, amount: number): Promise<{ amount: number, orderId: string }> {
         try {
+
+            const existingWallet = await this.walletRepository.findOne({ userId });
+
+            if (!existingWallet) {
+                await this.walletRepository.create({ userId });
+            }
+
             const order = await this.razorpay.orders.create({
                 amount: amount * 100,
                 currency: "INR",
                 receipt: "order_rcptid_11",
                 payment_capture: true,
             });
+
             console.log("order:", order);
             return { amount: order.amount as number, orderId: order.id as string };
         } catch (error) {
@@ -84,10 +92,10 @@ export class WalletService implements IWalletService {
                     status: "completed",
                     serviceType: "deposit"
                 }
-
-                await this.walletRepository.updateWallet(userId, amount, transaction);
+                console.log("transaction :", transaction);
+                console.log("userid",userId)
+                await this.walletRepository.updateWallet(userId, amount,transaction);
             }
-            // await this.walletRepository.withdrawMoney(userId, amount);
         } catch (error) {
             console.error("Error during verifying deposite:", error);
             throw error;
@@ -123,7 +131,7 @@ export class WalletService implements IWalletService {
                 serviceType: "refund"
             }
 
-            await this.walletRepository.updateWallet(userId, amount, transaction, session);
+            // await this.walletRepository.updateWallet(userId, amount, transaction, session);
 
         } catch (error) {
             console.error("Error during update wallet:", error);

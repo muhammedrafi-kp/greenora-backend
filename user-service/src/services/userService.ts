@@ -11,7 +11,8 @@ import { HTTP_STATUS } from "../constants/httpStatus";
 import bcrypt from "bcrypt";
 import { configDotenv } from "dotenv";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import s3 from "../config/s3Config";
+import { s3 } from "../config/s3Config";
+import { getSignedProfileImageUrl } from "../utils/s3";
 import { TokenPayload } from "google-auth-library";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IAdminRepository } from "../interfaces/admin/IAdminRepository";
@@ -128,7 +129,7 @@ export class UserService implements IUserService {
             const hashedPassword = await bcrypt.hash(userData.password, 10);
             userData.password = hashedPassword;
 
-            const user = await this._userRepository.createUser(userData);
+            const user = await this._userRepository.create(userData);
 
             RabbitMQ.publish("userCreatedQueue", { userId: user._id });
             console.log("User created and sent to queue:", user._id);
@@ -310,6 +311,11 @@ export class UserService implements IUserService {
                 throw error;
             }
 
+            if (user.profileUrl) {
+                const signedUrl = await getSignedProfileImageUrl(user.profileUrl);
+                user.profileUrl = signedUrl;
+            }
+            
             return UserDto.from(user);
 
         } catch (error: any) {
@@ -318,31 +324,33 @@ export class UserService implements IUserService {
         }
     }
 
-    async updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<IUser | null> {
+    async updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<UserDto> {
         try {
 
-            let profileUrl: string | undefined;
+            let profileKey: string | undefined;
 
             if (profileImage) {
+                profileKey = `profile-images/user/${Date.now()}_${profileImage.originalname}`;
+
                 const s3Params = {
                     Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                    Key: `profile-images/user/${Date.now()}_${profileImage.originalname}`,
+                    Key: profileKey,
                     Body: profileImage.buffer,
                     ContentType: profileImage.mimetype,
                 };
 
                 const command = new PutObjectCommand(s3Params);
-                const s3Response = await s3.send(command);
+                await s3.send(command);
 
-                profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
             }
 
-            console.log("profileUrl ", profileUrl);
+            console.log("profileUrl ", profileKey);
 
             const updatedData: Partial<IUser> = {
                 ...userData,
-                ...(profileUrl && { profileUrl }),
+                ...(profileKey && { profileUrl: profileKey }),
             };
+
 
             const user = await this._userRepository.updateUserById(userId, updatedData);
 
@@ -352,7 +360,7 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            return user;
+            return UserDto.from(user);
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
             throw error;
@@ -365,9 +373,11 @@ export class UserService implements IUserService {
                 throw new Error("Profile image file is missing.");
             }
 
+            const profileKey = `profile-images/user/${Date.now()}_${file.originalname}`;
+
             const s3Params = {
                 Bucket: process.env.AWS_S3_BUCKET_NAME!,
-                Key: `profile-images/user/${Date.now()}_${file.originalname}`,
+                Key: profileKey,
                 Body: file.buffer,
                 ContentType: file.mimetype,
             };
@@ -375,16 +385,17 @@ export class UserService implements IUserService {
             const command = new PutObjectCommand(s3Params);
             await s3.send(command);
 
-            const profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
+            const signedUrl = await getSignedProfileImageUrl(s3Params.Key);
 
-            await this._userRepository.updateProfileUrl(userId, profileUrl);
+            await this._userRepository.updateProfileUrl(userId, s3Params.Key);
 
-            return profileUrl;
+            return signedUrl;
         } catch (error: any) {
             console.log("Error while fetching user data :", error.message);
             throw error;
         }
     }
+
 
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         try {
@@ -430,7 +441,7 @@ export class UserService implements IUserService {
             }
             return collector;
         } catch (error: any) {
-            console.log("Error while fetching collector data!!!!!!!!!!!1 :", error.message);
+            console.log("Error while fetching collector data :", error.message);
             throw error;
         }
     }

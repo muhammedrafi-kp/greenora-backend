@@ -166,11 +166,10 @@ export class UserController implements IUserController {
         }
     }
 
-
     async googleAuthCallback(req: Request, res: Response): Promise<void> {
         try {
             const { credential } = req.body;
-            
+
             const { accessToken, refreshToken, user } = await this._userService.handleGoogleAuth(credential);
 
             setRefreshTokenCookie(res, refreshToken);
@@ -266,8 +265,7 @@ export class UserController implements IUserController {
         try {
             const userId = req.headers['x-client-id'];
             console.log("req.cookies :", req.cookies);
-
-
+            
             const user = await this._userService.getUser(userId as string);
 
             console.log("userdata in controller:", user);
@@ -310,25 +308,12 @@ export class UserController implements IUserController {
 
             const updatedUser = await this._userService.updateUser(userId as string, updatedData, profileImage);
 
-            if (!updatedUser) {
-                res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    message: MESSAGES.USER_NOT_FOUND,
-                });
-            } else {
-                const userdata = {
-                    name: updatedUser?.name,
-                    email: updatedUser?.email,
-                    phone: updatedUser?.phone,
-                    profileUrl: updatedUser?.profileUrl,
-                };
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.USER_UPDATED,
+                data: updatedUser,
+            });
 
-                res.status(HTTP_STATUS.OK).json({
-                    success: true,
-                    message: MESSAGES.USER_UPDATED,
-                    data: userdata,
-                });
-            }
         } catch (error: any) {
             console.error('Error in updateUser controller:', error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -342,6 +327,7 @@ export class UserController implements IUserController {
         try {
             const userId = req.headers['x-client-id'];
             const profileImage = req.file;
+
             if (!userId) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,

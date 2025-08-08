@@ -17,7 +17,7 @@ export interface IUserService {
     logout(refreshToken: string): Promise<void>;
 
     getUser(userId: string): Promise<UserDto>;
-    updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<IUser | null>;
+    updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<UserDto >;
     uploadProfileImage(userId: string, file: Express.Multer.File | undefined): Promise<string | null>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
     getCollector(collectorId: string): Promise<ICollector>;

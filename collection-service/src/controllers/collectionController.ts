@@ -33,7 +33,7 @@ export class CollectionController implements ICollectionController {
 
     } catch (error: any) {
 
-      if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND) {
+      if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.CONFLICT) {
         res.status(error.status).json({ success: false, message: error.message });
       } else {
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -104,8 +104,8 @@ export class CollectionController implements ICollectionController {
 
   async getCollection(req: Request, res: Response): Promise<void> {
     try {
-      console.log("Inside getCollection");
       const collectionId = req.params.collectionId;
+      console.log("collection id:", collectionId)
 
       if (!collectionId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -140,7 +140,6 @@ export class CollectionController implements ICollectionController {
 
   async getCollectionHistory(req: Request, res: Response): Promise<void> {
     try {
-       console.log("Inside getCollectionHistory");
       const userId = req.headers['x-client-id'] as string;
       console.log("params:", req.query);
 

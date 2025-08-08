@@ -7,12 +7,15 @@ import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyToken } from '../utils/token';
 import { HTTP_STATUS } from '../constants/httpStatus';
 import { MESSAGES } from '../constants/messages';
-import { IUser } from '../models/User';
+import { getSignedProfileImageUrl } from "../utils/s3";
 import { ICollector } from '../models/Collector';
 import { IDistrict } from '../interfaces/external/locationService';
 import { IServiceArea } from '../interfaces/external/locationService';
 import axios from 'axios';
 import RabbitMQ from '../utils/rabbitmq';
+
+import { AuthDTo } from "../dtos/response/auth.dto"
+import { UserDto } from "../dtos/response/user.dto"
 
 export class AdminService implements IAdminService {
 
@@ -23,12 +26,12 @@ export class AdminService implements IAdminService {
     ) { };
 
 
-    async createAdmin(email: string, password: string): Promise<IAdmin> {
+    async createAdmin(email: string, password: string): Promise<AuthDTo> {
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
 
             const admin = await this._adminRepository.createAdmin({ email, password: hashedPassword });
-            return admin;
+            return AuthDTo.from(admin);
 
         } catch (error) {
             console.error('Error while creating admin:', error);
@@ -36,7 +39,7 @@ export class AdminService implements IAdminService {
         }
     }
 
-    async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; admin: IAdmin }> {
+    async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; admin: AuthDTo }> {
         try {
             const admin = await this._adminRepository.findAdminByEmail(email);
 
@@ -53,9 +56,7 @@ export class AdminService implements IAdminService {
             const accessToken = generateAccessToken(admin._id as string, 'admin');
             const refreshToken = generateRefreshToken(admin._id as string, 'admin');
 
-            console.log("Login success full");
-
-            return { accessToken, refreshToken, admin };
+            return { accessToken, refreshToken, admin: AuthDTo.from(admin) };
 
         } catch (error) {
             console.error('Error while creating admin:', error);
@@ -96,7 +97,7 @@ export class AdminService implements IAdminService {
         sortOrder?: string;
         page?: number;
         limit?: number;
-    }): Promise<{ users: IUser[], totalItems: number, totalPages: number }> {
+    }): Promise<{ users: UserDto[], totalItems: number, totalPages: number }> {
         try {
             const {
                 search,
@@ -129,7 +130,23 @@ export class AdminService implements IAdminService {
 
             const users = await this._userRepository.find(filter, {}, sort, skip, limit);
 
-            return { users, totalItems, totalPages };
+            const usersWithSignedUrls = await Promise.all(
+                users.map(async (user) => {
+                    const plainUser = user.toObject();
+
+                    const signedProfileUrl = plainUser.profileUrl
+                        ? await getSignedProfileImageUrl(plainUser.profileUrl)
+                        : null;
+
+                    plainUser.profileUrl = signedProfileUrl;
+
+                    return UserDto.from(plainUser);
+                })
+            );
+
+            return { users: usersWithSignedUrls, totalItems, totalPages };
+
+            // return { users: UserDto.fromList(users), totalItems, totalPages };
         } catch (error) {
             console.error('Error while fetching users:', error);
             throw new Error(error instanceof Error ? error.message : MESSAGES.UNKNOWN_ERROR);
@@ -251,16 +268,45 @@ export class AdminService implements IAdminService {
 
 
 
-            const enrichedCollectors = collectors.map(collector => {
-                const plainCollector = collector.toObject();
-                return {
-                    ...plainCollector,
-                    district: collector.district ? districtMap.get(collector.district) : null,
-                    serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
-                };
-            });
+            // const enrichedCollectors = collectors.map(collector => {
+            //     const plainCollector = collector.toObject();
+
+            //     return {
+            //         ...plainCollector,
+            //         district: collector.district ? districtMap.get(collector.district) : null,
+            //         serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+            //     };
+            // });
 
             // console.log("enrichedCollectors:", enrichedCollectors);
+
+
+            const enrichedCollectors = await Promise.all(
+                collectors.map(async (collector) => {
+                    const plainCollector = collector.toObject();
+
+                    const signedProfileUrl = plainCollector.profileUrl
+                        ? await getSignedProfileImageUrl(plainCollector.profileUrl)
+                        : null;
+
+                    const signedIdFrontUrl = plainCollector.idProofFrontUrl
+                        ? await getSignedProfileImageUrl(plainCollector.idProofFrontUrl)
+                        : null;
+
+                    const signedIdBackUrl = plainCollector.idProofBackUrl
+                        ? await getSignedProfileImageUrl(plainCollector.idProofBackUrl)
+                        : null;
+
+                    return {
+                        ...plainCollector,
+                        profileUrl: signedProfileUrl,
+                        idProofFrontUrl: signedIdFrontUrl,
+                        idProofBackUrl: signedIdBackUrl,
+                        district: collector.district ? districtMap.get(collector.district) : null,
+                        serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+                    };
+                })
+            );
 
             return { collectors: enrichedCollectors, totalItems, totalPages };
 
@@ -310,15 +356,42 @@ export class AdminService implements IAdminService {
 
 
 
-            const enrichedCollectors = collectors.map(collector => {
-                const plainCollector = collector.toObject();
-                return {
-                    ...plainCollector,
-                    district: collector.district ? districtMap.get(collector.district) : null,
-                    serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
-                };
-            });
-            
+            // const enrichedCollectors = collectors.map(collector => {
+            //     const plainCollector = collector.toObject();
+            //     return {
+            //         ...plainCollector,
+            //         district: collector.district ? districtMap.get(collector.district) : null,
+            //         serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+            //     };
+            // });
+
+            const enrichedCollectors = await Promise.all(
+                collectors.map(async (collector) => {
+                    const plainCollector = collector.toObject();
+
+                    const signedProfileUrl = plainCollector.profileUrl
+                        ? await getSignedProfileImageUrl(plainCollector.profileUrl)
+                        : null;
+
+                    const signedIdFrontUrl = plainCollector.idProofFrontUrl
+                        ? await getSignedProfileImageUrl(plainCollector.idProofFrontUrl)
+                        : null;
+
+                    const signedIdBackUrl = plainCollector.idProofBackUrl
+                        ? await getSignedProfileImageUrl(plainCollector.idProofBackUrl)
+                        : null;
+
+                    return {
+                        ...plainCollector,
+                        profileUrl: signedProfileUrl,
+                        idProofFrontUrl: signedIdFrontUrl,
+                        idProofBackUrl: signedIdBackUrl,
+                        district: collector.district ? districtMap.get(collector.district) : null,
+                        serviceArea: collector.serviceArea ? serviceAreaMap.get(collector.serviceArea) : null
+                    };
+                })
+            );
+
             return enrichedCollectors;
         } catch (error) {
             console.error('Error while fetching verification requests:', error);

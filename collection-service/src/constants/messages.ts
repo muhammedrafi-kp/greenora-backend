@@ -23,6 +23,7 @@ export const MESSAGES = {
     COLLECTION_SCHEDULED: "Collection scheduled successfully.",
     COLLECTION_CANCELLED: "Collection cancelled successfully.",
     COLLECTIONS_FETCHED: "Collections fetched successfully.",
-    PAYMENT_REQUESTED: "Payment requested successfully."
+    PAYMENT_REQUESTED: "Payment requested successfully.",
+    PAYMENT_IN_PROGRESS:"Payment already in progress"
 };
 

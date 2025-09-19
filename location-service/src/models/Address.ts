@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface IAddress extends Document {
+    _id: Types.ObjectId; 
     userId: Types.ObjectId;
     name: string;
     mobile: string;

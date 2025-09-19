@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface IServiceArea extends Document {
+    _id: string
     name: string;
     districtId: Types.ObjectId;
     center: {
@@ -10,7 +11,7 @@ export interface IServiceArea extends Document {
     location: string;
     capacity: number;
     serviceDays: string[];
-    postalCodes:string[];
+    postalCodes: string[];
     collectors: Types.ObjectId[];
     isActive: boolean;
 }
@@ -25,7 +26,7 @@ const serviceAreaSchema = new Schema<IServiceArea>({
     location: { type: String, required: true },
     capacity: { type: Number, required: true },
     serviceDays: [{ type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] }],
-    postalCodes:[{type:String}],
+    postalCodes: [{ type: String }],
     collectors: [{ type: Schema.Types.ObjectId, ref: 'Collector' }],
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });

@@ -1,6 +1,7 @@
 import { ClientSession } from "mongoose";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
-import { Wallet, IWallet, ITransaction } from "../models/Wallet";
+import { Wallet, IWallet } from "../models/Wallet";
+import { ITransaction } from "../models/Transaction";
 import { BaseRepository } from "./baseRepository";
 
 
@@ -8,16 +9,6 @@ class WalletRepository extends BaseRepository<IWallet> implements IWalletReposit
     constructor() {
         super(Wallet);
     }
-
-    // async updateWallet(userId: string, amount: number, transaction: ITransaction): Promise<void> {
-    // await this.updateOne(
-    //     { userId },
-    //     {
-    //         $inc: { balance: amount },
-    //         $push: { transactions: transaction },
-    //     }
-    // );
-    // }
 
     async updateWallet(userId: string, amount: number, transaction: ITransaction, session?: ClientSession): Promise<IWallet | null> {
         const options = session ? { session } : {};

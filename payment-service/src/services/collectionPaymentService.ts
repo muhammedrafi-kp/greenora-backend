@@ -1,11 +1,11 @@
 import { ICollectionPaymentService } from "../interfaces/collectionPayment/ICollectionPaymentService";
-import { ICollectionPaymentRepository } from "../interfaces/collectionPayment/ICollectionPaymentRepository";
 import Razorpay from "razorpay";
 import { createHmac } from "node:crypto"
 import { v4 as uuidv4 } from 'uuid';
-import { ICollectionPayment } from "../models/CollectionPayment";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
-import { ITransaction } from "../models/Wallet";
+import { ITransactionRepository } from "../interfaces/wallet/ITransactionRepository";
+import { CreateTransactionDto } from "../dtos/internal/transaction.dto"
+
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import { ClientSession } from "mongoose";
@@ -15,8 +15,8 @@ export class CollectionPaymentService implements ICollectionPaymentService {
     private razorpay: Razorpay;
 
     constructor(
-        private _collectionPaymentRepository: ICollectionPaymentRepository,
-        private _walletRepository: IWalletRepository
+        private _walletRepository: IWalletRepository,
+        private _transactionRepository: ITransactionRepository
     ) {
         this.razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID as string,
@@ -63,23 +63,26 @@ export class CollectionPaymentService implements ICollectionPaymentService {
         }
     }
 
-
-
-
     async payWithWallet(userId: string, amount: number, serviceType: string): Promise<{ transactionId: string, paymentId: string }> {
+        const session = await this._walletRepository.startSession()
+        session.startTransaction();
+
         try {
 
-            const walletBalance = await this._walletRepository.getBalance(userId);
+            const wallet = await this._walletRepository.updateOne(
+                { userId, balance: { $gte: amount } },
+                { $inc: { balance: -amount } },
+                { new: true, session }
+            );
 
-            console.log("walletBalance :", walletBalance);  
-
-            if (walletBalance < amount) {
-                const error: any = new Error(MESSAGES.INSUFFICIENT_WALLET_BALANCE);
+            if (!wallet) {
+                const error: any = new Error(MESSAGES.INSUFFICIENT_BALANCE);
                 error.status = HTTP_STATUS.BAD_REQUEST;
                 throw error;
             }
 
-            const transaction: ITransaction = {
+            const transactionData: CreateTransactionDto = {
+                walletId: wallet._id,
                 type: "debit",
                 amount: amount,
                 timestamp: new Date(),
@@ -87,50 +90,22 @@ export class CollectionPaymentService implements ICollectionPaymentService {
                 serviceType: serviceType
             }
 
-            const updatedWallet = await this._walletRepository.updateWallet(userId, amount * (-1), transaction);
+            const transaction = await this._transactionRepository.create(transactionData, { session })
 
-            const transactionId = updatedWallet?.transactions[updatedWallet?.transactions.length - 1]._id;
+            console.log("transaction :", transaction);
 
             const paymentId = uuidv4().replace(/-/g, '').substring(0, 16);
 
-            if (!updatedWallet || !transactionId) {
-                const error: any = new Error(MESSAGES.WALLET_UPDATE_FAILED);
-                error.status = HTTP_STATUS.BAD_REQUEST;
-                throw error;
-            }
+            await session.commitTransaction();
 
-            return { transactionId, paymentId };
+            return { transactionId: transaction._id.toString(), paymentId };
 
         } catch (error: any) {
-            console.error('Error while initiating payment:', error.message);
+            await session.abortTransaction()
+            console.error('Error while wallet payment:', error.message);
             throw error;
+        } finally {
+            session.endSession();
         }
     }
-
-    async getPaymentData(paymentId: string): Promise<ICollectionPayment | null> {
-        try {
-            return await this._collectionPaymentRepository.findOne({ paymentId });
-        } catch (error: any) {
-            console.error("Error while fetching payment details :", error.message);
-            throw error;
-        }
-    }
-
-
-    async updatePaymentData(paymentId: string, paymentData: Partial<ICollectionPayment>, session?: ClientSession): Promise<ICollectionPayment | null> {
-        try {
-            const options = session ? { session } : {};
-
-            console.log("paymentId:", paymentId)
-            console.log("paymentId:", paymentData)
-
-
-            return await this._collectionPaymentRepository.updateOne({ paymentId }, paymentData, options);
-        } catch (error: any) {
-            console.error("Error while updating payment details :", error.message);
-            throw error;
-        }
-    }
-
-
 }

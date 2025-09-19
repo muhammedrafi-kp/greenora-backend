@@ -53,7 +53,7 @@ export class CollectionPaymentController implements ICollectionPaymentController
     async payWithWallet(req: Request, res: Response): Promise<void> {
         try {
             const { userId, amount, serviceType } = req.body;
-
+            console.log("Pay with wallet")
             if (!userId || !amount || !serviceType) {
                 const error: any = new Error(MESSAGES.INVALID_DATA);
                 error.status = HTTP_STATUS.BAD_REQUEST;
@@ -75,45 +75,12 @@ export class CollectionPaymentController implements ICollectionPaymentController
 
         } catch (error: any) {
 
-            if (error.status === HTTP_STATUS.BAD_REQUEST) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    message: error.message
-                });
-                return;
+            if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
             }
-
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
-
-
-
-
-    async getPaymentData(req: Request, res: Response): Promise<void> {
-        try {
-            const paymentId = req.params.paymentId;
-            const paymentData = await this._collectionPaymentService.getPaymentData(paymentId);
-            console.log("payment data:", paymentData)
-            if (!paymentData) {
-                res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    message: MESSAGES.PAYMENT_NOT_FOUND
-                });
-                return;
-            }
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                data: paymentData
-            });
-
-
-        } catch (error: any) {
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-        }
-    }
-
-
-
 
 }

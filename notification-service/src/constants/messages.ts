@@ -1,4 +1,5 @@
 export const MESSAGES = {
+    NOTIFICATION_SENT:"Notification sent",
     NOTIFICATIONS_FETCHED: "Notifications fetched successfully.",
     UNREAD_NOTIFICATIONS_COUNT_FETCHED: "Unread notifications count fetched successfully.",
     MARKED_AS_READ: "Notification marked as read successfully.",

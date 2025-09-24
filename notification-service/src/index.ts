@@ -32,7 +32,7 @@ initializeSocket(io);
 app.use(morgan('dev'));
 app.use(express.json());
 
-app.use("/notification", notificationRoutes);
+app.use("/notifications", notificationRoutes);
 
 server.listen(process.env.PORT, () => {
     console.log(`notification-service is running on port ${process.env.PORT} ✅`);

@@ -1,6 +1,6 @@
 import RabbitMQ from "../utils/rabbitmq";
 import { io } from "../index";
-import { INotification } from "../models/Notification";
+import { CreateNotificationDto } from "../dtos/request/createNotification.dto";
 import { NotificationService } from "../services/notificationService";
 import notificationRepository from "../repositories/notificationRepository";
 import { INotificationService } from "../interfaces/INotificationService";
@@ -13,16 +13,16 @@ export default class NotificationConsumer {
         await RabbitMQ.connect();
 
         await RabbitMQ.consume("notification", async (msg) => {
-            console.log("Received pickup.cancelled:", msg.content.toString());
+            console.log("Received notification:", msg.content.toString());
 
-            const notification: INotification = JSON.parse(msg.content.toString());
+            const notificationData: CreateNotificationDto = JSON.parse(msg.content.toString());
 
-            console.log(notification)
+            console.log(notificationData)
 
             try {
 
-                const newNotification = await notificationService.createNotification(notification);
-                console.log("newNotification :",newNotification);
+                const notification = await notificationService.createNotification(notificationData);
+                console.log("newNotification :", notification);
 
                 io.to(notification.userId).emit("receive-notification", notification);
 

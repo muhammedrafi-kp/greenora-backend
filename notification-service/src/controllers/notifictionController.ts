@@ -29,13 +29,16 @@ export class NotificationController implements INotificationController {
 
     async sendNotification(req: Request, res: Response): Promise<void> {
         try {
-            const notification = req.body;
-
-            await this._notificationService.sendNotification(notification);
-            res.status(200).send('Notification sent');
-        } catch (error) {
+            const notificationData = req.body;
+            const notification = await this._notificationService.sendNotification(notificationData);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.NOTIFICATION_SENT,
+                data: notification
+            });
+        } catch (error: any) {
             console.log(error);
-            res.status(500).send('Notification failed');
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
         }
     }
 
@@ -48,9 +51,9 @@ export class NotificationController implements INotificationController {
                 message: MESSAGES.UNREAD_NOTIFICATIONS_COUNT_FETCHED,
                 data: count,
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send('Failed to fetch unread notifications count');
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
         }
     }
 

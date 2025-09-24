@@ -1,6 +1,7 @@
-import { Document, Schema, model } from "mongoose";
+import { Document, Schema, model,Types } from "mongoose";
 
 export interface INotification extends Document {
+    _id:Types.ObjectId;
     userId: string;
     title: string;
     message: string;

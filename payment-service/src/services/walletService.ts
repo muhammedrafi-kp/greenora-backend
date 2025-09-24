@@ -1,16 +1,15 @@
 import { IWalletService } from "../interfaces/wallet/IWalletService";
 import { IWalletRepository } from "../interfaces/wallet/IWalletRepository";
 import { IWallet } from "../models/Wallet";
-import { ITransaction } from "../models/Transaction";
 import Razorpay from "razorpay";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
 import axios from "axios";
 import { createHmac } from "node:crypto"
-import mongoose, { ClientSession } from "mongoose";
 import { ITransactionRepository } from "../interfaces/wallet/ITransactionRepository";
 import { CreateTransactionDto } from "../dtos/internal/transaction.dto";
 import { TransactionDto } from "../dtos/response/transaction.dto"
+import { WalletDto } from "../dtos/response/wallet.dto";
 
 export class WalletService implements IWalletService {
 
@@ -26,7 +25,22 @@ export class WalletService implements IWalletService {
         });
     }
 
-    async getWalletData(userId: string): Promise<IWallet> {
+    async createWallet(userId: string): Promise<WalletDto> {
+        try {
+            let wallet = await this._walletRepository.findOne({ userId });
+
+            if (!wallet) {
+                wallet = await this._walletRepository.create({ userId });
+            }
+
+            return WalletDto.from(wallet);
+        } catch (error) {
+            console.error("Error while creating wallet:", error);
+            throw error;
+        }
+    }
+
+    async getWallet(userId: string): Promise<WalletDto> {
         try {
             console.log("userId:", userId);
 
@@ -37,7 +51,7 @@ export class WalletService implements IWalletService {
                 error.status = HTTP_STATUS.NOT_FOUND;
                 throw error;
             }
-            return wallet;
+            return WalletDto.from(wallet);
         } catch (error) {
             console.error("Error fetching wallet data:", error);
             throw error;
@@ -142,8 +156,6 @@ export class WalletService implements IWalletService {
                 { $inc: { balance: amount } },
                 { session }
             );
-
-            console.log("wallet :", wallet);
 
             if (!wallet) {
                 const error: any = new Error(MESSAGES.WALLET_NOT_FOUND);

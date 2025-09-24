@@ -8,8 +8,6 @@ import { CreateTransactionDto } from "../dtos/internal/transaction.dto"
 
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
-import { ClientSession } from "mongoose";
-
 
 export class CollectionPaymentService implements ICollectionPaymentService {
     private razorpay: Razorpay;
@@ -103,6 +101,49 @@ export class CollectionPaymentService implements ICollectionPaymentService {
         } catch (error: any) {
             await session.abortTransaction()
             console.error('Error while wallet payment:', error.message);
+            throw error;
+        } finally {
+            session.endSession();
+        }
+    }
+
+    async refundCollectionAdvance(userId: string, amount: number): Promise<void> {
+        const session = await this._walletRepository.startSession();
+        session.startTransaction();
+
+        try {
+
+            const wallet = await this._walletRepository.updateOne(
+                { userId },
+                { $inc: { balance: amount } },
+                { session }
+            );
+
+            if (!wallet) {
+                // const error: any = new Error(MESSAGES.WALLET_NOT_FOUND);
+                // error.status = HTTP_STATUS.NOT_FOUND;
+                // throw error;
+                return;
+            };
+
+            const transactionData: CreateTransactionDto = {
+                walletId: wallet._id,
+                type: "refund",
+                amount,
+                timestamp: new Date(),
+                status: "completed",
+                serviceType: "Collection advance refund"
+            };
+
+            const transaction = await this._transactionRepository.create(transactionData, { session })
+
+            console.log("transaction :", transaction);
+
+            await session.commitTransaction();
+
+        } catch (error) {
+            await session.abortTransaction()
+            console.error("Error during withdrawing money:", error);
             throw error;
         } finally {
             session.endSession();

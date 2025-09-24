@@ -16,6 +16,7 @@
     "@grpc/grpc-js": "^1.12.6",
     "@grpc/proto-loader": "^0.7.13",
     "@types/uuid": "^10.0.0",
+    "amqplib": "^0.10.9",
     "class-validator": "^0.14.2",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -25,6 +26,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.13.4",

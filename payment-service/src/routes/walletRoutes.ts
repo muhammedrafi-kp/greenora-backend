@@ -9,7 +9,7 @@ const walletController = new WalletController(walletService);
 
 const router = Router();
 
-router.get("/", walletController.getWalletData.bind(walletController));
+router.get("/", walletController.getWallet.bind(walletController));
 router.get("/transactions", walletController.getWalletWithTransactions.bind(walletController));
 router.post("/deposits/initiate", walletController.initiateDeposit.bind(walletController));
 router.post("/deposits/verification", walletController.verifyDeposit.bind(walletController));

@@ -8,10 +8,10 @@ import { MESSAGES } from "../constants/messages";
 export class WalletController implements IWalletController {
     constructor(private readonly _walletService: IWalletService) { }
 
-    async getWalletData(req: Request, res: Response): Promise<void> {
+    async getWallet(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-client-id'] as string;
-            const wallet = await this._walletService.getWalletData(userId);
+            const wallet = await this._walletService.getWallet(userId);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,

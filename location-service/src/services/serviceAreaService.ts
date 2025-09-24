@@ -1,7 +1,6 @@
 import { IDistrictRepository } from "../interfaces/serviceArea/IDistrictRepository";
 import { IServiceAreaService } from "../interfaces/serviceArea/IServiceAreaService";
 import { IServiceAreaRepository } from "../interfaces/serviceArea/IServiceAreaRepository";
-import { IDistrict } from "../models/District";
 import { IServiceArea } from "../models/ServiceArea";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
@@ -39,6 +38,14 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async createDistrict(districtName: string): Promise<DistrictDto> {
         try {
+            const existingDistrict = await this._districtRepository.findOne({ name: districtName });
+
+            if (existingDistrict) {
+                const error: any = new Error(MESSAGES.DISTRICT_EXISTS);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
             const district = await this._districtRepository.create({ name: districtName });
             return DistrictDto.from(district);
         } catch (error) {
@@ -74,6 +81,15 @@ export class ServiceAreaService implements IServiceAreaService {
 
     async createServiceArea(serviceAreaData: IServiceArea): Promise<ServiceAreaDto> {
         try {
+
+             const existingServiceArea = await this._serviceAreaRepository.findOne({ name: serviceAreaData.name });
+
+            if (existingServiceArea) {
+                const error: any = new Error(MESSAGES.SERVICE_AREA_EXISTS);
+                error.status = HTTP_STATUS.BAD_REQUEST;
+                throw error;
+            }
+
             const serviceArea = await this._serviceAreaRepository.create(serviceAreaData);
             return ServiceAreaDto.from(serviceArea);
         } catch (error) {
@@ -154,7 +170,7 @@ export class ServiceAreaService implements IServiceAreaService {
     async getDistrictsWithServiceAreas(): Promise<DistrictWithAreasDto[]> {
         try {
             const districtWithAreas = await this._districtRepository.getDistrictsWithServiceAreas();
-            return  DistrictWithAreasDto.fromList(districtWithAreas);
+            return DistrictWithAreasDto.fromList(districtWithAreas);
         } catch (error) {
             console.error('Error while finding district with serviceAreas:', error);
             throw error;

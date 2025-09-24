@@ -4,6 +4,7 @@ import { IAddress } from "../models/Address";
 import { AddressDto } from "../dtos/response/address.dto";
 
 export class AddressService implements IAddressService {
+    
     constructor(private _addressRepository: IAddressRepository) { };
 
     async createAddress(addressData: IAddress): Promise<AddressDto> {

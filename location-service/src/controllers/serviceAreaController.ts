@@ -63,8 +63,12 @@ export class ServiceAreaController implements IServiceAreaController {
             });
 
         } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            console.error("Error during creating district:", error);
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
         }
     }
 
@@ -128,8 +132,6 @@ export class ServiceAreaController implements IServiceAreaController {
 
 
 
-
-
     async createServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const serviceAreaData = req.body;
@@ -141,8 +143,12 @@ export class ServiceAreaController implements IServiceAreaController {
             });
 
         } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            console.error("Error during creating district:", error);
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
         }
     }
 

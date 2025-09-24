@@ -11,6 +11,8 @@ export class ChatController implements IChatController {
     async createChat(req: Request, res: Response): Promise<void> {
         try {
             const chatData = req.body;
+
+            console.log("chat data in controller:", chatData);
             
             const chat = await this._chatService.startChat(chatData);
             res.status(HTTP_STATUS.OK).json({
@@ -52,13 +54,10 @@ export class ChatController implements IChatController {
             const { chatId } = req.params;
             const messages = await this._chatService.getMessages(chatId);
 
-            // console.log("messages :",messages);
-
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 data: messages
             });
-
         } catch (error) {
             console.error("Error during calculate cost:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
@@ -106,7 +105,6 @@ export class ChatController implements IChatController {
                 });
                 return;
             }
-
             console.error("Error during calculate cost:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error instanceof Error ? error.message : String(error) });
         }

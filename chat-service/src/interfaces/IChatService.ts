@@ -1,14 +1,15 @@
 
-import { IChat, IMessage } from "../models/Chat"
+import { CreateChatDto } from "../dtos/request/createChatDto.dto";
+import { ChatDto } from "../dtos/response/chat.dto";
+import { CreateMessageDto } from "../dtos/request/createMessageDto.dto";
+import { MessageDto } from "../dtos/response/message.dto";
 
 export interface IChatService {
-    startChat(chatData: Partial<IChat>): Promise<IChat>
-    getChat(participant1: string, participant2: string): Promise<IChat | null>;
-    getChats(): Promise<IChat[]>;
+    startChat(chatData: CreateChatDto): Promise<ChatDto>;
+    getChat(participant1: string, participant2: string): Promise<ChatDto | null>;
+    getChats(): Promise<ChatDto[]>;
 
-    // getChats(userId: string): Promise<IChat[]>;
-    // sendMessage(chatId: string, senderId: string, receiverId: string, message: string): Promise<IMessage>;
-    sendMessage(messageData: Partial<IMessage>): Promise<IMessage>;
-    getMessages(chatId: string): Promise<IMessage[]>;
-    markMessagesAsRead(chatId: string, userId: string): Promise<IMessage | null>
+    sendMessage(messageData: CreateMessageDto): Promise<MessageDto>;
+    getMessages(chatId: string): Promise<MessageDto[]>;
+    markMessagesAsRead(chatId: string, userId: string): Promise<void>
 }

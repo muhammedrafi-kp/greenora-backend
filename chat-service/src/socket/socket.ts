@@ -1,10 +1,9 @@
 import { Server, Socket } from "socket.io";
-import { Chat, Message } from "../models/Chat";
-import mongoose, { ObjectId, Types } from "mongoose";
 import { ChatService } from "../services/chatService";
 import chatRepository from "../repositories/chatRepository";
 import messageRepository from "../repositories/messageRepository";
 import { IChatService } from "../interfaces/IChatService";
+import { CreateMessageDto } from "../dtos/request/createMessageDto.dto";
 import { redis } from '../config/redisConfig';
 
 
@@ -18,11 +17,11 @@ export const initializeSocket = (io: Server) => {
     io.on("connection", (socket: Socket) => {
 
         console.log("A user connected:", socket.id);
-        
+
         socket.on("user_connected", (userId) => {
             // console.log("user-connected:", userId);
             onlineUsers.set(userId, socket.id);
-            socket.broadcast.emit("user_online", userId); // Notify others only
+            socket.broadcast.emit("user_online", userId);
         });
 
         socket.on("get_online_users", () => {
@@ -39,7 +38,6 @@ export const initializeSocket = (io: Server) => {
             socket.emit("admin_online_status", adminOnline);
         });
 
-        // JOIN CHAT ROOM
         socket.on("join_room", async (data) => {
             const { chatId, userId } = data;
             socket.join(chatId);
@@ -48,7 +46,6 @@ export const initializeSocket = (io: Server) => {
             await chatService.markMessagesAsRead(chatId, userId);
         });
 
-        // LEAVE CHAT ROOM
         socket.on("leave_room", async (data) => {
             const { chatId, userId } = data;
             socket.leave(chatId);
@@ -78,25 +75,20 @@ export const initializeSocket = (io: Server) => {
                     chatId = chat?._id as string;
                 }
 
-
-                const messageData = {
+                const messageData: CreateMessageDto = {
                     chatId,
-                    senderId: senderId,
-                    receiverId: receiverId,
-                    message: message,
-                    timestamp: timestamp
+                    senderId,
+                    receiverId,
+                    message,
+                    timestamp
                 }
 
                 const newMessage = await chatService.sendMessage(messageData);
 
                 console.log("newMessage :", newMessage);
 
-                console.log("newMessage.chatId :", newMessage.chatId);
-
-                // Emit the message to the room with all necessary data
-                // io.emit("receive_message", {
-                // io.to(chatId).emit("receive_message", {
                 io.emit("receive_message", {
+                    _id: newMessage._id,
                     chatId,
                     senderId: newMessage.senderId,
                     receiverId: newMessage.senderId,
@@ -130,7 +122,6 @@ export const initializeSocket = (io: Server) => {
             socket.to(chatId).emit("admin_stop_typing");
         });
 
-        // Admin explicitly disconnects
         socket.on("admin_disconnected", () => {
             adminOnline = false;
             socket.broadcast.emit("admin_online_status", adminOnline);

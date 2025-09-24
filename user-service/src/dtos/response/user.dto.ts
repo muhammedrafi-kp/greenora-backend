@@ -7,6 +7,7 @@ export class UserDto {
     public readonly phone?: string;
     public readonly profileUrl?: string;
     public readonly authProvider: "google" | "local";
+    public readonly isBlocked:boolean;
 
     constructor(user: IUser) {
         this._id = user._id.toString();
@@ -15,6 +16,7 @@ export class UserDto {
         this.phone = user.phone;
         this.profileUrl = user.profileUrl;
         this.authProvider = user.authProvider;
+        this.isBlocked = user.isBlocked;
     }
 
     public static from(user: IUser): UserDto {

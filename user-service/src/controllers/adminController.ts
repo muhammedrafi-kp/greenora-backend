@@ -24,6 +24,12 @@ export class AdminController implements IAdminController {
             });
 
         } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED || error.status === HTTP_STATUS.FORBIDDEN) {
+                res.status(error.status).json({ message: error.message });
+                return;
+            }
+            console.error("Error status: ", error.status);
             console.error("Error while logging in: ", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }

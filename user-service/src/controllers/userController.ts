@@ -112,6 +112,34 @@ export class UserController implements IUserController {
         }
     }
 
+    async googleAuthCallback(req: Request, res: Response): Promise<void> {
+        try {
+            const { credential } = req.body;
+
+            const { accessToken, refreshToken, user } = await this._userService.handleGoogleAuth(credential);
+
+            setRefreshTokenCookie(res, refreshToken);
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
+                data: { token: accessToken, role: "user", user }
+            });
+
+        } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.UNAUTHORIZED || error.status === HTTP_STATUS.FORBIDDEN) {
+                res.status(error.status).json({ message: error.message });
+                return;
+            }
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message
+            });
+        }
+    }
+
     async sendResetPasswordLink(req: Request, res: Response): Promise<void> {
         try {
             const { email } = req.body;
@@ -166,27 +194,7 @@ export class UserController implements IUserController {
         }
     }
 
-    async googleAuthCallback(req: Request, res: Response): Promise<void> {
-        try {
-            const { credential } = req.body;
 
-            const { accessToken, refreshToken, user } = await this._userService.handleGoogleAuth(credential);
-
-            setRefreshTokenCookie(res, refreshToken);
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: MESSAGES.GOOGLE_AUTH_SUCCESS,
-                data: { token: accessToken, role: "user", user }
-            });
-
-        } catch (error: any) {
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message
-            });
-        }
-    }
 
     async getUserBlockedStatus(req: Request, res: Response): Promise<void> {
         try {
@@ -265,7 +273,7 @@ export class UserController implements IUserController {
         try {
             const userId = req.headers['x-client-id'];
             console.log("req.cookies :", req.cookies);
-            
+
             const user = await this._userService.getUser(userId as string);
 
             console.log("userdata in controller:", user);
@@ -410,14 +418,11 @@ export class UserController implements IUserController {
             });
         } catch (error: any) {
             if (error.status === HTTP_STATUS.NOT_FOUND) {
-                res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    message: error.message
-                });
-                return;
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                console.error("Error while fetching collector data in controller:", error.message);
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
             }
-            console.error("Error while fetching collector data in controller !!!!!!!!!!1: ", error.message);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
     }
 
@@ -426,8 +431,12 @@ export class UserController implements IUserController {
             const admin = await this._userService.getAdmin();
             res.status(HTTP_STATUS.OK).json({ success: true, data: admin });
         } catch (error: any) {
-            console.error("Error while fetching admin data in controller : ", error.message);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            if (error.status === HTTP_STATUS.NOT_FOUND) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                console.error("Error while fetching admin data in controller:", error.message);
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
         }
     }
 

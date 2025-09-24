@@ -1,10 +1,12 @@
 import { ICollector } from "../../models/Collector";
+import { SignupDto } from "../../dtos/request/auth.dto";
+import { UpdateCollectorDto } from "../../dtos/request/collector.dto"
 import { AuthDTo } from "../../dtos/response/auth.dto";
 import { CollectorDto } from "../../dtos/response/collector.dto";
 
 export interface ICollectorService {
     login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, collector: AuthDTo }>;
-    signUp(collectorData: ICollector): Promise<void>;
+    signUp(collectorData: SignupDto): Promise<void>;
     verifyOtp(email: string, otp: string): Promise<{ accessToken: string, refreshToken: string, collector: AuthDTo }>;
     resendOtp(email: string): Promise<void>;
     sendResetPasswordLink(email: string): Promise<void>;
@@ -14,18 +16,18 @@ export interface ICollectorService {
     handleGoogleAuth(credential: string): Promise<{ accessToken: string, refreshToken: string, collector: AuthDTo }>;
 
     getCollector(id: string): Promise<CollectorDto>;
-    getCollectors(collectorIds: string[]): Promise<ICollector[]>;
+    getCollectors(collectorIds: string[]): Promise<CollectorDto[]>;
     // updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null>;
     updateCollector(
         collectorId: string,
-        collectorData: Partial<ICollector>,
+        collectorData: UpdateCollectorDto,
         profileImage?: Express.Multer.File,
         idProofFront?: Express.Multer.File,
         idProofBack?: Express.Multer.File
     ): Promise<CollectorDto>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
-    getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector> | null }>
+    getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: CollectorDto | null }>
     calculateCollectorScore(collector: ICollector, dateKey: string): Promise<number>;
     assignCollectionToCollector(collectorId: string, collectionId: string, preferredDate: string): Promise<void>;
-    cancelCollection(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
+    // cancelCollection(collectionId: string, collectorId: string, preferredDate: string): Promise<void>;
 }

@@ -1,8 +1,6 @@
 import { IRedisRepository } from "../interfaces/redis/IRedisRepository";
 import { IUserRepository } from "../interfaces/user/IUserRepository";
 import { IUserService } from "../interfaces/user/IUserService";
-import { IUser } from "../models/User";
-import { ICollector } from "../models/Collector";
 import OTP from "otp-generator";
 import { sendOtp, sendResetPasswordLink } from "../utils/mail";
 import { generateAccessToken, generateRefreshToken, generateResetPasswordToken, verifyToken, verifyGoogleToken, decodeToken } from "../utils/token";
@@ -16,16 +14,18 @@ import { getSignedProfileImageUrl } from "../utils/s3";
 import { TokenPayload } from "google-auth-library";
 import { ICollectorRepository } from "../interfaces/collector/ICollectorRepository";
 import { IAdminRepository } from "../interfaces/admin/IAdminRepository";
-import { IAdmin } from "../models/Admin";
 import RabbitMQ from "../utils/rabbitmq";
 
-import { AuthDTo } from "../dtos/response/auth.dto"
-import { UserDto } from "../dtos/response/user.dto"
+import { SignupDto } from "../dtos/request/auth.dto";
+import { UpdateUserDto } from "../dtos/request/user.dto"
+import { AuthDTo } from "../dtos/response/auth.dto";
+import { UserDto } from "../dtos/response/user.dto";
+import { CollectorDto } from "../dtos/response/collector.dto";
+import { AdminDto } from "../dtos/response/admin.dto";
 
 configDotenv();
 
 export class UserService implements IUserService {
-
 
     constructor(
         private _userRepository: IUserRepository,
@@ -35,10 +35,9 @@ export class UserService implements IUserService {
     ) {
     }
 
-
     async login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, user: AuthDTo }> {
         try {
-            const user = await this._userRepository.getUserByEmail(email);
+            const user = await this._userRepository.findOne({ email });
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -74,11 +73,11 @@ export class UserService implements IUserService {
         }
     }
 
-    async signUp(userData: IUser): Promise<void> {
+    async signUp(userData: SignupDto): Promise<void> {
         try {
             const { email } = userData;
 
-            const existingUser = await this._userRepository.getUserByEmail(email);
+            const existingUser = await this._userRepository.findOne({ email });
 
             if (existingUser) {
                 const error: any = new Error("Email already exists!");
@@ -114,7 +113,7 @@ export class UserService implements IUserService {
                 throw error;
             }
 
-            const userData = await this._redisRepository.get(`user:${email}`) as IUser;
+            const userData = await this._redisRepository.get(`user:${email}`) as SignupDto;
 
             console.log("OTP verified successfully for email:", userData);
 
@@ -131,7 +130,7 @@ export class UserService implements IUserService {
 
             const user = await this._userRepository.create(userData);
 
-            RabbitMQ.publish("userCreatedQueue", { userId: user._id });
+            RabbitMQ.publish("user-created", { userId: user._id });
             console.log("User created and sent to queue:", user._id);
 
             const accessToken = generateAccessToken(user._id as string, 'user');
@@ -159,7 +158,6 @@ export class UserService implements IUserService {
 
     async validateRefreshToken(token: string): Promise<{ accessToken: string, refreshToken: string }> {
         try {
-
             const isBlacklisted = await this._redisRepository.get(`bl-refresh:${token}`);
 
             if (isBlacklisted) {
@@ -171,7 +169,7 @@ export class UserService implements IUserService {
 
             const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
-            const user = await this._userRepository.getUserById(decoded.userId);
+            const user = await this._userRepository.findById(decoded.userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -200,7 +198,6 @@ export class UserService implements IUserService {
                 throw new Error("Invalid or malformed refresh token");
             }
 
-
             const expirySeconds = decoded.exp - Math.floor(Date.now() / 1000);
 
             await this._redisRepository.set(`bl-refresh:${refreshToken}`, "true", expirySeconds);
@@ -224,23 +221,27 @@ export class UserService implements IUserService {
 
             console.log("payload :", payload);
 
-            let user = await this._userRepository.getUserByEmail(payload.email);
+            let user = await this._userRepository.findOne({ email: payload.email });
 
             console.log("user :", user);
 
             if (!user) {
-                user = await this._userRepository.createUser({
+                user = await this._userRepository.create({
                     name: payload.name,
                     email: payload.email,
                     phone: 'N/A',
                     password: '',
-                    profileUrl: payload.picture,
+                    // profileUrl: payload.picture,
                     authProvider: "google",
                 });
 
-                // this.channel.sendToQueue("userCreatedQueue", Buffer.from(user._id as string), { persistent: true });
-                RabbitMQ.publish("userCreatedQueue", { userId: user._id });
-                console.log("User created and sent to queue:", user._id);
+                RabbitMQ.publish("user-created", { userId: user._id });
+            }
+
+            if (user.isBlocked) {
+                const error: any = new Error(MESSAGES.USER_BLOCKED);
+                error.status = HTTP_STATUS.FORBIDDEN;
+                throw error;
             }
 
             const accessToken = generateAccessToken(user._id as string, 'user');
@@ -256,7 +257,7 @@ export class UserService implements IUserService {
 
     async sendResetPasswordLink(email: string): Promise<void> {
         try {
-            const user = await this._userRepository.getUserByEmail(email);
+            const user = await this._userRepository.findOne({ email });
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -283,7 +284,7 @@ export class UserService implements IUserService {
             const decoded = verifyToken(token, process.env.JWT_RESET_PASSOWORD_SECRET as string);
 
             console.log("decode :", decoded)
-            const user = await this._userRepository.getUserById(decoded.userId);
+            const user = await this._userRepository.findById(decoded.userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -303,7 +304,7 @@ export class UserService implements IUserService {
 
     async getUser(userId: string): Promise<UserDto> {
         try {
-            const user = await this._userRepository.getUserById(userId);
+            const user = await this._userRepository.findById(userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -315,7 +316,7 @@ export class UserService implements IUserService {
                 const signedUrl = await getSignedProfileImageUrl(user.profileUrl);
                 user.profileUrl = signedUrl;
             }
-            
+
             return UserDto.from(user);
 
         } catch (error: any) {
@@ -324,7 +325,7 @@ export class UserService implements IUserService {
         }
     }
 
-    async updateUser(userId: string, userData: Partial<IUser>, profileImage?: Express.Multer.File): Promise<UserDto> {
+    async updateUser(userId: string, userData: UpdateUserDto, profileImage?: Express.Multer.File): Promise<UserDto> {
         try {
 
             let profileKey: string | undefined;
@@ -341,18 +342,16 @@ export class UserService implements IUserService {
 
                 const command = new PutObjectCommand(s3Params);
                 await s3.send(command);
-
             }
 
-            console.log("profileUrl ", profileKey);
+            console.log("profileUrl :", profileKey);
 
-            const updatedData: Partial<IUser> = {
+            const updatedData: UpdateUserDto = {
                 ...userData,
                 ...(profileKey && { profileUrl: profileKey }),
             };
 
-
-            const user = await this._userRepository.updateUserById(userId, updatedData);
+            const user = await this._userRepository.updateById(userId, updatedData);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -387,7 +386,7 @@ export class UserService implements IUserService {
 
             const signedUrl = await getSignedProfileImageUrl(s3Params.Key);
 
-            await this._userRepository.updateProfileUrl(userId, s3Params.Key);
+            await this._userRepository.updateById(userId, { profileUrl: s3Params.Key });
 
             return signedUrl;
         } catch (error: any) {
@@ -396,10 +395,9 @@ export class UserService implements IUserService {
         }
     }
 
-
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         try {
-            const user = await this._userRepository.getUserById(userId);
+            const user = await this._userRepository.findById(userId);
 
             console.log("user in service:", user);
 
@@ -427,40 +425,48 @@ export class UserService implements IUserService {
         }
     }
 
-    async getCollector(collectorId: string): Promise<ICollector> {
+    async getCollector(collectorId: string): Promise<CollectorDto> {
         try {
-            const projection = {
-                password: 0,
-                __v: 0
-            }
-            const collector = await this._collectorRepository.findById(collectorId, projection);
+            const collector = await this._collectorRepository.findById(collectorId);
+
             if (!collector) {
                 const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
                 throw error;
             }
-            return collector;
+
+            if (collector.profileUrl) {
+                collector.profileUrl = await getSignedProfileImageUrl(collector.profileUrl);
+            }
+
+            return CollectorDto.from(collector);
         } catch (error: any) {
             console.log("Error while fetching collector data :", error.message);
             throw error;
         }
     }
 
-    async getAdmin(): Promise<IAdmin | null> {
+    async getAdmin(): Promise<AdminDto | null> {
         try {
             const email = "admin@gmail.com";
-            return this._adminRepository.findAdminByEmail(email);
+            const admin = await this._adminRepository.findOne({ email });
+            if (!admin) {
+                const error: any = new Error(MESSAGES.USER_NOT_FOUND);
+                error.status = HTTP_STATUS.NOT_FOUND;
+                throw error;
+            }
+            return AdminDto.from(admin);
         } catch (error) {
             console.error('Error while fetching admin:', error);
             throw error;
         }
     }
 
-    async getUsers(userIds: string[]): Promise<IUser[]> {
+    async getUsers(userIds: string[]): Promise<UserDto[]> {
         try {
             const users = await this._userRepository.find({ _id: { $in: userIds } });
             console.log("users :", users);
-            return users;
+            return UserDto.fromList(users);
         } catch (error) {
             console.error('Error while fetching users:', error);
             throw error;
@@ -469,7 +475,7 @@ export class UserService implements IUserService {
 
     async getUserBlockedStatus(userId: string): Promise<boolean> {
         try {
-            const user = await this._userRepository.getUserById(userId);
+            const user = await this._userRepository.findById(userId);
             return user?.isBlocked || false;
         } catch (error) {
             console.error('Error while fetching user blocked status:', error);

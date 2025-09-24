@@ -25,7 +25,7 @@ export default class UserConsumer {
 
                 if (!message.collectorId) return;
 
-                await collectorService.cancelCollection(message.collectionId, message.collectorId, message.preferredDate);
+                // await collectorService.cancelCollection(message.collectionId, message.collectorId, message.preferredDate);
 
                 console.log(`Collector ${message.collectorId} task count reduced`);
 
@@ -44,7 +44,7 @@ export default class UserConsumer {
 
                 if (!message.collectorId) return;
 
-                await collectorService.cancelCollection(message.collectionId, message.collectorId, message.preferredDate);
+                // await collectorService.cancelCollection(message.collectionId, message.collectorId, message.preferredDate);
 
                 console.log(`Collector ${message.collectorId} task count reduced`);
 

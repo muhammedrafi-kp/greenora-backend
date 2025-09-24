@@ -13,6 +13,8 @@ import { s3 } from "../config/s3Config";
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedProfileImageUrl } from "../utils/s3";
 
+import { SignupDto } from "../dtos/request/auth.dto";
+import { UpdateCollectorDto } from "../dtos/request/collector.dto"
 import { AuthDTo } from "../dtos/response/auth.dto";
 import { CollectorDto } from "../dtos/response/collector.dto";
 
@@ -24,7 +26,7 @@ export class CollectorService implements ICollectorService {
 
     async login(email: string, password: string): Promise<{ accessToken: string; refreshToken: string; collector: AuthDTo; }> {
         try {
-            const collector = await this._collectorRepository.getCollectorByEmail(email);
+            const collector = await this._collectorRepository.findOne({ email });
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -57,11 +59,11 @@ export class CollectorService implements ICollectorService {
         }
     };
 
-    async signUp(collectorData: ICollector): Promise<void> {
+    async signUp(collectorData: SignupDto): Promise<void> {
         try {
             const { email } = collectorData;
 
-            const existingCollector = await this._collectorRepository.getCollectorByEmail(email);
+            const existingCollector = await this._collectorRepository.findOne({ email });
 
             if (existingCollector) {
                 const error: any = new Error("Email already exists!");
@@ -94,7 +96,7 @@ export class CollectorService implements ICollectorService {
                 throw error;
             }
 
-            const collectorData = await this._redisRepository.get(`collector:${email}`) as ICollector;
+            const collectorData = await this._redisRepository.get(`collector:${email}`) as SignupDto;
 
             console.log("OTP verified successfully for email:", collectorData);
 
@@ -137,7 +139,7 @@ export class CollectorService implements ICollectorService {
 
     async sendResetPasswordLink(email: string): Promise<void> {
         try {
-            const collector = await this._collectorRepository.getCollectorByEmail(email);
+            const collector = await this._collectorRepository.findOne({ email });
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -168,7 +170,7 @@ export class CollectorService implements ICollectorService {
             const decoded = verifyToken(token, process.env.JWT_RESET_PASSOWORD_SECRET as string);
 
             console.log("decode :", decoded)
-            const collector = await this._collectorRepository.getCollectorById(decoded.userId);
+            const collector = await this._collectorRepository.findById(decoded.userId);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -191,7 +193,7 @@ export class CollectorService implements ICollectorService {
 
             const decoded = verifyToken(token, process.env.JWT_REFRESH_SECRET as string);
 
-            const user = await this._collectorRepository.getCollectorById(decoded.userId);
+            const user = await this._collectorRepository.findById(decoded.userId);
 
             if (!user) {
                 const error: any = new Error(MESSAGES.USER_NOT_FOUND);
@@ -225,7 +227,7 @@ export class CollectorService implements ICollectorService {
 
             console.log("payload :", payload);
 
-            let collector = await this._collectorRepository.getCollectorByEmail(payload.email);
+            let collector = await this._collectorRepository.findOne({ email: payload.email });
 
             console.log("user :", collector);
 
@@ -235,7 +237,7 @@ export class CollectorService implements ICollectorService {
                     email: payload.email,
                     phone: 'N/A',
                     password: '',
-                    profileUrl: payload.picture,
+                    // profileUrl: payload.picture,
                     authProvider: "google",
                 });
             }
@@ -279,42 +281,25 @@ export class CollectorService implements ICollectorService {
             }
 
             return CollectorDto.from(collector);
-            
+
         } catch (error: any) {
             console.log("Error while fetching collectorData :", error.message);
             throw error;
         }
     }
 
-    async getCollectors(collectorIds: string[]): Promise<ICollector[]> {
+    async getCollectors(collectorIds: string[]): Promise<CollectorDto[]> {
         try {
             const collectors = await this._collectorRepository.find({ _id: { $in: collectorIds } });
             console.log("collectors :", collectors);
-            return collectors;
+            return CollectorDto.fromList(collectors);
         } catch (error: any) {
             console.log("Error while fetching collectorData :", error.message);
             throw error;
         }
     }
 
-    // async updateCollector(id: string, collectorData: Partial<ICollector>): Promise<ICollector | null> {
-    //     try {
-    //         const collector = await this._collectorRepository.updateCollectorById(id, collectorData);
-
-    //         if (!collector) {
-    //             const error: any = new Error(MESSAGES.USER_NOT_FOUND);
-    //             error.status = HTTP_STATUS.NOT_FOUND;
-    //             throw error;
-    //         }
-
-    //         return collector;
-    //     } catch (error: any) {
-    //         console.log("Error while updating collector :", error.message);
-    //         throw error;
-    //     }
-    // }
-
-    async updateCollector(collectorId: string, collectorData: Partial<ICollector>, profileImage?: Express.Multer.File, idProofFront?: Express.Multer.File, idProofBack?: Express.Multer.File): Promise<CollectorDto> {
+    async updateCollector(collectorId: string, collectorData: UpdateCollectorDto, profileImage?: Express.Multer.File, idProofFront?: Express.Multer.File, idProofBack?: Express.Multer.File): Promise<CollectorDto> {
         try {
             let profileKey: string | undefined;
             let idProofFrontKey: string | undefined;
@@ -356,14 +341,14 @@ export class CollectorService implements ICollectorService {
                 await s3.send(new PutObjectCommand(s3Params));
             }
 
-            const updatedData: Partial<ICollector> = {
+            const updatedData: UpdateCollectorDto = {
                 ...collectorData,
                 ...(profileKey && { profileUrl: profileKey }),
                 ...(idProofFrontKey && { idProofFrontUrl: idProofFrontKey }),
                 ...(idProofBackKey && { idProofBackUrl: idProofBackKey }),
             };
 
-            const collector = await this._collectorRepository.updateCollectorById(collectorId, updatedData);
+            const collector = await this._collectorRepository.updateById(collectorId, updatedData);
 
             if (!collector) {
                 const error: any = new Error(MESSAGES.COLLECTOR_NOT_FOUND);
@@ -381,7 +366,7 @@ export class CollectorService implements ICollectorService {
 
     async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
         try {
-            const collector = await this._collectorRepository.getCollectorById(userId);
+            const collector = await this._collectorRepository.findById(userId);
 
             console.log("collector in service:", collector);
 
@@ -402,21 +387,20 @@ export class CollectorService implements ICollectorService {
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             collector.password = hashedPassword;
 
-            await this._collectorRepository.updateCollectorById(userId, collector);
+            await this._collectorRepository.updateById(userId, collector);
         } catch (error: any) {
             console.log("Error while changing collector password :", error.message);
             throw error;
         }
     }
 
-    async getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: Partial<ICollector> | null }> {
+    async getAvailableCollector(serviceAreaId: string, preferredDate: string): Promise<{ success: boolean; collector: CollectorDto | null }> {
         try {
             const collectionDate = new Date(preferredDate);
             const dateKey = collectionDate.toISOString().split('T')[0];
 
             console.log("serviceAreaId :", serviceAreaId);
             console.log("dateKey :", dateKey);
-
 
             const filter = {
                 serviceArea: serviceAreaId,
@@ -517,7 +501,7 @@ export class CollectorService implements ICollectorService {
 
     async getCollectorBlockedStatus(collectorId: string): Promise<boolean> {
         try {
-            const collector = await this._collectorRepository.getCollectorById(collectorId);
+            const collector = await this._collectorRepository.findById(collectorId);
             return collector?.isBlocked || false;
         } catch (error: any) {
             console.log("Error while getting collector blocked status :", error.message);

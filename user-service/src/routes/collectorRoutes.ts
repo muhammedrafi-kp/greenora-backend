@@ -31,7 +31,6 @@ router.post('/password-reset',validateDto(SendResetPasswordLinkDto), collectorCo
 router.patch('/password-reset',validateDto(SendResetPasswordLinkDto), collectorController.resetPassword.bind(collectorController));
 router.post('/refresh-token', collectorController.validateRefreshToken.bind(collectorController));
 router.post('/google/callback',validateDto(GoogleAuthCallbackDto), collectorController.googleAuthCallback.bind(collectorController));
-
 router.get('/blocked-status/:clientId', collectorController.getCollectorBlockedStatus.bind(collectorController));
 
 router.get('/me', validateCollector, collectorController.getCollector.bind(collectorController));

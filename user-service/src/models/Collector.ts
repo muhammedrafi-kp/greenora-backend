@@ -1,7 +1,7 @@
 import { Schema, Document, model, Types } from "mongoose";
 
 export interface ICollector extends Document {
-    _id:string;
+    _id: string;
     collectorId: string;
     name: string;
     email: string;
@@ -16,9 +16,9 @@ export interface ICollector extends Document {
     idProofFrontUrl?: string;
     idProofBackUrl?: string;
     verificationStatus?: "pending" | "requested" | "approved" | "rejected";
-    isVerified?: boolean;
-    editAccess?: boolean;
-    isBlocked?: boolean;
+    isVerified: boolean;
+    editAccess: boolean;
+    isBlocked: boolean;
     availabilityStatus: "available" | "unavailable" | "on_break";
     currentTasks: number;
     maxCapacity: number;
@@ -39,6 +39,8 @@ export interface ICollector extends Document {
         long: number;
         updatedAt: Date;
     };
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const collectorSchema = new Schema<ICollector>({

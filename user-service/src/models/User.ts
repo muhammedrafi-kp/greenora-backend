@@ -8,7 +8,7 @@ export interface IUser extends Document {
     password: string;
     profileUrl?: string;
     authProvider: "google" | "local";
-    isBlocked?: boolean;
+    isBlocked: boolean;
 }
 
 const userSchema = new Schema<IUser>({

@@ -2,11 +2,10 @@ import { Request, Response } from "express";
 import { ICollcetorController } from "../interfaces/collector/ICollectorController";
 import { ICollectorService } from "../interfaces/collector/ICollectorServices";
 import { HTTP_STATUS } from "../constants/httpStatus";
-import { ICollector } from "../models/Collector";
+import { UpdateCollectorDto } from "../dtos/request/collector.dto"
 import { MESSAGES } from '../constants/messages';
 import { setRefreshTokenCookie } from "../utils/cookie"
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3 } from "../config/s3Config";
+
 
 export class CollcetorController implements ICollcetorController {
 
@@ -15,7 +14,6 @@ export class CollcetorController implements ICollcetorController {
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
-
 
             if (!email || !password) {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
@@ -278,123 +276,6 @@ export class CollcetorController implements ICollcetorController {
         }
     }
 
-    // async updateCollector(req: Request, res: Response): Promise<void> {
-    //     try {
-    //         const userId = req.headers['x-client-id'];
-    //         const { name, phone, gender, district, serviceArea, idProofType } = req.body;
-    //         console.log("req.body :", req.body);
-    //         const files = req.files as {
-    //             [fieldname: string]: Express.Multer.File[]
-    //         };
-
-    //         let profileUrl: string | undefined;
-    //         let idProofFrontUrl: string | undefined;
-    //         let idProofBackUrl: string | undefined;
-
-    //         // Handle profile image upload
-    //         if (files['profileImage']) {
-    //             const profileImage = files['profileImage'][0];
-    //             const s3Params = {
-    //                 Bucket: process.env.AWS_S3_BUCKET_NAME!,
-    //                 Key: `profile-images/collector/${Date.now()}_${profileImage.originalname}`,
-    //                 Body: profileImage.buffer,
-    //                 ContentType: profileImage.mimetype,
-    //             };
-
-    //             const command = new PutObjectCommand(s3Params);
-    //             await s3.send(command);
-
-    //             profileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-    //         }
-
-    //         // Handle ID proof front image upload
-    //         if (files['idProofFront']) {
-    //             const idProofFront = files['idProofFront'][0];
-    //             const s3Params = {
-    //                 Bucket: process.env.AWS_S3_BUCKET_NAME!,
-    //                 Key: `id-proofs/collector/${Date.now()}_front_${idProofFront.originalname}`,
-    //                 Body: idProofFront.buffer,
-    //                 ContentType: idProofFront.mimetype,
-    //             };
-
-    //             const command = new PutObjectCommand(s3Params);
-    //             await s3.send(command);
-
-    //             idProofFrontUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-    //         }
-
-    //         // Handle ID proof back image upload
-    //         if (files['idProofBack']) {
-    //             const idProofBack = files['idProofBack'][0];
-    //             const s3Params = {
-    //                 Bucket: process.env.AWS_S3_BUCKET_NAME!,
-    //                 Key: `id-proofs/collector/${Date.now()}_back_${idProofBack.originalname}`,
-    //                 Body: idProofBack.buffer,
-    //                 ContentType: idProofBack.mimetype,
-    //             };
-
-    //             const command = new PutObjectCommand(s3Params);
-    //             await s3.send(command);
-
-    //             idProofBackUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Params.Key}`;
-    //         }
-
-    //         if (!userId) {
-    //             res.status(HTTP_STATUS.BAD_REQUEST).json({
-    //                 success: false,
-    //                 message: 'User ID is missing in the request headers.',
-    //             });
-    //             return;
-    //         }
-
-    //         const updatedData: Partial<ICollector> = {
-    //             name,
-    //             phone,
-    //             gender,
-    //             district,
-    //             serviceArea,
-    //             ...(idProofType && { idProofType }),
-    //             ...(profileUrl && { profileUrl }),
-    //             ...(idProofFrontUrl && { idProofFrontUrl }),
-    //             ...(idProofBackUrl && { idProofBackUrl }),
-    //             verificationStatus: 'requested'
-    //         };
-
-    //         const updatedCollector = await this._collectorService.updateCollector(userId as string, updatedData);
-
-    //         if (!updatedCollector) {
-    //             res.status(HTTP_STATUS.NOT_FOUND).json({
-    //                 success: false,
-    //                 message: MESSAGES.COLLECTOR_NOT_FOUND,
-    //             });
-    //             return;
-    //         }
-
-    //         const collectorData = {
-    //             name: updatedCollector.name,
-    //             email: updatedCollector.email,
-    //             phone: updatedCollector.phone,
-    //             district: updatedCollector.district,
-    //             serviceArea: updatedCollector.serviceArea,
-    //             profileUrl: updatedCollector.profileUrl,
-    //             idProofType: updatedCollector.idProofType,
-    //             verificationStatus: updatedCollector.verificationStatus
-    //         };
-
-    //         res.status(HTTP_STATUS.OK).json({
-    //             success: true,
-    //             message: MESSAGES.COLLECTOR_UPDATED,
-    //             data: collectorData,
-    //         });
-    //     } catch (error: any) {
-    //         console.error('Error in updateCollector controller:', error.message);
-    //         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-    //             success: false,
-    //             message: error.message || 'An internal server error occurred.',
-    //         });
-    //     }
-    // }
-
     async updateCollector(req: Request, res: Response): Promise<void> {
         try {
             const userId = req.headers['x-client-id'];
@@ -417,7 +298,7 @@ export class CollcetorController implements ICollcetorController {
             const idProofFront = files?.['idProofFront']?.[0];
             const idProofBack = files?.['idProofBack']?.[0];
 
-            const updatedData: Partial<ICollector> = {
+            const updatedData: UpdateCollectorDto = {
                 name,
                 phone,
                 gender,
@@ -503,9 +384,7 @@ export class CollcetorController implements ICollcetorController {
 
             res.status(HTTP_STATUS.OK).json({ success: true, data: collector });
 
-
         } catch (error: any) {
-
             console.error("Error while getting available collectors : ", error.message);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }

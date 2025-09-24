@@ -37,7 +37,7 @@ export const decodeToken = (token: string): JwtPayload => {
 export const verifyToken = (token: string, secret: string): JwtPayload => {
     try {
         const decoded = jwt.verify(token, secret) as JwtPayload;
-        console.log("decoded in util :", decoded)
+        console.log("decoded in util :", decoded);
         return decoded;
     } catch (err) {
         const error: any = new Error(MESSAGES.TOKEN_EXPIRED);

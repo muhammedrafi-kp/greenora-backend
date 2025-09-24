@@ -5,11 +5,12 @@ import { AdminService } from '../services/adminService'
 import adminRepository from '../repositories/adminRepository';
 import userRepository from '../repositories/userRepository';
 import collectorRepository from '../repositories/collectorRepository';
+import redisRepository from '../repositories/redisRepository';
 import { validateAdmin } from "../middlewares/auth";
 import { validateDto } from "../middlewares/validate";
 import { LoginDto, SignupDto, VerifyOtpDto, ResendOtpDto } from "../dtos/request/auth.dto";
 
-const adminService = new AdminService(adminRepository, userRepository, collectorRepository);
+const adminService = new AdminService(adminRepository, userRepository, collectorRepository,redisRepository);
 const adminController = new AdminController(adminService);
 
 const router = Router();

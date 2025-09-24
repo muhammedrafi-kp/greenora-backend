@@ -30,7 +30,6 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-
     async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>, sort?: Record<string, 1 | -1>, skip?: number, limit?: number): Promise<T[]> {
         try {
             if (typeof skip == 'number' && typeof limit == 'number') {

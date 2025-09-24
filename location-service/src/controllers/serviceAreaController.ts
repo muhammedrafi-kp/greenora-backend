@@ -9,6 +9,47 @@ export class ServiceAreaController implements IServiceAreaController {
         this._serviceAreaService = _serviceAreaService;
     }
 
+    async getDistricts(req: Request, res: Response): Promise<void> {
+        try {
+
+            const query: any = { isActive: true };
+            const districts = await this._serviceAreaService.getDistricts(query);
+
+            if (!districts) {
+                res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: true,
+                    message: MESSAGES.DISTRICTS_NOT_FOUND
+                });
+                return;
+            }
+
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.DISTRICTS_FETCHED,
+                data: districts
+            });
+
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
+    async getDistrictsByIds(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.query;
+            console.log("districtIds:", ids);
+            const districtIds = typeof ids === 'string' ? ids.split(',') : [];
+            console.log("districtIds:", districtIds);
+            const districts = await this._serviceAreaService.getDistrictsByIds(districtIds);
+            console.log("districts:", districts);
+            res.status(HTTP_STATUS.OK).json(districts);
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
     async createDistrict(req: Request, res: Response): Promise<void> {
         try {
             const districtName = req.body.name;
@@ -22,8 +63,12 @@ export class ServiceAreaController implements IServiceAreaController {
             });
 
         } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            console.error("Error during creating district:", error);
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
         }
     }
 
@@ -85,48 +130,7 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
-    async getDistricts(req: Request, res: Response): Promise<void> {
-        try {
 
-            const query: any = { isActive: true };
-            const districts = await this._serviceAreaService.getDistricts(query);
-
-            if (!districts) {
-                res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: true,
-                    message: MESSAGES.DISTRICTS_NOT_FOUND
-                });
-                return;
-            }
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: MESSAGES.DISTRICTS_FETCHED,
-                data: districts
-            });
-
-        } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-        }
-    }
-
-    async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
-        try {
-            const districtsAndServiceAreas = await this._serviceAreaService.getDistrictsWithServiceAreas();
-            console.log(districtsAndServiceAreas);
-
-            res.status(HTTP_STATUS.OK).json({
-                success: true,
-                message: MESSAGES.DISTRICTS_WITH_SERVICE_AREAS_FETCHED,
-                data: districtsAndServiceAreas
-            });
-
-        } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-        }
-    }
 
     async createServiceArea(req: Request, res: Response): Promise<void> {
         try {
@@ -139,8 +143,12 @@ export class ServiceAreaController implements IServiceAreaController {
             });
 
         } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            console.error("Error during creating district:", error);
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(error.status).json({ success: false, message: error.message });
+            } else {
+                res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+            }
         }
     }
 
@@ -169,6 +177,21 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
+    async getServiceAreasByIds(req: Request, res: Response): Promise<void> {
+        try {
+            const { ids } = req.query;
+            console.log("serviceAreaIds:", ids);
+            const serviceAreaIds = typeof ids === 'string' ? ids.split(',') : [];
+            console.log("serviceAreaIds:", serviceAreaIds);
+            const serviceAreas = await this._serviceAreaService.getServiceAreasByIds(serviceAreaIds);
+            console.log("serviceAreas:", serviceAreas);
+            res.status(HTTP_STATUS.OK).json(serviceAreas);
+        } catch (error: any) {
+            console.error("Error during login:", error);
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
+        }
+    }
+
     async updateServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const { serviceAreaId } = req.params;
@@ -185,15 +208,7 @@ export class ServiceAreaController implements IServiceAreaController {
             console.log("serviceAreaId :", serviceAreaId)
             console.log("pinCode :", pinCode)
 
-            const serviceArea = await this._serviceAreaService.isServiceAvailable(serviceAreaId, pinCode);
-
-            if (!serviceArea) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    message: MESSAGES.SERVICE_AREA_NOT_FOUND
-                });
-                return;
-            }
+            await this._serviceAreaService.isServiceAvailable(serviceAreaId, pinCode);
 
             res.status(HTTP_STATUS.OK).json({
                 success: true,
@@ -201,6 +216,15 @@ export class ServiceAreaController implements IServiceAreaController {
             })
 
         } catch (error: any) {
+
+            if (error.status === HTTP_STATUS.BAD_REQUEST) {
+                res.status(HTTP_STATUS.BAD_REQUEST).json({
+                    success: false,
+                    message: error.message
+                });
+                return;
+            }
+
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
         }
@@ -210,11 +234,13 @@ export class ServiceAreaController implements IServiceAreaController {
         try {
             const { districtId, serviceAreaId } = req.params;
 
-            console.log(districtId,serviceAreaId);
+            console.log(districtId, serviceAreaId);
 
             const { district, serviceArea } = await this._serviceAreaService.getDistrictWithServiceArea(districtId, serviceAreaId);
+
             console.log("district:", district);
             console.log("serviceArea:", serviceArea);
+
             res.status(HTTP_STATUS.OK).json({
                 success: true,
                 district,
@@ -227,30 +253,17 @@ export class ServiceAreaController implements IServiceAreaController {
         }
     }
 
-    async getDistrictsByIds(req: Request, res: Response): Promise<void> {
+    async getDistrictsWithServiceAreas(req: Request, res: Response): Promise<void> {
         try {
-            const { ids } = req.query;
-            console.log("districtIds:", ids);
-            const districtIds = typeof ids === 'string' ? ids.split(',') : [];
-            console.log("districtIds:", districtIds);
-            const districts = await this._serviceAreaService.getDistrictsByIds(districtIds);
-            console.log("districts:", districts);
-            res.status(HTTP_STATUS.OK).json(districts);
-        } catch (error: any) {
-            console.error("Error during login:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });
-        }
-    }
+            const districtsAndServiceAreas = await this._serviceAreaService.getDistrictsWithServiceAreas();
+            console.log(districtsAndServiceAreas);
 
-    async getServiceAreasByIds(req: Request, res: Response): Promise<void> {
-        try {
-            const { ids } = req.query;
-            console.log("serviceAreaIds:", ids);
-            const serviceAreaIds = typeof ids === 'string' ? ids.split(',') : [];
-            console.log("serviceAreaIds:", serviceAreaIds);
-            const serviceAreas = await this._serviceAreaService.getServiceAreasByIds(serviceAreaIds);
-            console.log("serviceAreas:", serviceAreas);  
-            res.status(HTTP_STATUS.OK).json( serviceAreas);
+            res.status(HTTP_STATUS.OK).json({
+                success: true,
+                message: MESSAGES.DISTRICTS_WITH_SERVICE_AREAS_FETCHED,
+                data: districtsAndServiceAreas
+            });
+
         } catch (error: any) {
             console.error("Error during login:", error);
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message });

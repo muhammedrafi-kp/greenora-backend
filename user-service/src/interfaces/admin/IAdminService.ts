@@ -5,6 +5,9 @@ import { IDistrict } from "../../interfaces/external/locationService";
 import { IServiceArea } from "../../interfaces/external/locationService";
 import { AuthDTo } from "../../dtos/response/auth.dto";
 import { UserDto } from "../../dtos/response/user.dto";
+import { CollectorDto } from "../../dtos/response/collector.dto";
+import { CollectorAdminDto } from "../../dtos/response/CollectorAdminDto.dto";
+import {AvailableCollectorDto} from "../../dtos/response/availableCollectorDto.dto";
 
 export interface IAdminService {
     login(email: string, password: string): Promise<{ accessToken: string, refreshToken: string, admin: AuthDTo }>;
@@ -19,7 +22,7 @@ export interface IAdminService {
         limit?: number;
     }): Promise<{ users: UserDto[], totalItems: number, totalPages: number }>;
 
-    getCollector(collectorId: string): Promise<ICollector>;
+    getCollector(collectorId: string): Promise<CollectorDto>;
 
     getCollectors(queryOptions: {
         search?: string;
@@ -30,14 +33,14 @@ export interface IAdminService {
         sortOrder?: string;
         page?: number;
         limit?: number;
-    }): Promise<{ collectors: Partial<ICollector>[], totalItems: number, totalPages: number }>;
+    }): Promise<{ collectors: CollectorAdminDto[], totalItems: number, totalPages: number }>;
 
-    getAvailableCollectors(serviceArea: string, preferredDate: string): Promise<Partial<ICollector>[]>;
+    getAvailableCollectors(serviceArea: string, preferredDate: string): Promise<AvailableCollectorDto[]>;
 
     getVerificationRequests(): Promise<ICollector[]>;
     updateVerificationStatus(id: string, status: string): Promise<ICollector | null>;
-    updateUserStatus(id: string): Promise<string>;
-    updateCollectorStatus(id: string): Promise<string>;
+    updateUserStatus(userId: string): Promise<string>;
+    updateCollectorStatus(collectorId: string): Promise<string>;
     getDistrictsByIds(districtIds: string[]): Promise<IDistrict[]>;
     getServiceAreasByIds(serviceAreaIds: string[]): Promise<IServiceArea[]>
 }

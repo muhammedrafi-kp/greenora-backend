@@ -17,7 +17,7 @@ const app = express();
 connectDB();
 startGrpcServer();
 connectToRedis();
-CollectionConsumer.initialize()
+CollectionConsumer.initialize();
 
 app.use(morgan('dev'));
 app.use(express.json()); 

@@ -1,6 +1,7 @@
 import { INotificationRepository } from "../interfaces/INotificationRepository";
 import { INotificationService } from "../interfaces/INotificationService";
-import { INotification } from "../models/Notification";
+import { NotificationDto } from "../dtos/response/notification.dto";
+import { CreateNotificationDto } from "../dtos/request/createNotification.dto";
 import { io } from "../index";
 import { HTTP_STATUS } from "../constants/httpStatus";
 import { MESSAGES } from "../constants/messages";
@@ -10,42 +11,42 @@ export class NotificationService implements INotificationService {
 
     constructor(private readonly _notificationRepository: INotificationRepository) { };
 
-    async getNotifications(userId: string, limit: number, skip: number): Promise<INotification[]> {
+    async getNotifications(userId: string, limit: number, skip: number): Promise<NotificationDto[]> {
         try {
             const notifications = await this._notificationRepository.find({ userId }, {}, { limit, skip, sort: { createdAt: -1 } });
-            return notifications;
+            return NotificationDto.fromList(notifications);
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
 
-    async createNotification(notificationData: INotification): Promise<void> {
+    async createNotification(notificationData: CreateNotificationDto): Promise<NotificationDto> {
         try {
-            await this._notificationRepository.create(notificationData);
+            const notification = await this._notificationRepository.create(notificationData);
+            return NotificationDto.from(notification);
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
 
-    async sendNotification(notificationData: INotification): Promise<void> {
+    async sendNotification(notificationData: CreateNotificationDto): Promise<NotificationDto> {
         try {
             const { userId } = notificationData;
-
-            io.to(userId).emit("receive-notification", notificationData);
-
-            await this._notificationRepository.create(notificationData);
-        } catch (error) {
-            console.log(error);
+            const notification = await this._notificationRepository.create(notificationData);
+            io.to(userId).emit("receive-notification", notification);
+            return NotificationDto.from(notification);
+        } catch (error: any) {
+            console.log("Error :", error.message);
+            throw error;
         }
-
     }
 
     async getUnreadNotificationsCount(userId: string): Promise<number> {
         try {
             const count = await this._notificationRepository.count({ userId, isRead: false });
-            return count;
+            return count || 0;
         } catch (error) {
             console.log(error);
             throw error;
@@ -56,7 +57,6 @@ export class NotificationService implements INotificationService {
         try {
             const response = await this._notificationRepository.updateById(notificationId, { isRead: true });
             if (!response) {
-                throw new Error('Notification not found');
                 const error: any = new Error(MESSAGES.NOTIFICATION_NOT_FOUND);
                 error.status = HTTP_STATUS.NOT_FOUND;
                 throw error;

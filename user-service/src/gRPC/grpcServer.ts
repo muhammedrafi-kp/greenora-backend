@@ -7,12 +7,10 @@ import { CollectorService } from "../services/collectorService";
 import collectorRepository from "../repositories/collectorRepository";
 import adminRepository from "../repositories/adminRepository";
 import redisRepository from "../repositories/redisRepository";
-import { ICollector } from "../models/Collector";
+import { CollectorDto } from "../dtos/response/collector.dto";
 
 import { UserService } from "../services/userService";
 import userRepository from "../repositories/userRepository";
-
-// import path from "path";
 
 const COLLECTOR_PROTO_PATH = './src/gRPC/protos/collector.proto';
 const USER_PROTO_PATH = './src/gRPC/protos/user.proto';
@@ -44,7 +42,8 @@ server.addService(collectorProto.collectorService.service, {
 
             const { serviceAreaId, preferredDate } = call.request;
 
-            const response = await collectorService.getAvailableCollector(serviceAreaId, preferredDate) as { success: boolean, collector: ICollector & { _id: { toString: () => string } } };
+            // const response = await collectorService.getAvailableCollector(serviceAreaId, preferredDate) as { success: boolean, collector: CollectorDto & { _id: { toString: () => string } } };
+            const response = await collectorService.getAvailableCollector(serviceAreaId, preferredDate) as { success: boolean, collector: CollectorDto};
 
             console.log("response in grpc server:", response);
             if (!response.success) {
@@ -97,8 +96,8 @@ server.addService(userProto.userService.service, {
             const userIds = call.request.userIds;
             const usersData = await userService.getUsers(userIds);
 
-            const users = usersData.map((user: any) => ({
-                userId: user._id.toString(),
+            const users = usersData.map((user) => ({
+                userId: user._id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone

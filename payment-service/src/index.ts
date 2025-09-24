@@ -3,6 +3,7 @@ import { configDotenv } from "dotenv";
 import morgan from 'morgan';
 
 import connectDB from "./config/dbConfig";
+import PaymnetConsumer from "./consumers/paymentConsumer";
 import collectionPaymentRoutes from "./routes/collectionPaymentRoutes";
 import walletRoutes from "./routes/walletRoutes";
 
@@ -11,6 +12,7 @@ configDotenv();
 const app = express();
 
 connectDB();
+PaymnetConsumer.initialize();
 
 app.use(morgan('dev'));
 app.use(express.json());

@@ -1,6 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
 export interface IDistrict extends Document {
+    _id: string;
     name: string;
     serviceAreas: Types.ObjectId[];
     isActive: boolean;

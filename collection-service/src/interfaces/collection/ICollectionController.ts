@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 export interface ICollectionController {
     initiateRazorpayAdvance(req: Request, res: Response): Promise<void>;
     verifyRazorpayAdvance(req: Request, res: Response): Promise<void>;
-
+    unlockPaymentLock(req: Request, res: Response): Promise<void>;
+    
     payAdvanceWithWallet(req: Request, res: Response): Promise<void>;
     verifyRazorpayPayment(req: Request, res: Response): Promise<void>;
     payWithWallet(req: Request, res: Response): Promise<void>;

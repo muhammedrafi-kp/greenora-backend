@@ -1,8 +1,7 @@
 import { IDistrict } from "../../models/District";
+import {IServiceArea} from "../../models/ServiceArea";
 import { IBaseRepository } from "../baseRepository/IBaseRepository";
 
 export interface IDistrictRepository extends IBaseRepository<IDistrict> {
-    findDistrictByName(name: string): Promise<IDistrict | null>;
-    findAllDistricts(): Promise<IDistrict[]>;
-    getDistrictsWithServiceAreas(): Promise<IDistrict[]>;
+    getDistrictsWithServiceAreas(): Promise<(IDistrict & { serviceAreas: IServiceArea[] })[]>;
 }

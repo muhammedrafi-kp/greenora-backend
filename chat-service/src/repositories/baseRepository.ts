@@ -30,8 +30,11 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>,sort?: Record<string, 1 | -1>): Promise<T[]> {
+    async find(filter: FilterQuery<T> = {}, projection?: Record<string, number>, sort?: Record<string, 1 | -1>, skip?: number, limit?: number): Promise<T[]> {
         try {
+            if (typeof skip == 'number' && typeof limit == 'number') {
+                return await this.model.find(filter, projection).sort(sort).skip(skip).limit(limit);
+            }
             return await this.model.find(filter, projection).sort(sort);
         } catch (error) {
             throw new Error(`Find failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -46,9 +49,10 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-    async updateMany(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<any> {
+    async updateMany(filter: FilterQuery<T>, data: UpdateQuery<T>): Promise<{ matchedCount: number; modifiedCount: number; }> {
         try {
-            return await this.model.updateMany(filter, data);
+            const result = await this.model.updateMany(filter, data);
+            return { matchedCount: result.matchedCount, modifiedCount: result.modifiedCount };
         } catch (error) {
             throw new Error(`UpdateMany failed: ${error instanceof Error ? error.message : String(error)}`);
         }

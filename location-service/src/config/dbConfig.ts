@@ -5,7 +5,6 @@ configDotenv();
 
 const connectDB = async (): Promise<void> => {
     const mongo_URI = process.env.MONGO_URI;
-    console.log(mongo_URI);
     if (!mongo_URI) {
         console.error('MongoDB URI is not defined in the .env file!');
         process.exit(1);

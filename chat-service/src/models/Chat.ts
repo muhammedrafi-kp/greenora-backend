@@ -1,14 +1,16 @@
-import { timeStamp } from "console";
-import mongoose, { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
 
 export interface IChat extends Document {
+    _id: Types.ObjectId;
     participant1: string;
     participant2: string;
     participant2Name: string;
     participant2ProfileUrl: string;
     lastMessage: string;
-    participant1Role: 'admin' ;
+    participant1Role: 'admin';
     participant2Role: 'user' | 'collector';
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const chatSchema = new Schema<IChat>({
@@ -25,6 +27,7 @@ const chatSchema = new Schema<IChat>({
 export const Chat = model("Chat", chatSchema);
 
 export interface IMessage extends Document {
+    _id: Types.ObjectId;
     chatId: string;
     senderId: string;
     receiverId: string;

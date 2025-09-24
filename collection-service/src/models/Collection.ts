@@ -1,6 +1,7 @@
 import mongoose, { Types, Schema, model, Document, Decimal128 } from "mongoose";
 
 export interface ICollection extends Document {
+    _id: Types.ObjectId;
     userId: string;
     collectionId: string;
     collectorId?: Types.ObjectId;
@@ -21,7 +22,7 @@ export interface ICollection extends Document {
         advancePaymentMethod?: "online" | "wallet";
         amount?: number;
         method?: "online" | "wallet" | "cash";
-        status?: "pending" | "success" | "failed"|"requested";
+        status?: "pending" | "success" | "failed" | "requested";
         orderId?: string;
         paidAt?: Date;
     }
@@ -39,7 +40,7 @@ export interface ICollection extends Document {
         long: number;
         updatedAt: Date;
     };
-    status: "pending" | "scheduled" | "in_progress" | "cancelled" | "completed";
+    status: "pending" | "confirmed" | "scheduled" | "in_progress" | "cancelled" | "completed";
     scheduledAt: Date;
     collectionProof: string;
     userFeedback: {
@@ -48,6 +49,9 @@ export interface ICollection extends Document {
     };
     cancellationReason: string;
     proofs?: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    
 }
 
 const collectionSchema = new Schema<ICollection>(
@@ -91,7 +95,7 @@ const collectionSchema = new Schema<ICollection>(
             advancePaymentMethod: { type: String, enum: ["online", "wallet"] },
             amount: { type: Number },
             method: { type: String, enum: ["online", "wallet", "cash"] },
-            status: { type: String, enum: ["pending", "success", "failed","requested"] },
+            status: { type: String, enum: ["pending", "success", "failed", "requested"] },
             orderId: { type: String },
             paidAt: { type: Date }
         },

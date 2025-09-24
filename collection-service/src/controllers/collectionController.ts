@@ -42,7 +42,6 @@ export class CollectionController implements ICollectionController {
     }
   }
 
-
   async verifyRazorpayAdvance(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.headers['x-client-id'] as string;
@@ -64,20 +63,31 @@ export class CollectionController implements ICollectionController {
     }
   }
 
+  async unlockPaymentLock(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.headers['x-client-id'] as string;
+      await this._collectionService.unlockPaymentLock(userId);
+      res.status(HTTP_STATUS.OK).json({ success: true });
+
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
+
 
   async payAdvanceWithWallet(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.headers['x-client-id'] as string;
       const collectionData = req.body;
 
-      console.log("collectionData :", collectionData);
+      console.log("collectionData in payAdvanceWithWallet controller:", collectionData);
 
       await this._collectionService.payAdvanceWithWallet(userId, collectionData);
 
       res.status(HTTP_STATUS.OK).json({ success: true, message: MESSAGES.PAYMENT_SUCCESSFULL });
 
     } catch (error: any) {
-      if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND) {
+      if (error.status === HTTP_STATUS.BAD_REQUEST || error.status === HTTP_STATUS.NOT_FOUND || error.status === HTTP_STATUS.CONFLICT) {
         res.status(error.status).json({ success: false, message: error.message });
       } else {
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
@@ -124,17 +134,11 @@ export class CollectionController implements ICollectionController {
       });
 
     } catch (error: any) {
-
       if (error.status === HTTP_STATUS.NOT_FOUND) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          success: false,
-          message: error.message
-        });
-        return;
+        res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: error.message });
+      } else {
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
       }
-
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
-
     }
   }
 
@@ -246,7 +250,7 @@ export class CollectionController implements ICollectionController {
       } = req.query;
       console.log("req.query :", req.query);
 
-      const collections = await this._collectionService.getAssignedCollections(
+      const { collections, totalItems } = await this._collectionService.getAssignedCollections(
         collectorId as string,
         {
           status: status as string,
@@ -260,7 +264,7 @@ export class CollectionController implements ICollectionController {
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: MESSAGES.COLLECTIONS_FETCHED,
-        data: collections
+        data: { collections, totalItems }
       });
 
     } catch (error: any) {

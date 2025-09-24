@@ -16,11 +16,9 @@ export interface ICollector {
     maxCapacity: number;
 }
 
-
 export interface INotification {
     userId: string;
     title: string;
     message: string;
     url: string;
-    createdAt: Date;
 }

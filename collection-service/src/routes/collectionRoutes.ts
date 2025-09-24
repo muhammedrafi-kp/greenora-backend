@@ -22,6 +22,7 @@ router.get('/analytics/collector/revenue', collectionController.getCollectorReve
 router.post("/payment/advance/razorpay-initiate", collectionController.initiateRazorpayAdvance.bind(collectionController));
 router.post("/payment/advance/razorpay-verify", collectionController.verifyRazorpayAdvance.bind(collectionController));
 router.post("/payment/advance/wallet", collectionController.payAdvanceWithWallet.bind(collectionController));
+router.post("/payment/unlock", collectionController.unlockPaymentLock.bind(collectionController));
 
 router.post('/payment-request', upload.array('collectionProofs'), collectionController.requestCollectionPayment.bind(collectionController));
 router.post('/payment/razorpay-verify', collectionController.verifyRazorpayPayment.bind(collectionController));

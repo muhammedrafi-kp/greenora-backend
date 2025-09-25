@@ -16,8 +16,10 @@ const router = Router();
 
 router.get('/analytics/dashboard', collectionController.getDashboardData.bind(collectionController));
 router.get('/analytics/revenue', collectionController.getRevenueData.bind(collectionController));
+router.get('/analytics/graph', collectionController.getCollectionChartData.bind(collectionController));
 router.get('/analytics/collector/dashboard', collectionController.getCollectorDashboardData.bind(collectionController));
 router.get('/analytics/collector/revenue', collectionController.getCollectorRevenueData.bind(collectionController));
+router.get('/analytics/collector/graph', collectionController.getCollectorCollectionChartData.bind(collectionController));
 
 router.post("/payment/advance/razorpay-initiate", collectionController.initiateRazorpayAdvance.bind(collectionController));
 router.post("/payment/advance/razorpay-verify", collectionController.verifyRazorpayAdvance.bind(collectionController));

@@ -57,7 +57,6 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
         }
     }
 
-
     async deleteById(id: string | Types.ObjectId): Promise<T | null> {
         try {
             return await this.model.findByIdAndDelete(id);

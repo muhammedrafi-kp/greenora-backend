@@ -1,6 +1,7 @@
 import { CollectionDto } from "../../dtos/response/collection.dto";
 import { ICollection } from "../../models/Collection";
 import { ICollector } from "../../dtos/external/external";
+import { ICollectionChartData,ICollectorCollectionChartData } from "../../dtos/response/collectionChart.dto";
 
 export interface IPayment {
     paymentId: string;
@@ -105,4 +106,9 @@ export interface ICollectionservice {
         totalWasteCollections: number;
         totalScrapCollections: number;
     }>
+
+    getCollectionChartData(): Promise<ICollectionChartData>;
+    getCollectorCollectionChartData(collectorId: string): Promise<ICollectorCollectionChartData>;
+
+    // setCollectionRevenuePercentage(value:number,updatedBy:string): Promise<void>;
 }

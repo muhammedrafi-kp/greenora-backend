@@ -3,6 +3,9 @@ import { ICollection } from "../models/Collection";
 import { BaseRepository } from "./baseRepository";
 import PickupRequest from "../models/Collection";
 import { Types } from "mongoose";
+import { ICollectionChartData, ICollectorCollectionChartData } from "../dtos/response/collectionChart.dto";
+// import { ISetting } from "../models/Settings";
+
 
 interface IRevenueData {
     date: string;
@@ -41,8 +44,8 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
         try {
             return await this.model.find({ userId }).populate({
                 path: "items.categoryId",
-                model: "Category",         
-                select: "name" 
+                model: "Category",
+                select: "name"
             }).sort({ createdAt: -1 });
 
         } catch (error) {
@@ -366,19 +369,19 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
     }> {
         try {
             const result = await this.model.aggregate([
-                { 
-                    $match: { 
-                        status: "completed" 
-                    } 
+                {
+                    $match: {
+                        status: "completed"
+                    }
                 },
                 {
                     $group: {
                         _id: null,
                         totalCollections: { $sum: 1 },
-                        totalRevenue: { 
-                            $sum: { 
-                                $multiply: ["$payment.amount", 0.75] 
-                            } 
+                        totalRevenue: {
+                            $sum: {
+                                $multiply: ["$payment.amount", 0.75]
+                            }
                         },
                         wasteCollections: {
                             $sum: {
@@ -402,7 +405,7 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
                     }
                 }
             ]);
-    
+
             // If no collections exist, return zeros
             return result[0] || {
                 totalCollections: 0,
@@ -424,20 +427,20 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
     }> {
         try {
             const result = await this.model.aggregate([
-                { 
-                    $match: { 
+                {
+                    $match: {
                         status: "completed",
                         collectorId: new Types.ObjectId(collectorId)
-                    } 
+                    }
                 },
                 {
                     $group: {
                         _id: null,
                         totalCollections: { $sum: 1 },
-                        totalRevenue: { 
-                            $sum: { 
-                                $multiply: ["$payment.amount", 0.15] 
-                            } 
+                        totalRevenue: {
+                            $sum: {
+                                $multiply: ["$payment.amount", 0.15]
+                            }
                         },
                         wasteCollections: {
                             $sum: {
@@ -461,7 +464,7 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
                     }
                 }
             ]);
-    
+
             return result[0] || {
                 totalCollections: 0,
                 totalRevenue: 0,
@@ -472,7 +475,181 @@ class CollectionRepository extends BaseRepository<ICollection> implements IColle
             throw new Error(`Error fetching collector dashboard data: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
-    
+
+    async getCollectionChartData(): Promise<ICollectionChartData> {
+        try {
+            console.log("repo for graph")
+
+            const typeStats = await this.model.aggregate([
+                { $group: { _id: "$type", count: { $sum: 1 } } },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: "$count" },
+                        breakdown: { $push: { type: "$_id", count: "$count" } }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        collectionTypeData: {
+                            $map: {
+                                input: "$breakdown",
+                                as: "b",
+                                in: {
+                                    type: "$$b.type",
+                                    count: "$$b.count",
+                                    percentage: {
+                                        $round: [
+                                            { $multiply: [{ $divide: ["$$b.count", "$total"] }, 100] },
+                                            2
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]);
+
+            // 📊 Status stats
+            const statusStats = await this.model.aggregate([
+                { $match: { status: { $in: ["confirmed", "scheduled", "cancelled", "completed"] } } },
+                { $group: { _id: "$status", count: { $sum: 1 } } },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: "$count" },
+                        breakdown: { $push: { status: "$_id", count: "$count" } }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        collectionStatusData: {
+                            $map: {
+                                input: "$breakdown",
+                                as: "b",
+                                in: {
+                                    status: "$$b.status",
+                                    count: "$$b.count",
+                                    percentage: {
+                                        $round: [
+                                            { $multiply: [{ $divide: ["$$b.count", "$total"] }, 100] },
+                                            2
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]);
+
+            const data: ICollectionChartData = {
+                collectionTypeData: typeStats[0].collectionTypeData || [],
+                collectionStatusData: statusStats[0].collectionStatusData || []
+            };
+
+            return data;
+        } catch (error) {
+            throw new Error(`Error fetching collection chart data: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    async getCollectorCollectionChartData(collectorId: string): Promise<ICollectorCollectionChartData> {
+        try {
+            const typeStats = await this.model.aggregate([
+                { $match: { collectorId: new Types.ObjectId(collectorId) } }, // filter by collector
+                { $group: { _id: "$type", count: { $sum: 1 } } },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: "$count" },
+                        breakdown: { $push: { type: "$_id", count: "$count" } }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        collectionTypeData: {
+                            $map: {
+                                input: "$breakdown",
+                                as: "b",
+                                in: {
+                                    type: "$$b.type",
+                                    count: "$$b.count",
+                                    percentage: {
+                                        $round: [
+                                            { $multiply: [{ $divide: ["$$b.count", "$total"] }, 100] },
+                                            2
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]);
+
+            const itemStats = await this.model.aggregate([
+                { $match: { collectorId: new Types.ObjectId(collectorId) } }, // filter by collector
+                { $unwind: "$items" },
+                { $group: { _id: "$items.name", qty: { $sum: "$items.qty" } } },
+                {
+                    $group: {
+                        _id: null,
+                        total: { $sum: "$qty" },
+                        breakdown: { $push: { name: "$_id", qty: "$qty" } }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        itemType: {
+                            $map: {
+                                input: "$breakdown",
+                                as: "b",
+                                in: {
+                                    name: "$$b.name",
+                                    qty: "$$b.qty",
+                                    percentage: {
+                                        $round: [
+                                            { $multiply: [{ $divide: ["$$b.qty", "$total"] }, 100] },
+                                            2
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]);
+
+            const data: ICollectorCollectionChartData = {
+                collectionTypeData: typeStats[0]?.collectionTypeData || [],
+                itemType: itemStats[0]?.itemType || []
+            };
+
+            return data;
+
+        } catch (error) {
+            throw new Error(`Error fetching collection chart data: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    // async updateRevenuePercentage(value: number, updatedBy?: string): Promise<ISetting> {
+    //     try {
+    //         await this.model.updateOne(
+    //             { key: "waste_revenue_pct" },
+    //             { value: value, updatedAt: new Date() },
+    //             { upsert: true, new: true }
+    //         );
+    //     } catch (error) {
+    //         throw new Error(`Error fetching collection chart data: ${error instanceof Error ? error.message : String(error)}`);
+    //     }
+    // }
+
 }
 
 export default new CollectionRepository();

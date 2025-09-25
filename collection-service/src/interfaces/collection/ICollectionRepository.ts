@@ -1,5 +1,7 @@
 import { ICollection } from "../../models/Collection";
+// import { ISetting } from "../../models/Settings";
 import { IBaseRepository } from "../baseRepository/IBaseRepository";
+import { ICollectionChartData,ICollectorCollectionChartData } from "../../dtos/response/collectionChart.dto";
 
 export interface IRevenueData {
     date: string;
@@ -42,4 +44,8 @@ export interface ICollectionRepository extends IBaseRepository<ICollection> {
         totalWasteCollections: number;
         totalScrapCollections: number;
     }>
+
+    getCollectionChartData(): Promise<ICollectionChartData>;
+    getCollectorCollectionChartData(collectorId: string): Promise<ICollectorCollectionChartData>;
+    // updateRevenuePercentage(value:number,updatedBy:string): Promise<ISetting>;
 }

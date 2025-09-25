@@ -1,13 +1,13 @@
 import { IDistrictRepository } from "../interfaces/serviceArea/IDistrictRepository";
 import { IServiceAreaService } from "../interfaces/serviceArea/IServiceAreaService";
 import { IServiceAreaRepository } from "../interfaces/serviceArea/IServiceAreaRepository";
-import { IServiceArea } from "../models/ServiceArea";
 import { MESSAGES } from "../constants/messages";
 import { HTTP_STATUS } from "../constants/httpStatus";
+import { CreateAreaDto } from "../dtos/request/serviceArea.dto"
 import { DistrictDto } from "../dtos/response/district.dto";
 import { ServiceAreaDto } from "../dtos/response/serviceArea.dto";
 import { DistrictWithAreasDto } from "../dtos/response/DistrictWithAreasDto.dto";
-
+import { Types } from "mongoose"
 
 export class ServiceAreaService implements IServiceAreaService {
     constructor(
@@ -79,10 +79,10 @@ export class ServiceAreaService implements IServiceAreaService {
         }
     }
 
-    async createServiceArea(serviceAreaData: IServiceArea): Promise<ServiceAreaDto> {
+    async createServiceArea(serviceAreaData: CreateAreaDto): Promise<ServiceAreaDto> {
         try {
 
-             const existingServiceArea = await this._serviceAreaRepository.findOne({ name: serviceAreaData.name });
+            const existingServiceArea = await this._serviceAreaRepository.findOne({ name: serviceAreaData.name });
 
             if (existingServiceArea) {
                 const error: any = new Error(MESSAGES.SERVICE_AREA_EXISTS);
@@ -90,7 +90,12 @@ export class ServiceAreaService implements IServiceAreaService {
                 throw error;
             }
 
-            const serviceArea = await this._serviceAreaRepository.create(serviceAreaData);
+            const dataToSave = {
+                ...serviceAreaData,
+                districtId: new Types.ObjectId(serviceAreaData.districtId)
+            };
+            
+            const serviceArea = await this._serviceAreaRepository.create(dataToSave);
             return ServiceAreaDto.from(serviceArea);
         } catch (error) {
             console.error('Error while creating ServiceArea:', error);

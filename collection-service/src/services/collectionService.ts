@@ -13,6 +13,7 @@ import RabbitMQ from "../utils/rabbitmq";
 import { IUser, ICollector, INotification } from "../dtos/external/external";
 import s3 from "../config/s3Config";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { ICollectionChartData, ICollectorCollectionChartData } from "../dtos/response/collectionChart.dto";
 
 export class CollectionService implements ICollectionservice {
     constructor(
@@ -1056,10 +1057,36 @@ export class CollectionService implements ICollectionservice {
     }
 
 
+    async getCollectionChartData(): Promise<ICollectionChartData> {
+        try {
+            console.log("controller for graph");
+            return await this._collectionRepository.getCollectionChartData();
+        } catch (error) {
+            console.error('Error while fetching collection chart data:', error);
+            throw error;
+        }
+    }
 
 
+    async getCollectorCollectionChartData(collectorId: string): Promise<ICollectorCollectionChartData> {
+        try {
+            console.log("controller for graph");
+            return await this._collectionRepository.getCollectorCollectionChartData(collectorId);
+        } catch (error) {
+            console.error('Error while fetching collection chart data:', error);
+            throw error;
+        }
+    }
 
 
+    // async setCollectionRevenuePercentage(value: number, updatedBy?: string): Promise<void> {
+    //      try {
+    //         await 
+    //     } catch (error) {
+    //         console.error('Error while fetching collection chart data:', error);
+    //         throw error;
+    //     }
+    // }
 
 
 
@@ -1107,5 +1134,7 @@ export class CollectionService implements ICollectionservice {
             throw error;
         }
     }
+
+
 
 }

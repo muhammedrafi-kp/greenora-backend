@@ -1,13 +1,13 @@
 import { IAddressRepository } from "../interfaces/address/IAddressRepository";
 import { IAddressService } from "../interfaces/address/IAddressService";
-import { IAddress } from "../models/Address";
+import { CreateAddressDto } from "../dtos/request/address.dto";
 import { AddressDto } from "../dtos/response/address.dto";
 
 export class AddressService implements IAddressService {
-    
+
     constructor(private _addressRepository: IAddressRepository) { };
 
-    async createAddress(addressData: IAddress): Promise<AddressDto> {
+    async createAddress(addressData: CreateAddressDto): Promise<AddressDto> {
         try {
             const address = await this._addressRepository.create(addressData);
             return AddressDto.from(address);
@@ -27,7 +27,7 @@ export class AddressService implements IAddressService {
         }
     }
 
-    async updateAddress(addressId: string, addressData: Partial<IAddress>): Promise<AddressDto | null> {
+    async updateAddress(addressId: string, addressData: CreateAddressDto): Promise<AddressDto | null> {
         try {
             const address = await this._addressRepository.updateById(addressId, addressData);
             return AddressDto.from(address!);

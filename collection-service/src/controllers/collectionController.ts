@@ -436,8 +436,6 @@ export class CollectionController implements ICollectionController {
 
       const data = await this._collectionService.getRevenueData(queryOptions);
 
-      // console.log("revenue data :", data);
-
       res.status(HTTP_STATUS.OK).json({ success: true, data });
 
     } catch (error: any) {
@@ -445,9 +443,25 @@ export class CollectionController implements ICollectionController {
     }
   }
 
+  async getCollectionChartData(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await this._collectionService.getCollectionChartData();
+      res.status(HTTP_STATUS.OK).json({ success: true, data });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
 
 
-
+  async getCollectorCollectionChartData(req: Request, res: Response): Promise<void> {
+    try {
+      const collectorId = req.headers['x-client-id'] as string;
+      const data = await this._collectionService.getCollectorCollectionChartData(collectorId);
+      res.status(HTTP_STATUS.OK).json({ success: true, data });
+    } catch (error: any) {
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+    }
+  }
 
   async getCollectorRevenueData(req: Request, res: Response): Promise<void> {
     try {
@@ -458,8 +472,6 @@ export class CollectionController implements ICollectionController {
       console.log("dateFilter :", dateFilter);
       console.log("startDate :", startDate);
       console.log("endDate :", endDate);
-
-
 
       if (!collectorId) {
         res.status(400).json({ message: "collectorId is required" });
@@ -485,15 +497,20 @@ export class CollectionController implements ICollectionController {
 
       const revenueData = await this._collectionService.getCollectorRevenueData(queryOptions);
 
-
-
       res.status(HTTP_STATUS.OK).json({ success: true, data: revenueData });
-
-
 
     } catch (error: any) {
       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
   }
 
+  // async setCollectionRevenuePercentage(req: Request, res: Response): Promise<void> {
+  //    try {
+  //     const collectorId = req.headers['x-client-id'] as string;
+  //     const data = await this._collectionService.getCollectorCollectionChartData(collectorId);
+  //     res.status(HTTP_STATUS.OK).json({ success: true, data });
+  //   } catch (error: any) {
+  //     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
+  //   }
+  // }
 }

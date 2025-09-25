@@ -11,7 +11,7 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
-      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -30,6 +30,34 @@ services:
       retries: 10
       start_period: 10s
     restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.8.2
+    ports:
+    - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+    - ./loki-config.yaml:/etc/loki/local-config.yaml
+    - ./loki-data/chunks:/chunks
+    - ./loki-data/index:/index
+    - ./loki-data/index_cache:/index_cache
+    - ./loki-data/compactor:/compactor
+    - ./loki-data/wal:/wal
+
+  promtail:
+    image: grafana/promtail:2.8.2
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:9.5.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
 
   api-gateway:
     build:
@@ -121,3 +149,6 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  grafana-data:

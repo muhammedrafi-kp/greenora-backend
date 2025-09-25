@@ -39,7 +39,14 @@ spec:
               service:
                 name: notification-service
                 port:
-                  number: 3006                  
+                  number: 3006
+          - path: /grafana(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000                 
           - path: /
             pathType: Prefix
             backend:

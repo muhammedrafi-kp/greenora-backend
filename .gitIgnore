@@ -1,3 +1,6 @@
 k8s/secrets.yaml
+k8s/loki.yaml
+k8s/grafana.yaml
+k8s/promtail.yaml
 /node_modules/
 

@@ -135,11 +135,12 @@ export class ServiceAreaController implements IServiceAreaController {
     async createServiceArea(req: Request, res: Response): Promise<void> {
         try {
             const serviceAreaData = req.body;
-            const serviceArea = await this._serviceAreaService.createServiceArea(serviceAreaData);
+            console.log("data :",serviceAreaData);
+            // const serviceArea = await this._serviceAreaService.createServiceArea(serviceAreaData);
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
                 message: MESSAGES.SERVICE_AREA_CREATED,
-                data: serviceArea
+                // data: serviceArea
             });
 
         } catch (error: any) {

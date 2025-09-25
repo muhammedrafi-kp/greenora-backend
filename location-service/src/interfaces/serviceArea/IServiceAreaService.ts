@@ -1,5 +1,4 @@
-import { IDistrict } from "../../models/District";
-import { IServiceArea } from "../../models/ServiceArea";
+import {CreateAreaDto} from "../../dtos/request/serviceArea.dto"
 import { DistrictDto } from "../../dtos/response/district.dto";
 import { ServiceAreaDto } from "../../dtos/response/serviceArea.dto";
 import { DistrictWithAreasDto } from "../../dtos/response/DistrictWithAreasDto.dto";
@@ -11,7 +10,7 @@ export interface IServiceAreaService {
     updateDistrict(districtId: string, districtName: string): Promise<DistrictDto | null>;
     deleteDistrict(districtId: string): Promise<DistrictDto | null>;
 
-    createServiceArea(serviceAreaData: IServiceArea): Promise<ServiceAreaDto>;
+    createServiceArea(serviceAreaData: CreateAreaDto): Promise<ServiceAreaDto>;
     getServiceAreas(districtId: string): Promise<ServiceAreaDto[]>;
     getServiceAreasByIds(ids: string[]): Promise<ServiceAreaDto[]>;
     isServiceAvailable(serviceAreaId: string, pincode: string): Promise<ServiceAreaDto | null>;
